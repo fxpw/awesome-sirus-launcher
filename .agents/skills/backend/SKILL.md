@@ -1,6 +1,6 @@
 ---
 name: backend
-description: Backend implementation rules for the Awesome Sirus Launcher Electron TypeScript backend. Use when editing TypeScript core modules, Electron main/preload adapters, IPC contracts, file downloads, MD5 client patch checks, WTF backups, FPS patch installation, GitHub addon installation, account profile storage, Config.wtf account switching, settings persistence, logging, or game launch behavior.
+description: Backend implementation rules for the Awesome Sirus Launcher Electron TypeScript backend. Use when editing TypeScript core modules, Electron main/preload adapters, IPC contracts, file downloads, MD5 client patch checks, WTF backups, FPS patch installation, GitHub addon installation, launcher auto-update, account profile storage, Config.wtf account switching, settings persistence, logging, or game launch behavior.
 ---
 
 # Sirus Launcher Backend
@@ -22,6 +22,7 @@ Prefer these module boundaries:
 - `addons`: download GitHub repository source zip archives, unpack them safely, strip the top archive folder, and install real addon folders.
 - `backup`: zip, list, restore, and safety-backup `WTF`.
 - `launcher`: start WoW without blocking the UI.
+- `app-updater`: check GitHub Releases, compare launcher versions, download update assets, and trigger installation.
 - `logging`: write structured logs and forward user-facing events.
 
 Keep shared DTOs and channel names in `shared` so main, preload, renderer, and tests compile against the same contract.
@@ -79,12 +80,14 @@ Emit progress events from main to renderer. Keep cancellation cooperative and ma
 - After unpacking a GitHub source zip, do not install the top folder like `{repo}-{branch}`. Find folders containing `.toc` and move those addon folders into `<wowPath>/Interface/AddOns`.
 - Back up `<wowPath>/WTF` into timestamped zip archives.
 - For multi-account launch, update `<wowPath>/WTF/Config.wtf` with `SET accountName "login"` and `SET readTerminationWithoutNotice "password"` immediately before launching the game.
+- For launcher auto-update, compare local `package.json.version`/`VERSION` with GitHub Releases, ignore pre-releases unless enabled, download to a temporary file, validate metadata/checksum when available, and provide manual fallback to the release page.
 - Never log saved passwords or write them to plaintext launcher logs/settings. Prefer OS-protected storage for secrets.
 - Launch only the validated WoW executable, not arbitrary user-provided commands.
 
 ## Testing
 
 - Unit test path derivation, manifest parsing, fallback source selection, and MD5 comparison.
+- Unit test app updater version comparison, release parsing, pre-release filtering, asset selection, and fallback behavior.
 - Integration test backup/restore and addon extraction using temporary directories.
 - Add adapter contract tests for filesystem, downloader, archive extraction, process launch, and secret storage.
 - Mock network calls; do not depend on live patch servers in unit tests.
