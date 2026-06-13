@@ -1,0 +1,66 @@
+name: Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - VERSION
+      - package.json
+      - package-lock.json
+      - pnpm-lock.yaml
+      - yarn.lock
+      - .github/workflows/build.yml
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check project scaffold
+        id: scaffold
+        shell: pwsh
+        run: |
+          if (Test-Path package.json) {
+            "exists=true" >> $env:GITHUB_OUTPUT
+          } else {
+            "exists=false" >> $env:GITHUB_OUTPUT
+            Write-Host "package.json is not created yet; skipping Node/Electron build."
+          }
+
+      - name: Setup Node
+        if: steps.scaffold.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        if: steps.scaffold.outputs.exists == 'true'
+        run: npm ci
+
+      - name: Check
+        if: steps.scaffold.outputs.exists == 'true'
+        run: npm run check --if-present
+
+      - name: Test
+        if: steps.scaffold.outputs.exists == 'true'
+        run: npm test --if-present
+
+      - name: Build
+        if: steps.scaffold.outputs.exists == 'true'
+        run: npm run build
+
+      - name: Upload artifacts
+        if: steps.scaffold.outputs.exists == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launcher-build
+          path: |
+            dist/**
+            release/**
+          if-no-files-found: ignore

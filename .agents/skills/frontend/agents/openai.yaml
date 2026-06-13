@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sirus Launcher Frontend"
+  short_description: "Frontend rules for the Sirus launcher Vue renderer."
+  default_prompt: "Use this skill when implementing launcher UI modules."

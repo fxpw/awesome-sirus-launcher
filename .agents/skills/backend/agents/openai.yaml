@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sirus Launcher Backend"
+  short_description: "Backend rules for the Sirus launcher Electron main process."
+  default_prompt: "Use this skill when implementing launcher backend modules."
