@@ -14,3 +14,4 @@
 - [Backend skill](.agents/skills/backend/SKILL.md)
 - [Frontend skill](.agents/skills/frontend/SKILL.md)
 - [Changelog skill](.agents/skills/changelog/SKILL.md)
+- [Commit skill](.agents/skills/commit/SKILL.md)
