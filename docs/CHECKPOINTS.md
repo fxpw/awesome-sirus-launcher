@@ -16,19 +16,19 @@
 - Создан файл версии [VERSION](../VERSION).
 - Созданы agent rules и skills в `.agents`.
 - Добавлены skills:
-  - `backend`;
-  - `frontend`;
-  - `changelog`;
-  - `commit`.
+    - `backend`;
+    - `frontend`;
+    - `changelog`;
+    - `commit`.
 - В plan добавлены будущие модули:
-  - GitHub-аддоны через source zip;
-  - backup `WTF`;
-  - FPS-патч;
-  - обновление клиента по MD5;
-  - мультиаккаунты;
-  - автообновление WeakAuras;
-  - автообновление лаунчера через GitHub Releases;
-  - GitHub token для повышенных лимитов.
+    - GitHub-аддоны через source zip;
+    - backup `WTF`;
+    - FPS-патч;
+    - обновление клиента по MD5;
+    - мультиаккаунты;
+    - автообновление WeakAuras;
+    - автообновление лаунчера через GitHub Releases;
+    - GitHub token для повышенных лимитов.
 
 ### Каркас приложения
 
@@ -36,9 +36,9 @@
 - Добавлен `package-lock.json`.
 - Добавлен `electron-vite` config.
 - Добавлены TypeScript configs:
-  - `tsconfig.json`;
-  - `tsconfig.node.json`;
-  - `tsconfig.web.json`.
+    - `tsconfig.json`;
+    - `tsconfig.node.json`;
+    - `tsconfig.web.json`.
 - Добавлен Electron main process.
 - Добавлен preload через `contextBridge`.
 - Добавлен Vue renderer.
@@ -52,12 +52,12 @@
 ### Архитектура
 
 - Заложена структура:
-  - `src/core`;
-  - `src/main`;
-  - `src/preload`;
-  - `src/renderer`;
-  - `src/shared`;
-  - `tests`.
+    - `src/core`;
+    - `src/main`;
+    - `src/preload`;
+    - `src/renderer`;
+    - `src/shared`;
+    - `tests`.
 - `core` сделан переносимым: без импортов Electron.
 - Electron-specific логика держится в `main`/`preload`.
 - Общие DTO и IPC channel names лежат в `src/shared/contracts.ts`.
@@ -65,34 +65,39 @@
 ### Реализованные core-модули
 
 - `src/core/wow/wowPaths.ts`
-  - строит пути клиента WoW;
-  - проверяет базовую структуру клиента.
+    - строит пути клиента WoW;
+    - проверяет базовую структуру клиента.
 - `src/core/accounts/configWtf.ts`
-  - обновляет `SET accountName`;
-  - обновляет `SET readTerminationWithoutNotice`;
-  - сохраняет остальные строки `Config.wtf`;
-  - экранирует кавычки и slash в значениях.
+    - обновляет `SET accountName`;
+    - обновляет `SET readTerminationWithoutNotice`;
+    - сохраняет остальные строки `Config.wtf`;
+    - экранирует кавычки и slash в значениях.
 - `src/core/github/githubAuth.ts`
-  - создает `Authorization: Bearer ...`;
-  - редактирует токен из логируемого текста;
-  - парсит `X-RateLimit-*`;
-  - классифицирует `401/403`.
+    - создает `Authorization: Bearer ...`;
+    - редактирует токен из логируемого текста;
+    - парсит `X-RateLimit-*`;
+    - классифицирует `401/403`.
 - `src/core/github/sourceZip.ts`
-  - строит GitHub source zip URL для ветки.
+    - строит GitHub source zip URL для ветки.
 - `src/core/updater/appUpdate.ts`
-  - мапит GitHub Release response;
-  - сравнивает SemVer;
-  - игнорирует pre-release по умолчанию;
-  - определяет наличие обновления лаунчера.
+    - мапит GitHub Release response;
+    - сравнивает SemVer;
+    - игнорирует pre-release по умолчанию;
+    - определяет наличие обновления лаунчера.
 - `src/core/backup/wtfBackup.ts`
-  - строит план бекапа `WTF`;
-  - строит план восстановления `WTF` с safety backup;
-  - создает стабильное имя zip-архива;
-  - определяет папку хранения бекапов.
+    - строит план бекапа `WTF`;
+    - строит план восстановления `WTF` с safety backup;
+    - создает стабильное имя zip-архива;
+    - определяет папку хранения бекапов.
 - `src/core/fpsPatch/fpsPatch.ts`
-  - определяет имя FPS-патча;
-  - хранит primary/fallback ссылки;
-  - строит план установки в `Data/ruRU`.
+    - определяет имя FPS-патча;
+    - хранит primary/fallback ссылки;
+    - строит план установки в `Data/ruRU`.
+- `src/core/clientPatches/clientPatches.ts`
+    - фиксирует fallback API-источники manifest;
+    - нормализует ответ `{ patches: [...] }`;
+    - безопасно строит локальные пути файлов клиента;
+    - сравнивает MD5 без учета регистра.
 
 ### Electron backend
 
@@ -102,31 +107,32 @@
 - Внешние ссылки открываются через `shell.openExternal`.
 - IPC handlers регистрируются через schema-first wrapper с Zod validation для входов и выходов.
 - Добавлены первые IPC handlers:
-  - получить app info;
-  - проверить GitHub token status;
-  - сохранить GitHub token;
-  - удалить GitHub token;
-  - получить settings;
-  - сохранить settings;
-  - выбрать папку WoW через dialog;
-  - список backup `WTF`;
-  - создать backup `WTF`;
-  - восстановить backup `WTF`;
-  - удалить backup `WTF`;
-  - открыть папку backup `WTF`;
-  - получить статус FPS-патча;
-  - установить FPS-патч;
-  - проверить путь к WoW;
-  - preview изменения `Config.wtf`.
+    - получить app info;
+    - проверить GitHub token status;
+    - сохранить GitHub token;
+    - удалить GitHub token;
+    - получить settings;
+    - сохранить settings;
+    - выбрать папку WoW через dialog;
+    - список backup `WTF`;
+    - создать backup `WTF`;
+    - восстановить backup `WTF`;
+    - удалить backup `WTF`;
+    - открыть папку backup `WTF`;
+    - получить статус FPS-патча;
+    - установить FPS-патч;
+    - проверить клиент по MD5 manifest;
+    - проверить путь к WoW;
+    - preview изменения `Config.wtf`.
 - GitHub token сохраняется через Electron `safeStorage` в encrypted file внутри `userData`.
 - Настройки лаунчера сохраняются в `settings.json` внутри `userData`.
 
 ### UI
 
 - Есть базовый layout:
-  - sidebar;
-  - topbar;
-  - dashboard panel.
+    - sidebar;
+    - topbar;
+    - dashboard panel.
 - Показывается версия приложения.
 - Показывается статус GitHub token.
 - Есть ручная проверка пути к WoW.
@@ -139,6 +145,7 @@
 - Есть блок создания, просмотра, восстановления и удаления backup `WTF`.
 - Есть кнопка открытия папки backup `WTF` в проводнике.
 - Есть блок статуса FPS-патча с установкой/переустановкой.
+- Есть блок проверки клиента с итогами `ok/missing/outdated` и списком проблемных файлов.
 - Показываются найденные/отсутствующие базовые элементы клиента.
 
 ### CI и сборка
@@ -153,7 +160,7 @@
 
 - `npm run check` проходит.
 - `npm run build` проходит.
-- Тесты проходят: 11 test files, 30 tests.
+- Тесты проходят: 12 test files, 34 tests.
 - Проверка portable core проходит: `src/core` не импортирует Electron.
 
 ## Частично сделано
@@ -243,6 +250,30 @@
 - cancellation;
 - checksum/MD5-проверка, если появится надежный эталон для файла.
 
+### MD5 проверка клиента
+
+Сделано:
+
+- получен и зафиксирован формат ответа API `patches`;
+- fallback по API-источникам:
+    - `https://s-patches.pro/api/client/patches`;
+    - `https://s-patches.ru/api/client/patches`;
+    - `https://sirus.world/api/client/patches`;
+- безопасное построение локальных путей из `path` и `filename`;
+- stream MD5 для локальных файлов;
+- сравнение размера и MD5;
+- статусы файлов `ok`, `missing`, `outdated`;
+- IPC `client.check`;
+- UI блок проверки клиента;
+- тесты manifest parser, path safety, fallback и проверки файлов.
+
+Осталось:
+
+- progress events;
+- cancellation;
+- скачивание отсутствующих/битых файлов;
+- повторная проверка MD5 после скачивания.
+
 ## Следующие чекпоинты
 
 ### Чекпоинт 1. Настройки и путь к WoW
@@ -290,10 +321,8 @@
 
 ### Чекпоинт 7. MD5 обновление клиента
 
-- Получить пример ответа API patches.
-- Зафиксировать схему manifest.
-- Реализовать stream MD5.
-- Сравнить локальные файлы.
+- Добавить progress events.
+- Добавить cancellation.
 - Скачать отсутствующие/битые файлы.
 - Проверить MD5 после скачивания.
 
@@ -311,10 +340,9 @@
 - В окружении был warning `NODE_TLS_REJECT_UNAUTHORIZED=0`; это небезопасно для сетевых операций.
 - Текущий GitHub token storage использует `safeStorage`; надо проверить поведение на целевых Windows-машинах.
 - Пароль аккаунта нельзя логировать или хранить в plain config.
-- Схема API MD5 patches пока не зафиксирована примером ответа.
 - `Config.wtf` строка `SET readTerminationWithoutNotice` требует подтверждения на реальном клиенте Sirus.
 
 ## Последний зеленый прогон
 
-- `npm run check` - успешно, 11 test files, 30 tests.
+- `npm run check` - успешно, 12 test files, 34 tests.
 - `npm run build` - успешно.

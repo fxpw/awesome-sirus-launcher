@@ -18,9 +18,9 @@ describe('unzipToDirectory', () => {
 
 		await unzipToDirectory(archivePath, targetDir)
 
-		await expect(readFile(join(targetDir, 'Account', 'Demo', 'SavedVariables.lua'), 'utf8')).resolves.toBe(
-			'value = true'
-		)
+		await expect(
+			readFile(join(targetDir, 'Account', 'Demo', 'SavedVariables.lua'), 'utf8')
+		).resolves.toBe('value = true')
 	})
 
 	it('rejects zip entries outside target directory', async () => {
@@ -84,7 +84,10 @@ async function createUnsafeZip(archivePath: string): Promise<void> {
 	end.writeUInt32LE(centralOffset, 16)
 	end.writeUInt16LE(0, 20)
 
-	await writeFile(archivePath, Buffer.concat([localHeader, fileName, content, centralDirectory, end]))
+	await writeFile(
+		archivePath,
+		Buffer.concat([localHeader, fileName, content, centralDirectory, end])
+	)
 }
 
 function crc32(buffer: Buffer): number {

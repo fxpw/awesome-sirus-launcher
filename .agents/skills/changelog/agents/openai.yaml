@@ -1,4 +1,4 @@
 interface:
-  display_name: "Changelog"
-  short_description: "Rules for updating CHANGELOG.md after agent changes."
-  default_prompt: "Use this skill after making project changes to update the changelog."
+    display_name: 'Changelog'
+    short_description: 'Rules for updating CHANGELOG.md after agent changes.'
+    default_prompt: 'Use this skill after making project changes to update the changelog.'

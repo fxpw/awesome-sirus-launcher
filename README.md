@@ -11,22 +11,22 @@
 
 ## Команды
 
-| Команда | Что делает |
-| --- | --- |
-| `npm install` | Установить зависимости. |
-| `npm run dev` | Запустить лаунчер в dev-режиме. |
-| `npm start` | То же самое, алиас для `npm run dev`. |
-| `npm run typecheck` | Проверить TypeScript для renderer и main/preload/core. |
-| `npm run typecheck:web` | Проверить только Vue/renderer часть. |
-| `npm run typecheck:node` | Проверить main/preload/core/shared/tests. |
-| `npm test` | Запустить unit tests один раз. |
-| `npm run test:watch` | Запустить tests в watch-режиме. |
-| `npm run check` | Полная быстрая проверка: typecheck + tests. |
-| `npm run build` | Собрать Electron main/preload/renderer в `out/`. |
-| `npm run preview` | Запустить preview собранного приложения. |
-| `npm run package:dir` | Собрать unpacked-приложение в `release/` без installer. |
-| `npm run package:win` | Собрать Windows installer/portable artifacts. |
-| `npm run package` | Собрать приложение через `electron-builder` с настройками из `package.json`. |
+| Команда                  | Что делает                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `npm install`            | Установить зависимости.                                                      |
+| `npm run dev`            | Запустить лаунчер в dev-режиме.                                              |
+| `npm start`              | То же самое, алиас для `npm run dev`.                                        |
+| `npm run typecheck`      | Проверить TypeScript для renderer и main/preload/core.                       |
+| `npm run typecheck:web`  | Проверить только Vue/renderer часть.                                         |
+| `npm run typecheck:node` | Проверить main/preload/core/shared/tests.                                    |
+| `npm test`               | Запустить unit tests один раз.                                               |
+| `npm run test:watch`     | Запустить tests в watch-режиме.                                              |
+| `npm run check`          | Полная быстрая проверка: typecheck + tests.                                  |
+| `npm run build`          | Собрать Electron main/preload/renderer в `out/`.                             |
+| `npm run preview`        | Запустить preview собранного приложения.                                     |
+| `npm run package:dir`    | Собрать unpacked-приложение в `release/` без installer.                      |
+| `npm run package:win`    | Собрать Windows installer/portable artifacts.                                |
+| `npm run package`        | Собрать приложение через `electron-builder` с настройками из `package.json`. |
 
 Обычный цикл разработки:
 

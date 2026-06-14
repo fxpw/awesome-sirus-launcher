@@ -1,173 +1,203 @@
 export const ipcChannels = {
-  app: {
-    getInfo: 'app:get-info',
-    checkUpdate: 'app:check-update'
-  },
-  github: {
-    getTokenStatus: 'github:get-token-status',
-    saveToken: 'github:save-token',
-    clearToken: 'github:clear-token'
-  },
-  settings: {
-    get: 'settings:get',
-    save: 'settings:save',
-    selectWowPath: 'settings:select-wow-path'
-  },
-  backup: {
-    listWtf: 'backup:list-wtf',
-    createWtf: 'backup:create-wtf',
-    restoreWtf: 'backup:restore-wtf',
-    deleteWtf: 'backup:delete-wtf',
-    openWtfFolder: 'backup:open-wtf-folder'
-  },
-  fpsPatch: {
-    getStatus: 'fps-patch:get-status',
-    install: 'fps-patch:install'
-  },
-  wow: {
-    validatePath: 'wow:validate-path',
-    previewAccountConfig: 'wow:preview-account-config'
-  }
+	app: {
+		getInfo: 'app:get-info',
+		checkUpdate: 'app:check-update'
+	},
+	github: {
+		getTokenStatus: 'github:get-token-status',
+		saveToken: 'github:save-token',
+		clearToken: 'github:clear-token'
+	},
+	settings: {
+		get: 'settings:get',
+		save: 'settings:save',
+		selectWowPath: 'settings:select-wow-path'
+	},
+	backup: {
+		listWtf: 'backup:list-wtf',
+		createWtf: 'backup:create-wtf',
+		restoreWtf: 'backup:restore-wtf',
+		deleteWtf: 'backup:delete-wtf',
+		openWtfFolder: 'backup:open-wtf-folder'
+	},
+	fpsPatch: {
+		getStatus: 'fps-patch:get-status',
+		install: 'fps-patch:install'
+	},
+	client: {
+		check: 'client:check'
+	},
+	wow: {
+		validatePath: 'wow:validate-path',
+		previewAccountConfig: 'wow:preview-account-config'
+	}
 } as const
 
 export interface AppInfo {
-  name: string
-  version: string
+	name: string
+	version: string
 }
 
 export interface GitHubTokenStatus {
-  configured: boolean
+	configured: boolean
 }
 
 export interface GitHubRateLimit {
-  limit?: number
-  remaining?: number
-  resetAt?: string
+	limit?: number
+	remaining?: number
+	resetAt?: string
 }
 
 export interface GitHubTokenInput {
-  token: string
+	token: string
 }
 
 export interface LauncherSettings {
-  wowPath: string
-  closeOnLaunch: boolean
-  checkClientBeforeLaunch: boolean
-  allowPrereleaseUpdates: boolean
+	wowPath: string
+	closeOnLaunch: boolean
+	checkClientBeforeLaunch: boolean
+	allowPrereleaseUpdates: boolean
 }
 
 export type LauncherSettingsPatch = Partial<LauncherSettings>
 
 export interface WowPathValidation {
-  wowPath: string
-  valid: boolean
-  executablePath: string
-  dataPath: string
-  localeDataPath: string
-  interfacePath: string
-  addonsPath: string
-  wtfPath: string
-  configWtfPath: string
-  missing: string[]
+	wowPath: string
+	valid: boolean
+	executablePath: string
+	dataPath: string
+	localeDataPath: string
+	interfacePath: string
+	addonsPath: string
+	wtfPath: string
+	configWtfPath: string
+	missing: string[]
 }
 
 export interface AccountConfigInput {
-  configText: string
-  login: string
-  password: string
+	configText: string
+	login: string
+	password: string
 }
 
 export interface AccountConfigPreview {
-  changed: boolean
-  text: string
-  touchedKeys: string[]
+	changed: boolean
+	text: string
+	touchedKeys: string[]
 }
 
 export interface ReleaseAsset {
-  name: string
-  downloadUrl: string
-  size?: number
+	name: string
+	downloadUrl: string
+	size?: number
 }
 
 export interface AppRelease {
-  version: string
-  url: string
-  notes?: string
-  prerelease: boolean
-  assets: ReleaseAsset[]
+	version: string
+	url: string
+	notes?: string
+	prerelease: boolean
+	assets: ReleaseAsset[]
 }
 
 export interface AppUpdateCheck {
-  currentVersion: string
-  latest?: AppRelease
-  updateAvailable: boolean
+	currentVersion: string
+	latest?: AppRelease
+	updateAvailable: boolean
 }
 
 export interface WtfBackupSummary {
-  id: string
-  fileName: string
-  archivePath: string
-  size: number
-  createdAt: string
+	id: string
+	fileName: string
+	archivePath: string
+	size: number
+	createdAt: string
 }
 
 export interface CreateWtfBackupResult {
-  backup: WtfBackupSummary
+	backup: WtfBackupSummary
 }
 
 export interface WtfBackupActionInput {
-  id: string
+	id: string
 }
 
 export interface RestoreWtfBackupResult {
-  restored: WtfBackupSummary
-  safetyBackup: WtfBackupSummary
+	restored: WtfBackupSummary
+	safetyBackup: WtfBackupSummary
 }
 
 export interface DeleteWtfBackupResult {
-  deletedId: string
+	deletedId: string
 }
 
 export interface FpsPatchStatus {
-  installed: boolean
-  patchPath: string
-  size?: number
-  updatedAt?: string
-  sourceUrls: string[]
+	installed: boolean
+	patchPath: string
+	size?: number
+	updatedAt?: string
+	sourceUrls: string[]
 }
 
 export interface FpsPatchInstallResult {
-  status: FpsPatchStatus
-  sourceUrl: string
+	status: FpsPatchStatus
+	sourceUrl: string
+}
+
+export type ClientPatchFileStatus = 'ok' | 'missing' | 'outdated'
+
+export interface ClientPatchCheckFile {
+	fileName: string
+	relativePath: string
+	targetPath: string
+	expectedMd5: string
+	actualMd5?: string
+	expectedSize: number
+	actualSize?: number
+	downloadUrl: string
+	status: ClientPatchFileStatus
+}
+
+export interface ClientCheckResult {
+	checkedAt: string
+	sourceUrl: string
+	total: number
+	ok: number
+	missing: number
+	outdated: number
+	files: ClientPatchCheckFile[]
 }
 
 export interface LauncherApi {
-  app: {
-    getInfo(): Promise<AppInfo>
-  }
-  github: {
-    getTokenStatus(): Promise<GitHubTokenStatus>
-    saveToken(input: GitHubTokenInput): Promise<GitHubTokenStatus>
-    clearToken(): Promise<GitHubTokenStatus>
-  }
-  settings: {
-    get(): Promise<LauncherSettings>
-    save(patch: LauncherSettingsPatch): Promise<LauncherSettings>
-    selectWowPath(): Promise<LauncherSettings>
-  }
-  backup: {
-    listWtf(): Promise<WtfBackupSummary[]>
-    createWtf(): Promise<CreateWtfBackupResult>
-    restoreWtf(input: WtfBackupActionInput): Promise<RestoreWtfBackupResult>
-    deleteWtf(input: WtfBackupActionInput): Promise<DeleteWtfBackupResult>
-    openWtfFolder(): Promise<void>
-  }
-  fpsPatch: {
-    getStatus(): Promise<FpsPatchStatus>
-    install(): Promise<FpsPatchInstallResult>
-  }
-  wow: {
-    validatePath(wowPath: string): Promise<WowPathValidation>
-    previewAccountConfig(input: AccountConfigInput): Promise<AccountConfigPreview>
-  }
+	app: {
+		getInfo(): Promise<AppInfo>
+	}
+	github: {
+		getTokenStatus(): Promise<GitHubTokenStatus>
+		saveToken(input: GitHubTokenInput): Promise<GitHubTokenStatus>
+		clearToken(): Promise<GitHubTokenStatus>
+	}
+	settings: {
+		get(): Promise<LauncherSettings>
+		save(patch: LauncherSettingsPatch): Promise<LauncherSettings>
+		selectWowPath(): Promise<LauncherSettings>
+	}
+	backup: {
+		listWtf(): Promise<WtfBackupSummary[]>
+		createWtf(): Promise<CreateWtfBackupResult>
+		restoreWtf(input: WtfBackupActionInput): Promise<RestoreWtfBackupResult>
+		deleteWtf(input: WtfBackupActionInput): Promise<DeleteWtfBackupResult>
+		openWtfFolder(): Promise<void>
+	}
+	fpsPatch: {
+		getStatus(): Promise<FpsPatchStatus>
+		install(): Promise<FpsPatchInstallResult>
+	}
+	client: {
+		check(): Promise<ClientCheckResult>
+	}
+	wow: {
+		validatePath(wowPath: string): Promise<WowPathValidation>
+		previewAccountConfig(input: AccountConfigInput): Promise<AccountConfigPreview>
+	}
 }

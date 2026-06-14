@@ -1,4 +1,4 @@
 interface:
-  display_name: "Sirus Launcher Backend"
-  short_description: "Backend rules for the Sirus launcher Electron TypeScript core."
-  default_prompt: "Use this skill when implementing launcher backend modules."
+    display_name: 'Sirus Launcher Backend'
+    short_description: 'Backend rules for the Sirus launcher Electron TypeScript core.'
+    default_prompt: 'Use this skill when implementing launcher backend modules.'

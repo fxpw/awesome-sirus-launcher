@@ -1,4 +1,4 @@
 interface:
-  display_name: "Commit"
-  short_description: "Rules for writing commit messages from agent changes."
-  default_prompt: "Use this skill when preparing a commit message for project changes."
+    display_name: 'Commit'
+    short_description: 'Rules for writing commit messages from agent changes.'
+    default_prompt: 'Use this skill when preparing a commit message for project changes.'

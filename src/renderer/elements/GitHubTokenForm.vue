@@ -32,7 +32,9 @@ const { t } = useLocale()
 				@update:model-value="$emit('update:token', $event)"
 			/>
 			<BaseButton @click="$emit('save')">{{ t('token.save') }}</BaseButton>
-			<BaseButton variant="secondary" @click="$emit('clear')">{{ t('token.clear') }}</BaseButton>
+			<BaseButton variant="secondary" @click="$emit('clear')">{{
+				t('token.clear')
+			}}</BaseButton>
 		</div>
 	</BasePanel>
 </template>

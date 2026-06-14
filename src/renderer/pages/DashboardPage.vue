@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import type {
-  AppInfo,
-  FpsPatchStatus,
-  GitHubTokenStatus,
-  LauncherSettings,
-  WowPathValidation,
-  WtfBackupSummary
+	AppInfo,
+	ClientCheckResult,
+	FpsPatchStatus,
+	GitHubTokenStatus,
+	LauncherSettings,
+	WowPathValidation,
+	WtfBackupSummary
 } from '@shared/contracts'
 import AppSidebar from '@renderer/blocks/AppSidebar.vue'
+import ClientCheckPanel from '@renderer/elements/ClientCheckPanel.vue'
 import DashboardHeader from '@renderer/blocks/DashboardHeader.vue'
 import FpsPatchPanel from '@renderer/elements/FpsPatchPanel.vue'
 import GitHubTokenForm from '@renderer/elements/GitHubTokenForm.vue'
@@ -27,6 +29,8 @@ const wowValidation = ref<WowPathValidation | null>(null)
 const backups = ref<WtfBackupSummary[]>([])
 const fpsPatchStatus = ref<FpsPatchStatus | null>(null)
 const fpsPatchInstalling = ref(false)
+const clientCheckResult = ref<ClientCheckResult | null>(null)
+const clientChecking = ref(false)
 const githubToken = ref('')
 const error = ref('')
 const notice = ref('')
@@ -37,10 +41,10 @@ useTheme()
 onMounted(async () => {
 	appInfo.value = await launcherApi.app.getInfo()
 	githubTokenStatus.value = await launcherApi.github.getTokenStatus()
-  settings.value = await launcherApi.settings.get()
-  backups.value = await launcherApi.backup.listWtf()
-  fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
-  wowPath.value = settings.value.wowPath
+	settings.value = await launcherApi.settings.get()
+	backups.value = await launcherApi.backup.listWtf()
+	fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
+	wowPath.value = settings.value.wowPath
 	if (wowPath.value) await validateWowPath()
 })
 
@@ -57,7 +61,7 @@ async function selectWowPath(): Promise<void> {
 	error.value = ''
 	settings.value = await launcherApi.settings.selectWowPath()
 	wowPath.value = settings.value.wowPath
-  fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
+	fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 	if (wowPath.value) await validateWowPath()
 }
 
@@ -67,7 +71,7 @@ async function saveWowPath(): Promise<void> {
 	settings.value = await launcherApi.settings.save({ wowPath: wowPath.value })
 	wowPath.value = settings.value.wowPath
 	await validateWowPath()
-  fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
+	fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 	notice.value = t('wow.saved')
 }
 
@@ -91,55 +95,72 @@ async function clearGitHubToken(): Promise<void> {
 	notice.value = ''
 	githubTokenStatus.value = await launcherApi.github.clearToken()
 	githubToken.value = ''
-  notice.value = t('token.cleared')
+	notice.value = t('token.cleared')
 }
 
 async function createWtfBackup(): Promise<void> {
-  error.value = ''
-  notice.value = ''
-  const result = await launcherApi.backup.createWtf()
-  backups.value = [result.backup, ...backups.value.filter((backup) => backup.id !== result.backup.id)]
-  notice.value = t('backup.created')
+	error.value = ''
+	notice.value = ''
+	const result = await launcherApi.backup.createWtf()
+	backups.value = [
+		result.backup,
+		...backups.value.filter((backup) => backup.id !== result.backup.id)
+	]
+	notice.value = t('backup.created')
 }
 
 async function restoreWtfBackup(backup: WtfBackupSummary): Promise<void> {
-  if (!confirm(t('backup.restoreConfirm', { name: backup.fileName }))) return
+	if (!confirm(t('backup.restoreConfirm', { name: backup.fileName }))) return
 
-  error.value = ''
-  notice.value = ''
-  await launcherApi.backup.restoreWtf({ id: backup.id })
-  backups.value = await launcherApi.backup.listWtf()
-  notice.value = t('backup.restored')
+	error.value = ''
+	notice.value = ''
+	await launcherApi.backup.restoreWtf({ id: backup.id })
+	backups.value = await launcherApi.backup.listWtf()
+	notice.value = t('backup.restored')
 }
 
 async function deleteWtfBackup(backup: WtfBackupSummary): Promise<void> {
-  if (!confirm(t('backup.deleteConfirm', { name: backup.fileName }))) return
+	if (!confirm(t('backup.deleteConfirm', { name: backup.fileName }))) return
 
-  error.value = ''
-  notice.value = ''
-  const result = await launcherApi.backup.deleteWtf({ id: backup.id })
-  backups.value = backups.value.filter((item) => item.id !== result.deletedId)
-  notice.value = t('backup.deleted')
+	error.value = ''
+	notice.value = ''
+	const result = await launcherApi.backup.deleteWtf({ id: backup.id })
+	backups.value = backups.value.filter((item) => item.id !== result.deletedId)
+	notice.value = t('backup.deleted')
 }
 
 async function openWtfBackupFolder(): Promise<void> {
-  error.value = ''
-  await launcherApi.backup.openWtfFolder()
+	error.value = ''
+	await launcherApi.backup.openWtfFolder()
 }
 
 async function installFpsPatch(): Promise<void> {
-  error.value = ''
-  notice.value = ''
-  fpsPatchInstalling.value = true
-  try {
-    const result = await launcherApi.fpsPatch.install()
-    fpsPatchStatus.value = result.status
-    notice.value = t('fpsPatch.installedNotice')
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : t('fpsPatch.installError')
-  } finally {
-    fpsPatchInstalling.value = false
-  }
+	error.value = ''
+	notice.value = ''
+	fpsPatchInstalling.value = true
+	try {
+		const result = await launcherApi.fpsPatch.install()
+		fpsPatchStatus.value = result.status
+		notice.value = t('fpsPatch.installedNotice')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('fpsPatch.installError')
+	} finally {
+		fpsPatchInstalling.value = false
+	}
+}
+
+async function checkClient(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	clientChecking.value = true
+	try {
+		clientCheckResult.value = await launcherApi.client.check()
+		notice.value = t('clientCheck.checked')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('clientCheck.error')
+	} finally {
+		clientChecking.value = false
+	}
 }
 </script>
 
@@ -159,23 +180,29 @@ async function installFpsPatch(): Promise<void> {
 				@save="saveWowPath"
 			/>
 
-      <LaunchBehaviorForm v-if="settings" :settings="settings" @toggle="toggleSetting" />
+			<LaunchBehaviorForm v-if="settings" :settings="settings" @toggle="toggleSetting" />
 
-      <FpsPatchPanel
-        :status="fpsPatchStatus"
-        :installing="fpsPatchInstalling"
-        @install="installFpsPatch"
-      />
+			<ClientCheckPanel
+				:result="clientCheckResult"
+				:checking="clientChecking"
+				@check="checkClient"
+			/>
 
-      <WtfBackupPanel
-        :backups="backups"
-        @create="createWtfBackup"
-        @restore="restoreWtfBackup"
-        @delete="deleteWtfBackup"
-        @open-folder="openWtfBackupFolder"
-      />
+			<FpsPatchPanel
+				:status="fpsPatchStatus"
+				:installing="fpsPatchInstalling"
+				@install="installFpsPatch"
+			/>
 
-      <GitHubTokenForm
+			<WtfBackupPanel
+				:backups="backups"
+				@create="createWtfBackup"
+				@restore="restoreWtfBackup"
+				@delete="deleteWtfBackup"
+				@open-folder="openWtfBackupFolder"
+			/>
+
+			<GitHubTokenForm
 				v-model:token="githubToken"
 				@save="saveGitHubToken"
 				@clear="clearGitHubToken"

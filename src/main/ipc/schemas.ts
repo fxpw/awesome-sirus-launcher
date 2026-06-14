@@ -54,47 +54,71 @@ export const accountConfigInputSchema = z.object({
 })
 
 export const accountConfigPreviewSchema = z.object({
-  changed: z.boolean(),
-  text: z.string(),
-  touchedKeys: z.array(z.string())
+	changed: z.boolean(),
+	text: z.string(),
+	touchedKeys: z.array(z.string())
 })
 
 export const wtfBackupSummarySchema = z.object({
-  id: z.string(),
-  fileName: z.string(),
-  archivePath: z.string(),
-  size: z.number(),
-  createdAt: z.string()
+	id: z.string(),
+	fileName: z.string(),
+	archivePath: z.string(),
+	size: z.number(),
+	createdAt: z.string()
 })
 
 export const wtfBackupListSchema = z.array(wtfBackupSummarySchema)
 
 export const createWtfBackupResultSchema = z.object({
-  backup: wtfBackupSummarySchema
+	backup: wtfBackupSummarySchema
 })
 
 export const wtfBackupActionInputSchema = z.object({
-  id: z.string().min(1)
+	id: z.string().min(1)
 })
 
 export const restoreWtfBackupResultSchema = z.object({
-  restored: wtfBackupSummarySchema,
-  safetyBackup: wtfBackupSummarySchema
+	restored: wtfBackupSummarySchema,
+	safetyBackup: wtfBackupSummarySchema
 })
 
 export const deleteWtfBackupResultSchema = z.object({
-  deletedId: z.string()
+	deletedId: z.string()
 })
 
 export const fpsPatchStatusSchema = z.object({
-  installed: z.boolean(),
-  patchPath: z.string(),
-  size: z.number().optional(),
-  updatedAt: z.string().optional(),
-  sourceUrls: z.array(z.string())
+	installed: z.boolean(),
+	patchPath: z.string(),
+	size: z.number().optional(),
+	updatedAt: z.string().optional(),
+	sourceUrls: z.array(z.string())
 })
 
 export const fpsPatchInstallResultSchema = z.object({
-  status: fpsPatchStatusSchema,
-  sourceUrl: z.string()
+	status: fpsPatchStatusSchema,
+	sourceUrl: z.string()
+})
+
+export const clientPatchFileStatusSchema = z.enum(['ok', 'missing', 'outdated'])
+
+export const clientPatchCheckFileSchema = z.object({
+	fileName: z.string(),
+	relativePath: z.string(),
+	targetPath: z.string(),
+	expectedMd5: z.string(),
+	actualMd5: z.string().optional(),
+	expectedSize: z.number(),
+	actualSize: z.number().optional(),
+	downloadUrl: z.string(),
+	status: clientPatchFileStatusSchema
+})
+
+export const clientCheckResultSchema = z.object({
+	checkedAt: z.string(),
+	sourceUrl: z.string(),
+	total: z.number(),
+	ok: z.number(),
+	missing: z.number(),
+	outdated: z.number(),
+	files: z.array(clientPatchCheckFileSchema)
 })

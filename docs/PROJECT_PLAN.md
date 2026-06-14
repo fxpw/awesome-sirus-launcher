@@ -149,14 +149,14 @@
 
 ```json
 [
-  {
-    "id": "example-addon",
-    "name": "Example Addon",
-    "repo": "owner/repository",
-    "ref": "master",
-    "installDir": "ExampleAddon",
-    "source": "source-zip"
-  }
+	{
+		"id": "example-addon",
+		"name": "Example Addon",
+		"repo": "owner/repository",
+		"ref": "master",
+		"installDir": "ExampleAddon",
+		"source": "source-zip"
+	}
 ]
 ```
 
@@ -334,8 +334,8 @@
 - если защищенное хранилище недоступно, явно предупреждать пользователя перед сохранением пароля;
 - перед запуском игры обновлять `<wowPath>/WTF/Config.wtf`;
 - менять или добавлять строки:
-  - `SET accountName "login"`
-  - `SET readTerminationWithoutNotice "password"`
+    - `SET accountName "login"`
+    - `SET readTerminationWithoutNotice "password"`
 - пример целевого файла для текущей установки: `F:\games\sirus\World of Warcraft Sirus\WTF\Config.wtf`;
 - не хардкодить этот путь, а строить его от сохраненного `<wowPath>`;
 - перед изменением `Config.wtf` создавать быстрый safety backup;

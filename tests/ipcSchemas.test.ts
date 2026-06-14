@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ZodError } from 'zod'
 import {
+	clientCheckResultSchema,
 	createWtfBackupResultSchema,
 	deleteWtfBackupResultSchema,
 	fpsPatchInstallResultSchema,
@@ -54,7 +55,9 @@ describe('ipc schemas', () => {
 		expect(wtfBackupListSchema.parse([backup])).toEqual([backup])
 		expect(createWtfBackupResultSchema.parse({ backup })).toEqual({ backup })
 		expect(wtfBackupActionInputSchema.parse({ id: backup.id })).toEqual({ id: backup.id })
-		expect(restoreWtfBackupResultSchema.parse({ restored: backup, safetyBackup: backup })).toEqual({
+		expect(
+			restoreWtfBackupResultSchema.parse({ restored: backup, safetyBackup: backup })
+		).toEqual({
 			restored: backup,
 			safetyBackup: backup
 		})
@@ -73,9 +76,37 @@ describe('ipc schemas', () => {
 		}
 
 		expect(fpsPatchStatusSchema.parse(status)).toEqual(status)
-		expect(fpsPatchInstallResultSchema.parse({ status, sourceUrl: status.sourceUrls[0] })).toEqual({
+		expect(
+			fpsPatchInstallResultSchema.parse({ status, sourceUrl: status.sourceUrls[0] })
+		).toEqual({
 			status,
 			sourceUrl: status.sourceUrls[0]
 		})
+	})
+
+	it('validates client check output shape', () => {
+		const file = {
+			fileName: 'patch.mpq',
+			relativePath: '/Data/',
+			targetPath: 'F:/wow/Data/patch.mpq',
+			expectedMd5: '6149eaf8791547a8f87454d687a46b29',
+			actualMd5: '6149eaf8791547a8f87454d687a46b29',
+			expectedSize: 10,
+			actualSize: 10,
+			downloadUrl: 'https://example.test/patch.mpq',
+			status: 'ok'
+		}
+
+		expect(
+			clientCheckResultSchema.parse({
+				checkedAt: '2026-06-14T10:20:30.000Z',
+				sourceUrl: 'https://s-patches.pro/api/client/patches',
+				total: 1,
+				ok: 1,
+				missing: 0,
+				outdated: 0,
+				files: [file]
+			})
+		).toMatchObject({ total: 1, files: [file] })
 	})
 })

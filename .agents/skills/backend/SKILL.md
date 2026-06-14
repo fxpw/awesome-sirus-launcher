@@ -73,12 +73,18 @@ Represent long-running work as jobs:
 
 ```ts
 export interface LauncherJob {
-  id: string
-  type: 'client-check' | 'client-update' | 'fps-patch' | 'addon-install' | 'wtf-backup' | 'wtf-restore'
-  status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
-  progress: number
-  message?: string
-  error?: string
+	id: string
+	type:
+		| 'client-check'
+		| 'client-update'
+		| 'fps-patch'
+		| 'addon-install'
+		| 'wtf-backup'
+		| 'wtf-restore'
+	status: 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled'
+	progress: number
+	message?: string
+	error?: string
 }
 ```
 

@@ -21,16 +21,16 @@
 
 ```ts
 export interface ClientPatchFile {
-  path: string
-  md5: string
-  size?: number
-  url?: string
+	path: string
+	md5: string
+	size?: number
+	url?: string
 }
 
 export interface ClientPatchManifest {
-  sourceUrl: string
-  receivedAt: string
-  files: ClientPatchFile[]
+	sourceUrl: string
+	receivedAt: string
+	files: ClientPatchFile[]
 }
 ```
 
@@ -53,16 +53,16 @@ export interface ClientPatchManifest {
 
 ```ts
 export interface FpsPatchSource {
-  url: string
-  priority: number
-  secure: boolean
+	url: string
+	priority: number
+	secure: boolean
 }
 
 export interface FpsPatchStatus {
-  installed: boolean
-  targetPath: string
-  size?: number
-  modifiedAt?: string
+	installed: boolean
+	targetPath: string
+	size?: number
+	modifiedAt?: string
 }
 ```
 
@@ -72,13 +72,13 @@ export interface FpsPatchStatus {
 
 ```ts
 export interface AddonCatalogItem {
-  id: string
-  name: string
-  repo: string
-  ref: string
-  installDir?: string
-  source: 'source-zip'
-  zipUrl?: string
+	id: string
+	name: string
+	repo: string
+	ref: string
+	installDir?: string
+	source: 'source-zip'
+	zipUrl?: string
 }
 ```
 

@@ -42,7 +42,9 @@ function nextTheme(): ThemeMode {
 			<StatusBadge :tone="githubTokenStatus.configured ? 'ok' : 'neutral'">
 				{{
 					t('github.status', {
-						status: githubTokenStatus.configured ? t('github.configured') : t('github.missing')
+						status: githubTokenStatus.configured
+							? t('github.configured')
+							: t('github.missing')
 					})
 				}}
 			</StatusBadge>
