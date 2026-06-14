@@ -613,13 +613,7 @@
 			"name": "EPGP",
 			"versionUrl": "https://raw.githubusercontent.com/fxpw/EPGP/master/EPGP/epgp.toc",
 			"branch": "master",
-			"folders": [
-				"EPGP",
-				"EPGP_Attendance",
-				"EPGP_Lootmaster",
-				"EPGP_Lootmaster_ML",
-				"EPGP_Auction"
-			],
+			"folders": ["EPGP", "EPGP_Attendance", "EPGP_Lootmaster", "EPGP_Lootmaster_ML"],
 			"description": "EPGP один из самых полезных аддонов для гильдий и рлов (рейд лидеров). Аддон распределяет очки EP (effort points) и GP (gear points) и в зависимости от их количества рл видит, кто больше заслуживает тот или иной предмет.",
 			"githubUrl": "https://github.com/fxpw/EPGP",
 			"repo": "fxpw/EPGP",
@@ -634,13 +628,7 @@
 			"name": "EPGP_Auction",
 			"versionUrl": "https://raw.githubusercontent.com/fxpw/EPGP_Auction/master/EPGP_Auction.toc",
 			"branch": "master",
-			"folders": [
-				"EPGP_Auction",
-				"EPGP",
-				"EPGP_Attendance",
-				"EPGP_Lootmaster",
-				"EPGP_Lootmaster_ML"
-			],
+			"folders": ["EPGP_Auction"],
 			"description": "EPGP_Auction один из самых полезных аддонов для гильдий и рлов (рейд лидеров). Аддон распределяет очки EP (effort points) зависимости от количества рл видит, кто больше заслуживает тот или иной предмет.",
 			"githubUrl": "https://github.com/fxpw/EPGP_Auction",
 			"repo": "fxpw/EPGP_Auction",

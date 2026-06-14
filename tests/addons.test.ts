@@ -10,6 +10,8 @@ import {
 	parseTocVersion
 } from '../src/core/addons/addons'
 import { createAddonService } from '../src/main/addons/addonService'
+import addonCatalog from '../src/shared/addons/addonCatalog.json'
+import type { AddonCatalogEntry } from '../src/shared/contracts'
 import type { SettingsStore } from '../src/main/settings/fileSettingsStore'
 import type { SecretStore } from '../src/main/secrets/memorySecretStore'
 import type { LauncherSettings } from '../src/shared/contracts'
@@ -48,6 +50,20 @@ describe('addons core', () => {
 			folders: [],
 			repo: 'example/my-addon'
 		})
+	})
+
+	it('keeps EPGP and EPGP_Auction folder ownership separated', () => {
+		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
+		const epgp = addons.find((addon) => addon.id === 'community:epgp')
+		const epgpAuction = addons.find((addon) => addon.id === 'community:epgp_auction')
+
+		expect(epgp?.folders).toEqual([
+			'EPGP',
+			'EPGP_Attendance',
+			'EPGP_Lootmaster',
+			'EPGP_Lootmaster_ML'
+		])
+		expect(epgpAuction?.folders).toEqual(['EPGP_Auction'])
 	})
 })
 
