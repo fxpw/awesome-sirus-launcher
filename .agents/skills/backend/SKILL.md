@@ -14,6 +14,7 @@ Use this skill to keep launcher backend code safe, testable, and consistent. Kee
 Prefer these module boundaries:
 
 - `settings`: read/write launcher config and selected WoW path.
+- `secrets`: store GitHub token and account passwords through OS-protected credential storage.
 - `accounts`: store local account profiles, protect saved passwords, and update `WTF/Config.wtf` before launch.
 - `wow-client`: validate WoW directory, derive `WTF`, `Data/ruRU`, `Interface/AddOns`, and `Wow.exe` paths.
 - `downloads`: queued downloads, temporary files, progress, retry, cancellation.
@@ -77,6 +78,7 @@ Emit progress events from main to renderer. Keep cancellation cooperative and ma
 - Install the FPS patch as `<wowPath>/Data/ruRU/patch-ruRU-[.mpq`.
 - Try `https://d1st4r.ru/patch/patch-ruRU-[.mpq` before `http://d1st4r.stream/patch/patch-ruRU-[.mpq`.
 - Download GitHub addons as repository source zip files, not release assets for the MVP.
+- Support an optional GitHub token for addon downloads/API calls to raise rate limits. Store it as a secret, use `Authorization: Bearer ...`, never log it, and keep addon downloads working without it when possible.
 - After unpacking a GitHub source zip, do not install the top folder like `{repo}-{branch}`. Find folders containing `.toc` and move those addon folders into `<wowPath>/Interface/AddOns`.
 - Back up `<wowPath>/WTF` into timestamped zip archives.
 - For multi-account launch, update `<wowPath>/WTF/Config.wtf` with `SET accountName "login"` and `SET readTerminationWithoutNotice "password"` immediately before launching the game.
@@ -87,6 +89,7 @@ Emit progress events from main to renderer. Keep cancellation cooperative and ma
 ## Testing
 
 - Unit test path derivation, manifest parsing, fallback source selection, and MD5 comparison.
+- Unit test GitHub token handling without exposing token values: auth header creation, redacted logging, 401/403 handling, and rate-limit parsing.
 - Unit test app updater version comparison, release parsing, pre-release filtering, asset selection, and fallback behavior.
 - Integration test backup/restore and addon extraction using temporary directories.
 - Add adapter contract tests for filesystem, downloader, archive extraction, process launch, and secret storage.

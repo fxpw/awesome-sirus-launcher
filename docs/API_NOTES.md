@@ -84,6 +84,12 @@ export interface AddonCatalogItem {
 
 Правила:
 
+- без токена использовать публичный GitHub endpoint и учитывать rate limit;
+- опциональный GitHub token хранить через защищенное хранилище ОС;
+- при наличии токена добавлять `Authorization: Bearer <token>` к GitHub-запросам;
+- не писать токен в config, логи, ошибки, changelog или telemetry;
+- считывать заголовки `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, если они есть;
+- при 401/403 различать неверный токен, недостаточные права и превышение лимита, насколько это позволяет ответ GitHub;
 - основной URL для ветки: `https://github.com/{owner}/{repo}/archive/refs/heads/{ref}.zip`;
 - для tag/commit позже можно добавить отдельный resolver;
 - скачивать zip во временный файл;
