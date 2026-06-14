@@ -21,6 +21,19 @@
 - Добавлено требование к тестируемому portable core, чтобы будущий переход на другой desktop shell был быстрым.
 - Добавлен план механики автообновления лаунчера через проверку версии в GitHub Releases и скачивание релизного артефакта.
 - Добавлен план настройки GitHub token для скачивания аддонов с повышенными лимитами.
+- Добавлен стартовый Electron/Vue/TypeScript каркас приложения.
+- Добавлены portable `core`-модули для `Config.wtf`, GitHub token/rate-limit, source zip URL и проверки версии лаунчера.
+- Добавлены unit tests и portability test для запрета Electron imports в `core`.
+- Добавлено зашифрованное хранение GitHub token через Electron `safeStorage`.
+- GitHub Actions теперь собирает Electron output и на push может упаковать release artifacts через electron-builder.
+- Добавлен документ чекпоинтов с текущим состоянием реализации и списком следующих задач.
+- Расширены npm scripts и README-команды для dev, typecheck, tests, build и packaging.
+- Добавлены persistent settings, выбор папки WoW через Electron dialog и UI для сохранения/удаления GitHub token.
+- Frontend разнесен по архитектуре `page -> block -> element -> component`.
+- Добавлены локализация `ru/en` и переключение светлой/темной темы.
+- IPC handlers переведены на schema-first Zod validation для входов и выходов.
+- Добавлен модуль создания backup `WTF`: core-план, zip adapter, IPC list/create, UI-блок и интеграционный тест.
+- Добавлено восстановление, удаление и открытие папки backup `WTF` с safety-бекапом перед restore и защитой zip-распаковки от выхода за целевую папку.
 
 ## [0.0.0] - 2026-06-13
 

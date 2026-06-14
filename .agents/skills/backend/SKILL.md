@@ -28,6 +28,18 @@ Prefer these module boundaries:
 
 Keep shared DTOs and channel names in `shared` so main, preload, renderer, and tests compile against the same contract.
 
+## Desktop Request Flow
+
+Adapt service backend layering to Electron desktop:
+
+- `ipc channel`: route name from `shared`.
+- `request/response schema`: Zod validation near the IPC layer.
+- `handler/controller`: validates input/output and delegates.
+- `service/core`: portable domain logic without Electron imports.
+- `adapter`: Electron, filesystem, downloader, archive, process, or secret storage boundary.
+
+Do not add manual ad-hoc `if/throw` validation in IPC handlers when a Zod schema can describe the input or output.
+
 ## Electron Security
 
 - Enable `contextIsolation`.

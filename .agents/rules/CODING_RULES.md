@@ -23,7 +23,7 @@
 - Включить `contextIsolation: true`.
 - Не включать `nodeIntegration` в renderer.
 - Все IPC-каналы описывать в одном typed контракте.
-- IPC handlers должны валидировать входные данные.
+- IPC handlers должны валидировать входные и выходные данные через Zod-схемы request/response слоя.
 - Не доверять данным из renderer.
 - Долгие операции оформлять как jobs с `id`, `status`, `progress`, `error`.
 - Прогресс отправлять событиями main -> renderer.
@@ -31,9 +31,14 @@
 - Архивы распаковывать только после проверки путей внутри архива, чтобы избежать zip slip.
 - GitHub-аддоны в MVP скачивать как zip архива кода, распаковывать во временную папку и переносить в `Interface/AddOns` только реальные папки аддонов с `.toc`, а не верхнюю папку архива.
 - Перед перезаписью важных пользовательских данных создавать safety backup.
+- Desktop backend flow: `ipc channel -> Zod request/response schema -> handler/controller -> service/core -> adapter`.
 
 ## Frontend / Vue
 
+- Новые и переработанные части UI строить слоями `page -> block -> element -> component`.
+- `page` собирает сценарий экрана, `block` крупные секции, `element` формы/списки/карточки, `component` переиспользуемые детали.
+- Видимый текст выносить в локализацию, а не размазывать строками по компонентам.
+- Темы оформлять через общие CSS variables, а не локальные переопределения в каждом блоке.
 - Компоненты делать маленькими и предметными.
 - Бизнес-логику не класть в `.vue`, выносить в composables/stores.
 - Для состояния использовать Pinia stores по доменам: settings, jobs, addons, backups, client.

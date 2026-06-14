@@ -1,0 +1,10 @@
+node_modules/
+dist/
+out/
+release/
+out/
+.vite/
+*.log
+*.local
+coverage/
+*.tsbuildinfo

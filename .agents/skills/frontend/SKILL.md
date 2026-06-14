@@ -25,11 +25,18 @@ Primary views:
 
 ## Vue Structure
 
+- Use explicit layers for refactored UI: `page -> block -> element -> component`.
+- `page` assembles screen scenarios and blocks.
+- `block` owns large page sections such as sidebar, header, menu, panels.
+- `element` owns meaningful local UI zones such as forms, lists, cards, tables.
+- `component` is reusable: buttons, fields, badges, toggles, rows, modal shells.
 - Keep `.vue` files focused on presentation and local interaction.
 - Put domain state in Pinia stores: `settings`, `client`, `jobs`, `addons`, `backups`, `logs`.
 - Put reusable logic in composables, not global mixins.
 - Keep IPC calls behind typed service modules so components do not call `window.api` directly everywhere.
 - Use shared DTOs from `shared`; do not duplicate backend response shapes.
+- Put browser-safe helpers, i18n dictionaries, mappers, and formatters in renderer `shared`.
+- New/refactored frontend files should follow root `.prettierrc`; indentation uses tabs.
 
 ## UI Rules
 
@@ -55,7 +62,7 @@ For each operational screen, cover:
 
 ## Copy
 
-Use concise Russian UI text by default. Prefer action labels like:
+Use localization keys for visible UI text. Russian is the default locale. Prefer action labels like:
 
 - `Выбрать папку WoW`
 - `Сделать бекап WTF`
