@@ -26,6 +26,10 @@ export const launcherApi = {
     deleteWtf: (input: WtfBackupActionInput) => window.launcher.backup.deleteWtf(input),
     openWtfFolder: () => window.launcher.backup.openWtfFolder()
   },
+  fpsPatch: {
+    getStatus: () => window.launcher.fpsPatch.getStatus(),
+    install: () => window.launcher.fpsPatch.install()
+  },
   wow: {
 		validatePath: (wowPath: string) => window.launcher.wow.validatePath(wowPath),
 		previewAccountConfig: (input: AccountConfigInput) =>

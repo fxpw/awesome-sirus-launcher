@@ -31,6 +31,10 @@ const api: LauncherApi = {
       ipcRenderer.invoke(ipcChannels.backup.deleteWtf, input),
     openWtfFolder: () => ipcRenderer.invoke(ipcChannels.backup.openWtfFolder)
   },
+  fpsPatch: {
+    getStatus: () => ipcRenderer.invoke(ipcChannels.fpsPatch.getStatus),
+    install: () => ipcRenderer.invoke(ipcChannels.fpsPatch.install)
+  },
   wow: {
     validatePath: (wowPath: string) => ipcRenderer.invoke(ipcChannels.wow.validatePath, wowPath),
     previewAccountConfig: (input: AccountConfigInput) =>

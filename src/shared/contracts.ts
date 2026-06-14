@@ -20,6 +20,10 @@ export const ipcChannels = {
     deleteWtf: 'backup:delete-wtf',
     openWtfFolder: 'backup:open-wtf-folder'
   },
+  fpsPatch: {
+    getStatus: 'fps-patch:get-status',
+    install: 'fps-patch:install'
+  },
   wow: {
     validatePath: 'wow:validate-path',
     previewAccountConfig: 'wow:preview-account-config'
@@ -124,6 +128,19 @@ export interface DeleteWtfBackupResult {
   deletedId: string
 }
 
+export interface FpsPatchStatus {
+  installed: boolean
+  patchPath: string
+  size?: number
+  updatedAt?: string
+  sourceUrls: string[]
+}
+
+export interface FpsPatchInstallResult {
+  status: FpsPatchStatus
+  sourceUrl: string
+}
+
 export interface LauncherApi {
   app: {
     getInfo(): Promise<AppInfo>
@@ -144,6 +161,10 @@ export interface LauncherApi {
     restoreWtf(input: WtfBackupActionInput): Promise<RestoreWtfBackupResult>
     deleteWtf(input: WtfBackupActionInput): Promise<DeleteWtfBackupResult>
     openWtfFolder(): Promise<void>
+  }
+  fpsPatch: {
+    getStatus(): Promise<FpsPatchStatus>
+    install(): Promise<FpsPatchInstallResult>
   }
   wow: {
     validatePath(wowPath: string): Promise<WowPathValidation>

@@ -89,6 +89,10 @@
   - строит план восстановления `WTF` с safety backup;
   - создает стабильное имя zip-архива;
   - определяет папку хранения бекапов.
+- `src/core/fpsPatch/fpsPatch.ts`
+  - определяет имя FPS-патча;
+  - хранит primary/fallback ссылки;
+  - строит план установки в `Data/ruRU`.
 
 ### Electron backend
 
@@ -110,6 +114,8 @@
   - восстановить backup `WTF`;
   - удалить backup `WTF`;
   - открыть папку backup `WTF`;
+  - получить статус FPS-патча;
+  - установить FPS-патч;
   - проверить путь к WoW;
   - preview изменения `Config.wtf`.
 - GitHub token сохраняется через Electron `safeStorage` в encrypted file внутри `userData`.
@@ -132,6 +138,7 @@
 - Есть переключение светлой/темной темы.
 - Есть блок создания, просмотра, восстановления и удаления backup `WTF`.
 - Есть кнопка открытия папки backup `WTF` в проводнике.
+- Есть блок статуса FPS-патча с установкой/переустановкой.
 - Показываются найденные/отсутствующие базовые элементы клиента.
 
 ### CI и сборка
@@ -146,7 +153,7 @@
 
 - `npm run check` проходит.
 - `npm run build` проходит.
-- Тесты проходят: 10 test files, 27 tests.
+- Тесты проходят: 11 test files, 30 tests.
 - Проверка portable core проходит: `src/core` не импортирует Electron.
 
 ## Частично сделано
@@ -217,6 +224,25 @@
 - progress events;
 - cancellation для долгих операций.
 
+### FPS-патч
+
+Сделано:
+
+- core-план установки;
+- downloader adapter через `fetch` и stream в файл;
+- скачивание во временный файл;
+- fallback с основной ссылки на альтернативную;
+- установка в `<wowPath>/Data/ruRU/patch-ruRU-[.mpq`;
+- IPC status/install;
+- UI блок статуса и install/reinstall;
+- тесты core-плана, fallback и установки через fake downloader.
+
+Осталось:
+
+- progress events;
+- cancellation;
+- checksum/MD5-проверка, если появится надежный эталон для файла.
+
 ## Следующие чекпоинты
 
 ### Чекпоинт 1. Настройки и путь к WoW
@@ -241,11 +267,9 @@
 
 ### Чекпоинт 4. FPS-патч
 
-- Реализовать downloader adapter.
-- Скачать patch во временный файл.
-- Fallback на альтернативную ссылку.
-- Установить в `<wowPath>/Data/ruRU/`.
-- Добавить status и reinstall action.
+- Добавить progress events.
+- Добавить cancellation.
+- Добавить checksum/MD5-проверку при наличии эталона.
 
 ### Чекпоинт 5. GitHub-аддоны
 
@@ -292,5 +316,5 @@
 
 ## Последний зеленый прогон
 
-- `npm run check` - успешно, 10 test files, 27 tests.
+- `npm run check` - успешно, 11 test files, 30 tests.
 - `npm run build` - успешно.

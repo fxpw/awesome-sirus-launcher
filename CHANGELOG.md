@@ -34,6 +34,7 @@
 - IPC handlers переведены на schema-first Zod validation для входов и выходов.
 - Добавлен модуль создания backup `WTF`: core-план, zip adapter, IPC list/create, UI-блок и интеграционный тест.
 - Добавлено восстановление, удаление и открытие папки backup `WTF` с safety-бекапом перед restore и защитой zip-распаковки от выхода за целевую папку.
+- Добавлена установка FPS-патча: скачивание во временный файл, fallback на альтернативную ссылку, установка в `Data/ruRU`, IPC status/install, UI-кнопка install/reinstall и тесты.
 
 ## [0.0.0] - 2026-06-13
 

@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import type {
   AppInfo,
+  FpsPatchStatus,
   GitHubTokenStatus,
   LauncherSettings,
   WowPathValidation,
@@ -9,6 +10,7 @@ import type {
 } from '@shared/contracts'
 import AppSidebar from '@renderer/blocks/AppSidebar.vue'
 import DashboardHeader from '@renderer/blocks/DashboardHeader.vue'
+import FpsPatchPanel from '@renderer/elements/FpsPatchPanel.vue'
 import GitHubTokenForm from '@renderer/elements/GitHubTokenForm.vue'
 import LaunchBehaviorForm from '@renderer/elements/LaunchBehaviorForm.vue'
 import WowPathForm from '@renderer/elements/WowPathForm.vue'
@@ -23,6 +25,8 @@ const settings = ref<LauncherSettings | null>(null)
 const wowPath = ref('')
 const wowValidation = ref<WowPathValidation | null>(null)
 const backups = ref<WtfBackupSummary[]>([])
+const fpsPatchStatus = ref<FpsPatchStatus | null>(null)
+const fpsPatchInstalling = ref(false)
 const githubToken = ref('')
 const error = ref('')
 const notice = ref('')
@@ -35,6 +39,7 @@ onMounted(async () => {
 	githubTokenStatus.value = await launcherApi.github.getTokenStatus()
   settings.value = await launcherApi.settings.get()
   backups.value = await launcherApi.backup.listWtf()
+  fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
   wowPath.value = settings.value.wowPath
 	if (wowPath.value) await validateWowPath()
 })
@@ -52,6 +57,7 @@ async function selectWowPath(): Promise<void> {
 	error.value = ''
 	settings.value = await launcherApi.settings.selectWowPath()
 	wowPath.value = settings.value.wowPath
+  fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 	if (wowPath.value) await validateWowPath()
 }
 
@@ -61,6 +67,7 @@ async function saveWowPath(): Promise<void> {
 	settings.value = await launcherApi.settings.save({ wowPath: wowPath.value })
 	wowPath.value = settings.value.wowPath
 	await validateWowPath()
+  fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 	notice.value = t('wow.saved')
 }
 
@@ -119,6 +126,21 @@ async function openWtfBackupFolder(): Promise<void> {
   error.value = ''
   await launcherApi.backup.openWtfFolder()
 }
+
+async function installFpsPatch(): Promise<void> {
+  error.value = ''
+  notice.value = ''
+  fpsPatchInstalling.value = true
+  try {
+    const result = await launcherApi.fpsPatch.install()
+    fpsPatchStatus.value = result.status
+    notice.value = t('fpsPatch.installedNotice')
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : t('fpsPatch.installError')
+  } finally {
+    fpsPatchInstalling.value = false
+  }
+}
 </script>
 
 <template>
@@ -138,6 +160,12 @@ async function openWtfBackupFolder(): Promise<void> {
 			/>
 
       <LaunchBehaviorForm v-if="settings" :settings="settings" @toggle="toggleSetting" />
+
+      <FpsPatchPanel
+        :status="fpsPatchStatus"
+        :installing="fpsPatchInstalling"
+        @install="installFpsPatch"
+      />
 
       <WtfBackupPanel
         :backups="backups"

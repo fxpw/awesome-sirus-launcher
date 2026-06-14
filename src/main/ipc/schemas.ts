@@ -85,3 +85,16 @@ export const restoreWtfBackupResultSchema = z.object({
 export const deleteWtfBackupResultSchema = z.object({
   deletedId: z.string()
 })
+
+export const fpsPatchStatusSchema = z.object({
+  installed: z.boolean(),
+  patchPath: z.string(),
+  size: z.number().optional(),
+  updatedAt: z.string().optional(),
+  sourceUrls: z.array(z.string())
+})
+
+export const fpsPatchInstallResultSchema = z.object({
+  status: fpsPatchStatusSchema,
+  sourceUrl: z.string()
+})

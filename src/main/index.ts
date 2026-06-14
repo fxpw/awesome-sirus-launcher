@@ -4,6 +4,8 @@ import { is } from '@electron-toolkit/utils'
 import { ipcChannels } from '@shared/contracts'
 import { updateAccountConfigText } from '@core/accounts/configWtf'
 import { createWtfBackupService } from '@main/backup/wtfBackupService'
+import { downloadFile } from '@main/downloads/downloadFile'
+import { createFpsPatchService } from '@main/fpsPatch/fpsPatchService'
 import { registerIpcHandler } from '@main/ipc/ipcHandler'
 import {
   accountConfigInputSchema,
@@ -11,6 +13,8 @@ import {
   appInfoSchema,
   createWtfBackupResultSchema,
   deleteWtfBackupResultSchema,
+  fpsPatchInstallResultSchema,
+  fpsPatchStatusSchema,
   githubTokenInputSchema,
   githubTokenStatusSchema,
   launcherSettingsPatchSchema,
@@ -30,6 +34,7 @@ import { validateWowPath } from '@core/wow/wowPaths'
 const secretStore = createElectronSecretStore(() => app.getPath('userData'))
 const settingsStore = createFileSettingsStore(() => app.getPath('userData'))
 const wtfBackupService = createWtfBackupService(() => app.getPath('userData'), settingsStore)
+const fpsPatchService = createFpsPatchService(() => app.getPath('userData'), settingsStore, downloadFile)
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -159,6 +164,20 @@ function registerIpcHandlers(): void {
       if (openError) throw new Error(openError)
       return undefined
     }
+  )
+
+  registerIpcHandler(
+    ipcChannels.fpsPatch.getStatus,
+    voidInputSchema,
+    fpsPatchStatusSchema,
+    async () => fpsPatchService.getStatus()
+  )
+
+  registerIpcHandler(
+    ipcChannels.fpsPatch.install,
+    voidInputSchema,
+    fpsPatchInstallResultSchema,
+    async () => fpsPatchService.install()
   )
 
   registerIpcHandler(

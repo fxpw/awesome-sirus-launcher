@@ -3,6 +3,8 @@ import { ZodError } from 'zod'
 import {
 	createWtfBackupResultSchema,
 	deleteWtfBackupResultSchema,
+	fpsPatchInstallResultSchema,
+	fpsPatchStatusSchema,
 	githubTokenInputSchema,
 	launcherSettingsPatchSchema,
 	restoreWtfBackupResultSchema,
@@ -58,6 +60,22 @@ describe('ipc schemas', () => {
 		})
 		expect(deleteWtfBackupResultSchema.parse({ deletedId: backup.id })).toEqual({
 			deletedId: backup.id
+		})
+	})
+
+	it('validates fps patch output shapes', () => {
+		const status = {
+			installed: true,
+			patchPath: 'F:/wow/Data/ruRU/patch-ruRU-[.mpq',
+			size: 2048,
+			updatedAt: '2026-06-14T10:20:30.000Z',
+			sourceUrls: ['https://example.test/patch.mpq']
+		}
+
+		expect(fpsPatchStatusSchema.parse(status)).toEqual(status)
+		expect(fpsPatchInstallResultSchema.parse({ status, sourceUrl: status.sourceUrls[0] })).toEqual({
+			status,
+			sourceUrl: status.sourceUrls[0]
 		})
 	})
 })
