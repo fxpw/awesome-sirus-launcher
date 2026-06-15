@@ -138,12 +138,72 @@ const appUpdateService = createAppUpdateService(
 		})
 		child.unref()
 	},
-	() => app.getPath('userData')
+	() => app.getPath('userData'),
+	{
+		isPortableLaunch: () => isPortableLaunch(),
+		getExecutablePath: () => process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath,
+		runPortableUpdate: async ({ downloadedPath, executablePath }) => {
+			const script = createPortableUpdateScript({
+				currentPid: process.pid,
+				downloadedPath,
+				executablePath
+			})
+			const child = spawn(
+				'powershell.exe',
+				['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
+				{
+					detached: true,
+					stdio: 'ignore',
+					windowsHide: true
+				}
+			)
+			child.unref()
+		}
+	}
 )
+
+function isPortableLaunch(): boolean {
+	return (
+		Boolean(process.env.PORTABLE_EXECUTABLE_DIR) ||
+		Boolean(process.env.PORTABLE_EXECUTABLE_FILE) ||
+		/portable/i.test(process.execPath)
+	)
+}
+
+function createPortableUpdateScript(input: {
+	currentPid: number
+	downloadedPath: string
+	executablePath: string
+}): string {
+	const downloadedPath = toPowerShellLiteral(input.downloadedPath)
+	const executablePath = toPowerShellLiteral(input.executablePath)
+
+	return [
+		"$ErrorActionPreference = 'Stop'",
+		`$launcherPid = ${input.currentPid}`,
+		`$downloadedPath = ${downloadedPath}`,
+		`$executablePath = ${executablePath}`,
+		'Start-Sleep -Milliseconds 500',
+		'Wait-Process -Id $launcherPid -ErrorAction SilentlyContinue',
+		'if ((Resolve-Path -LiteralPath $downloadedPath).Path -ne (Resolve-Path -LiteralPath $executablePath -ErrorAction SilentlyContinue).Path) {',
+		'	if (Test-Path -LiteralPath $executablePath) {',
+		'		Remove-Item -LiteralPath $executablePath -Force',
+		'	}',
+		'	Move-Item -LiteralPath $downloadedPath -Destination $executablePath -Force',
+		'} else {',
+		'	Move-Item -LiteralPath $downloadedPath -Destination $executablePath -Force',
+		'}',
+		'Start-Process -FilePath $executablePath -WorkingDirectory (Split-Path -Parent $executablePath)'
+	].join('\n')
+}
+
+function toPowerShellLiteral(value: string): string {
+	return `'${value.replace(/'/g, "''")}'`
+}
 
 function createWindow(): void {
 	const mainWindow = new BrowserWindow({
-		width: 1500,
+		width: 1580,
 		height: 820,
 		minWidth: 980,
 		minHeight: 620,

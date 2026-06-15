@@ -51,6 +51,8 @@
 
 * {
 	box-sizing: border-box;
+	cursor: default;
+	user-select: none;
 }
 
 html,
@@ -95,6 +97,15 @@ button,
 input,
 textarea {
 	font: inherit;
+}
+
+input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not(
+		[type='radio']
+	),
+textarea,
+[contenteditable='true'] {
+	cursor: text;
+	user-select: text;
 }
 
 .shell {
@@ -756,6 +767,11 @@ nav {
 
 .field:read-only {
 	color: rgba(247, 244, 238, 0.76);
+}
+
+textarea.field {
+	cursor: text;
+	user-select: text;
 }
 
 .field:-webkit-autofill,

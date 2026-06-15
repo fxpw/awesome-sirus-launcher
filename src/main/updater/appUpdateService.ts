@@ -4,13 +4,24 @@ import {
 	type GitHubReleaseResponse
 } from '../../core/updater/appUpdate'
 import { mkdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join, normalize } from 'node:path'
 import type { AppUpdateCheck, AppUpdateInstallResult, ReleaseAsset } from '../../shared/contracts'
 import type { SettingsStore } from '../settings/fileSettingsStore'
 import type { SecretStore } from '../secrets/memorySecretStore'
 
 export const appReleasesUrl =
 	'https://api.github.com/repos/fxpw/awesome-sirus-launcher/releases?per_page=20'
+
+interface PortableUpdateInput {
+	downloadedPath: string
+	executablePath: string
+}
+
+interface AppUpdateRuntime {
+	isPortableLaunch?: () => boolean
+	getExecutablePath?: () => string
+	runPortableUpdate?: (input: PortableUpdateInput) => Promise<void>
+}
 
 export function createAppUpdateService(
 	currentVersion: string,
@@ -20,7 +31,8 @@ export function createAppUpdateService(
 	fetchJsonWithToken: (url: string, token?: string) => Promise<unknown>,
 	downloadFile: (url: string, targetPath: string, options?: { token?: string }) => Promise<void>,
 	runInstaller: (installerPath: string) => Promise<void>,
-	getUserDataPath: () => string
+	getUserDataPath: () => string,
+	runtime: AppUpdateRuntime = {}
 ): { check(): Promise<AppUpdateCheck>; install(): Promise<AppUpdateInstallResult> } {
 	async function check(): Promise<AppUpdateCheck> {
 		const settings = await settingsStore.get()
@@ -63,15 +75,27 @@ export function createAppUpdateService(
 				throw new Error('Обновление лаунчера не найдено')
 			}
 
-			const asset = selectInstallAsset(update.latest.assets)
+			const isPortableLaunch = runtime.isPortableLaunch?.() ?? false
+			const asset = selectInstallAsset(update.latest.assets, isPortableLaunch)
 			if (!asset) throw new Error('В релизе нет Windows .exe установщика')
 
-			const updatesDir = join(getUserDataPath(), 'updates')
-			await mkdir(updatesDir, { recursive: true })
-			const targetPath = join(updatesDir, sanitizeFileName(asset.name))
+			const targetPath = isPortableLaunch
+				? getPortableUpdateDownloadPath(asset.name, getPortableExecutablePath(runtime))
+				: join(getUserDataPath(), 'updates', sanitizeFileName(asset.name))
+			await mkdir(dirname(targetPath), { recursive: true })
 
 			await downloadUpdateAsset(asset.downloadUrl, targetPath)
-			await runInstaller(targetPath)
+			if (isPortableLaunch) {
+				if (!runtime.runPortableUpdate) {
+					throw new Error('Portable updater не настроен')
+				}
+				await runtime.runPortableUpdate({
+					downloadedPath: targetPath,
+					executablePath: getPortableExecutablePath(runtime)
+				})
+			} else {
+				await runInstaller(targetPath)
+			}
 
 			return {
 				installedAt: new Date().toISOString(),
@@ -93,11 +117,22 @@ export function createAppUpdateService(
 	}
 }
 
-export function selectInstallAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
+export function selectInstallAsset(
+	assets: ReleaseAsset[],
+	preferPortable = false
+): ReleaseAsset | undefined {
 	const candidates = assets.filter((asset) => {
 		const name = asset.name.toLowerCase()
 		return name.endsWith('.exe') && !name.endsWith('.exe.blockmap')
 	})
+
+	if (preferPortable) {
+		return (
+			candidates.find((asset) => /portable/i.test(asset.name)) ??
+			candidates.find((asset) => /setup/i.test(asset.name)) ??
+			candidates[0]
+		)
+	}
 
 	return (
 		candidates.find((asset) => /setup/i.test(asset.name)) ??
@@ -108,6 +143,20 @@ export function selectInstallAsset(assets: ReleaseAsset[]): ReleaseAsset | undef
 
 function sanitizeFileName(fileName: string): string {
 	return fileName.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
+}
+
+function getPortableExecutablePath(runtime: AppUpdateRuntime): string {
+	const executablePath = runtime.getExecutablePath?.()
+	if (!executablePath) throw new Error('Путь к portable лаунчеру не найден')
+	return executablePath
+}
+
+function getPortableUpdateDownloadPath(assetName: string, executablePath: string): string {
+	const targetPath = join(dirname(executablePath), sanitizeFileName(assetName))
+	if (normalize(targetPath).toLowerCase() === normalize(executablePath).toLowerCase()) {
+		return `${targetPath}.download`
+	}
+	return targetPath
 }
 
 function isGitHubReleasesUnavailable(err: unknown): boolean {

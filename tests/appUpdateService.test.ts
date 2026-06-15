@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import {
 	createAppUpdateService,
@@ -149,6 +149,24 @@ describe('app update service', () => {
 		expect(asset?.downloadUrl).toBe('https://example.test/setup.exe')
 	})
 
+	it('prefers portable executable assets for portable install', () => {
+		const asset = selectInstallAsset(
+			[
+				{
+					name: 'Awesome-Sirus-Launcher-Setup-1.2.0.exe',
+					downloadUrl: 'https://example.test/setup.exe'
+				},
+				{
+					name: 'Awesome-Sirus-Launcher-Portable-1.2.0.exe',
+					downloadUrl: 'https://example.test/portable.exe'
+				}
+			],
+			true
+		)
+
+		expect(asset?.downloadUrl).toBe('https://example.test/portable.exe')
+	})
+
 	it('downloads the selected update asset and runs it', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-app-update-'))
 		const downloadedUrls: string[] = []
@@ -189,6 +207,64 @@ describe('app update service', () => {
 		expect(launchedPaths).toEqual([result.downloadedPath])
 		expect(result.version).toBe('1.2.0')
 		await expect(readFile(result.downloadedPath, 'utf8')).resolves.toBe('installer')
+	})
+
+	it('downloads portable updates next to the running executable', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-portable-update-'))
+		const executablePath = join(root, 'Awesome-Sirus-Launcher-Portable-1.0.0.exe')
+		const portableUpdates: Array<{ downloadedPath: string; executablePath: string }> = []
+		const service = createAppUpdateService(
+			'1.0.0',
+			createSettingsStore(false),
+			createSecretStore(),
+			async () => [
+				{
+					tag_name: 'v1.2.0',
+					html_url: 'https://github.com/fxpw/awesome-sirus-launcher/releases/tag/v1.2.0',
+					body: null,
+					prerelease: false,
+					assets: [
+						{
+							name: 'Awesome-Sirus-Launcher-Setup-1.2.0.exe',
+							browser_download_url: 'https://example.test/setup.exe',
+							size: 123
+						},
+						{
+							name: 'Awesome-Sirus-Launcher-Portable-1.2.0.exe',
+							browser_download_url: 'https://example.test/portable.exe',
+							size: 124
+						}
+					]
+				}
+			],
+			async () => undefined,
+			async (url, targetPath) => {
+				await writeFile(targetPath, `downloaded from ${url}`)
+			},
+			async () => undefined,
+			() => join(root, 'user-data'),
+			{
+				isPortableLaunch: () => true,
+				getExecutablePath: () => executablePath,
+				runPortableUpdate: async (input) => {
+					portableUpdates.push(input)
+				}
+			}
+		)
+
+		const result = await service.install()
+
+		expect(result.asset.downloadUrl).toBe('https://example.test/portable.exe')
+		expect(basename(result.downloadedPath)).toBe('Awesome-Sirus-Launcher-Portable-1.2.0.exe')
+		expect(portableUpdates).toEqual([
+			{
+				downloadedPath: result.downloadedPath,
+				executablePath
+			}
+		])
+		await expect(readFile(result.downloadedPath, 'utf8')).resolves.toBe(
+			'downloaded from https://example.test/portable.exe'
+		)
 	})
 })
 
