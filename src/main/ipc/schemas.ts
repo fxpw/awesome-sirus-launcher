@@ -315,6 +315,47 @@ export const customAddonsTransferResultSchema = z
 	})
 	.optional()
 
+export const miningStatusSchema = z.enum(['not-configured', 'stopped', 'running', 'failed'])
+
+export const miningConfigSchema = z.object({
+	consentAccepted: z.boolean(),
+	minerPath: z.string(),
+	arguments: z.string(),
+	poolUrl: z.string(),
+	walletAddress: z.string(),
+	workerName: z.string(),
+	coinSymbol: z.string()
+})
+
+export const miningConfigInputSchema = z
+	.object({
+		consentAccepted: z.boolean().optional(),
+		minerPath: z.string().optional(),
+		arguments: z.string().optional(),
+		poolUrl: z.string().optional(),
+		walletAddress: z.string().optional(),
+		workerName: z.string().optional(),
+		coinSymbol: z.string().optional()
+	})
+	.strict()
+
+export const minerPathInputSchema = z.string()
+
+export const miningStateSchema = z.object({
+	status: miningStatusSchema,
+	config: miningConfigSchema,
+	commandPreview: z.string(),
+	startedAt: z.string().optional(),
+	stoppedAt: z.string().optional(),
+	hashrate: z.string(),
+	acceptedSharesTotal: z.number(),
+	acceptedSharesSession: z.number(),
+	receivedTotal: z.number(),
+	receivedSession: z.number(),
+	lastOutput: z.string(),
+	error: z.string().optional()
+})
+
 export const addCustomAddonInputSchema = z
 	.object({
 		name: z.string().trim().min(1, 'Название аддона пустое'),

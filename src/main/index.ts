@@ -1,4 +1,4 @@
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { spawn } from 'node:child_process'
 import { app, BrowserWindow, dialog, shell, type OpenDialogOptions } from 'electron'
 import { is } from '@electron-toolkit/utils'
@@ -16,6 +16,7 @@ import { md5File } from '@main/files/md5File'
 import { createFpsPatchService } from '@main/fpsPatch/fpsPatchService'
 import { registerIpcHandler } from '@main/ipc/ipcHandler'
 import { createGameLaunchService } from '@main/launcher/gameLaunchService'
+import { createChildProcessMiningRunner, createMiningService } from '@main/mining/miningService'
 import { createAppUpdateService } from '@main/updater/appUpdateService'
 import { getPreloadPath } from '@main/windowPaths'
 import {
@@ -49,6 +50,9 @@ import {
 	githubTokenStatusSchema,
 	launcherSettingsPatchSchema,
 	launcherSettingsSchema,
+	minerPathInputSchema,
+	miningConfigInputSchema,
+	miningStateSchema,
 	restoreWtfBackupResultSchema,
 	selectAccountInputSchema,
 	voidInputSchema,
@@ -85,6 +89,17 @@ const addonService = createAddonService(
 	secretStore,
 	downloadFile,
 	unzipToDirectory
+)
+const miningService = createMiningService(
+	() => app.getPath('userData'),
+	createChildProcessMiningRunner((executablePath, args) =>
+		spawn(executablePath, args, {
+			cwd: dirname(executablePath),
+			detached: false,
+			stdio: 'pipe',
+			windowsHide: false
+		})
+	)
 )
 const gameLaunchService = createGameLaunchService(
 	settingsStore,
@@ -430,6 +445,52 @@ function registerIpcHandlers(): void {
 		}
 	)
 
+	registerIpcHandler(ipcChannels.mining.getState, voidInputSchema, miningStateSchema, async () =>
+		miningService.getState()
+	)
+
+	registerIpcHandler(
+		ipcChannels.mining.saveConfig,
+		miningConfigInputSchema,
+		miningStateSchema,
+		async (input) => miningService.saveConfig(input)
+	)
+
+	registerIpcHandler(
+		ipcChannels.mining.selectMinerPath,
+		voidInputSchema,
+		miningStateSchema,
+		async (_input, event) => {
+			const parentWindow = BrowserWindow.fromWebContents(event.sender)
+			const dialogOptions: OpenDialogOptions = {
+				title: 'Выбрать exe-файл майнера',
+				properties: ['openFile'],
+				filters: [{ name: 'Executable', extensions: ['exe'] }]
+			}
+			const result = parentWindow
+				? await dialog.showOpenDialog(parentWindow, dialogOptions)
+				: await dialog.showOpenDialog(dialogOptions)
+
+			if (result.canceled || !result.filePaths[0]) return miningService.getState()
+			return miningService.selectMinerPath(minerPathInputSchema.parse(result.filePaths[0]))
+		}
+	)
+
+	registerIpcHandler(ipcChannels.mining.start, voidInputSchema, miningStateSchema, async () =>
+		miningService.start()
+	)
+
+	registerIpcHandler(ipcChannels.mining.stop, voidInputSchema, miningStateSchema, async () =>
+		miningService.stop()
+	)
+
+	registerIpcHandler(
+		ipcChannels.mining.resetStats,
+		voidInputSchema,
+		miningStateSchema,
+		async () => miningService.resetStats()
+	)
+
 	registerIpcHandler(
 		ipcChannels.wow.validatePath,
 		wowPathInputSchema,
@@ -465,6 +526,11 @@ app.whenReady().then(() => {
 	})
 })
 
+app.on('before-quit', () => {
+	void miningService.stop()
+})
+
 app.on('window-all-closed', () => {
+	void miningService.stop()
 	if (process.platform !== 'darwin') app.quit()
 })

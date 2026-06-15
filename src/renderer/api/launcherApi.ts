@@ -8,6 +8,7 @@ import type {
 	GitHubTokenInput,
 	LauncherApi,
 	LauncherSettingsPatch,
+	MiningConfigInput,
 	SelectAccountInput,
 	WtfBackupActionInput
 } from '@shared/contracts'
@@ -71,6 +72,14 @@ export const launcherApi = {
 		addCustom: (input: AddCustomAddonInput) => getLauncher().addons.addCustom(input),
 		exportCustom: () => getLauncher().addons.exportCustom(),
 		importCustom: () => getLauncher().addons.importCustom()
+	},
+	mining: {
+		getState: () => getLauncher().mining.getState(),
+		saveConfig: (input: MiningConfigInput) => getLauncher().mining.saveConfig(input),
+		selectMinerPath: () => getLauncher().mining.selectMinerPath(),
+		start: () => getLauncher().mining.start(),
+		stop: () => getLauncher().mining.stop(),
+		resetStats: () => getLauncher().mining.resetStats()
 	},
 	wow: {
 		validatePath: (wowPath: string) => getLauncher().wow.validatePath(wowPath),

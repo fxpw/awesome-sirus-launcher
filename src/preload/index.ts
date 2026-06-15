@@ -9,6 +9,7 @@ import type {
 	GitHubTokenInput,
 	LauncherApi,
 	LauncherSettingsPatch,
+	MiningConfigInput,
 	SelectAccountInput,
 	WtfBackupActionInput
 } from '@shared/contracts'
@@ -72,6 +73,15 @@ const api: LauncherApi = {
 			ipcRenderer.invoke(ipcChannels.addons.addCustom, input),
 		exportCustom: () => ipcRenderer.invoke(ipcChannels.addons.exportCustom),
 		importCustom: () => ipcRenderer.invoke(ipcChannels.addons.importCustom)
+	},
+	mining: {
+		getState: () => ipcRenderer.invoke(ipcChannels.mining.getState),
+		saveConfig: (input: MiningConfigInput) =>
+			ipcRenderer.invoke(ipcChannels.mining.saveConfig, input),
+		selectMinerPath: () => ipcRenderer.invoke(ipcChannels.mining.selectMinerPath),
+		start: () => ipcRenderer.invoke(ipcChannels.mining.start),
+		stop: () => ipcRenderer.invoke(ipcChannels.mining.stop),
+		resetStats: () => ipcRenderer.invoke(ipcChannels.mining.resetStats)
 	},
 	wow: {
 		validatePath: (wowPath: string) =>

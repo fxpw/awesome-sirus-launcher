@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type {
 	AccountListResult,
 	AddonsListResult,
@@ -11,6 +11,8 @@ import type {
 	FpsPatchStatus,
 	GitHubTokenStatus,
 	LauncherSettings,
+	MiningConfigInput,
+	MiningState,
 	WowPathValidation,
 	WtfBackupSummary
 } from '@shared/contracts'
@@ -27,6 +29,7 @@ import FpsPatchPanel from '@renderer/elements/FpsPatchPanel.vue'
 import GitHubTokenForm from '@renderer/elements/GitHubTokenForm.vue'
 import GitHubTokenModal from '@renderer/elements/GitHubTokenModal.vue'
 import LaunchBehaviorForm from '@renderer/elements/LaunchBehaviorForm.vue'
+import MiningPanel from '@renderer/elements/MiningPanel.vue'
 import ThanksPanel from '@renderer/elements/ThanksPanel.vue'
 import WowPathForm from '@renderer/elements/WowPathForm.vue'
 import WtfBackupPanel from '@renderer/elements/WtfBackupPanel.vue'
@@ -35,7 +38,15 @@ import { useLocale } from '@renderer/composables/useLocale'
 import { useTheme } from '@renderer/composables/useTheme'
 import type { MessageKey } from '@renderer/shared/i18n'
 
-type LauncherSection = 'dashboard' | 'addons' | 'client' | 'patch' | 'wtf' | 'settings' | 'thanks'
+type LauncherSection =
+	| 'dashboard'
+	| 'addons'
+	| 'client'
+	| 'patch'
+	| 'wtf'
+	| 'mining'
+	| 'settings'
+	| 'thanks'
 
 const sectionTitleKeys: Record<LauncherSection, MessageKey> = {
 	dashboard: 'section.dashboard.title',
@@ -43,6 +54,7 @@ const sectionTitleKeys: Record<LauncherSection, MessageKey> = {
 	client: 'section.client.title',
 	patch: 'section.patch.title',
 	wtf: 'section.wtf.title',
+	mining: 'section.mining.title',
 	settings: 'section.settings.title',
 	thanks: 'section.thanks.title'
 }
@@ -53,6 +65,7 @@ const sectionEyebrowKeys: Record<LauncherSection, MessageKey> = {
 	client: 'section.client.eyebrow',
 	patch: 'section.patch.eyebrow',
 	wtf: 'section.wtf.eyebrow',
+	mining: 'section.mining.eyebrow',
 	settings: 'section.settings.eyebrow',
 	thanks: 'section.thanks.eyebrow'
 }
@@ -80,6 +93,8 @@ const clientDownloadingKey = ref('')
 const clientDownloadingAll = ref(false)
 const addonChecking = ref(false)
 const addonCheckResult = ref<AddonsListResult | null>(null)
+const miningState = ref<MiningState | null>(null)
+const miningWorking = ref(false)
 const githubToken = ref('')
 const error = ref('')
 const notice = ref('')
@@ -90,6 +105,7 @@ const accountLogin = ref('')
 const accountPassword = ref('')
 const accountModalError = ref('')
 const activeSection = ref<LauncherSection>('dashboard')
+let miningPollTimer: number | undefined
 
 const { t } = useLocale()
 useTheme()
@@ -154,6 +170,7 @@ onMounted(async () => {
 		settings.value = await launcherApi.settings.get()
 		backups.value = await launcherApi.backup.listWtf()
 		fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
+		miningState.value = await launcherApi.mining.getState()
 		wowPath.value = settings.value.wowPath
 		if (wowPath.value) {
 			await validateWowPath()
@@ -165,6 +182,14 @@ onMounted(async () => {
 	} catch (err) {
 		error.value = err instanceof Error ? err.message : t('app.initError')
 	}
+
+	miningPollTimer = window.setInterval(() => {
+		if (miningState.value?.status === 'running') void refreshMiningState()
+	}, 2500)
+})
+
+onUnmounted(() => {
+	if (miningPollTimer) window.clearInterval(miningPollTimer)
 })
 
 async function validateWowPath(): Promise<void> {
@@ -386,6 +411,9 @@ async function launchGame(): Promise<void> {
 	notice.value = ''
 	gameLaunching.value = true
 	try {
+		if (miningState.value?.status === 'running') {
+			miningState.value = await launcherApi.mining.stop()
+		}
 		await launcherApi.wow.launchGame()
 		notice.value = t('game.launched')
 		if (settings.value?.closeOnLaunch) window.close()
@@ -531,6 +559,85 @@ function updateAddonCheckResult(result: AddonsListResult): void {
 	addonCheckResult.value = result
 	notice.value = t('footer.status.addonsChecked', { total: result.total })
 }
+
+async function saveMiningConfig(patch: MiningConfigInput): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	miningWorking.value = true
+	try {
+		miningState.value = await launcherApi.mining.saveConfig(patch)
+		notice.value = t('mining.saved')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('mining.saveError')
+	} finally {
+		miningWorking.value = false
+	}
+}
+
+async function selectMinerPath(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	miningWorking.value = true
+	try {
+		miningState.value = await launcherApi.mining.selectMinerPath()
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('mining.selectError')
+	} finally {
+		miningWorking.value = false
+	}
+}
+
+async function startMining(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	miningWorking.value = true
+	try {
+		miningState.value = await launcherApi.mining.start()
+		notice.value = t('mining.started')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('mining.startError')
+	} finally {
+		miningWorking.value = false
+	}
+}
+
+async function stopMining(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	miningWorking.value = true
+	try {
+		miningState.value = await launcherApi.mining.stop()
+		notice.value = t('mining.stopped')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('mining.stopError')
+	} finally {
+		miningWorking.value = false
+	}
+}
+
+async function resetMiningStats(): Promise<void> {
+	if (!confirm(t('mining.resetConfirm'))) return
+
+	error.value = ''
+	notice.value = ''
+	miningWorking.value = true
+	try {
+		miningState.value = await launcherApi.mining.resetStats()
+		notice.value = t('mining.statsReset')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('mining.resetError')
+	} finally {
+		miningWorking.value = false
+	}
+}
+
+async function refreshMiningState(): Promise<void> {
+	try {
+		miningState.value = await launcherApi.mining.getState()
+	} catch {
+		// Footer already carries actionable errors from direct user actions.
+	}
+}
 </script>
 
 <template>
@@ -615,6 +722,19 @@ function updateAddonCheckResult(result: AddonsListResult): void {
 				@restore="restoreWtfBackup"
 				@delete="deleteWtfBackup"
 				@open-folder="openWtfBackupFolder"
+			/>
+
+			<MiningPanel
+				v-else-if="activeSection === 'mining'"
+				:state="miningState"
+				:working="miningWorking"
+				:error="error"
+				:notice="notice"
+				@save="saveMiningConfig"
+				@select-miner="selectMinerPath"
+				@start="startMining"
+				@stop="stopMining"
+				@reset-stats="resetMiningStats"
 			/>
 
 			<ThanksPanel v-else-if="activeSection === 'thanks'" />

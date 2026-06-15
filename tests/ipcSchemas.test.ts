@@ -12,6 +12,8 @@ import {
 	gameLaunchResultSchema,
 	githubTokenInputSchema,
 	launcherSettingsPatchSchema,
+	miningConfigInputSchema,
+	miningStateSchema,
 	restoreWtfBackupResultSchema,
 	selectAccountInputSchema,
 	wtfBackupActionInputSchema,
@@ -126,6 +128,36 @@ describe('ipc schemas', () => {
 		}
 
 		expect(gameLaunchResultSchema.parse(result)).toEqual(result)
+	})
+
+	it('validates mining input and output shapes', () => {
+		const config = {
+			consentAccepted: true,
+			minerPath: 'C:/miners/miner.exe',
+			arguments: '--server pool.example:3333 --user wallet.worker',
+			poolUrl: 'pool.example:3333',
+			walletAddress: 'wallet',
+			workerName: 'worker',
+			coinSymbol: 'COIN'
+		}
+
+		expect(miningConfigInputSchema.parse({ consentAccepted: true })).toEqual({
+			consentAccepted: true
+		})
+		expect(
+			miningStateSchema.parse({
+				status: 'running',
+				config,
+				commandPreview: 'miner.exe --server pool.example:3333 --user wallet.worker',
+				startedAt: '2026-06-14T10:20:30.000Z',
+				hashrate: '42 MH/s',
+				acceptedSharesTotal: 2,
+				acceptedSharesSession: 1,
+				receivedTotal: 0,
+				receivedSession: 0,
+				lastOutput: 'accepted'
+			})
+		).toMatchObject({ status: 'running', config })
 	})
 
 	it('validates client check output shape', () => {

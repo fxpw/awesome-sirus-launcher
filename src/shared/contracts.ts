@@ -47,6 +47,14 @@ export const ipcChannels = {
 		exportCustom: 'addons:export-custom',
 		importCustom: 'addons:import-custom'
 	},
+	mining: {
+		getState: 'mining:get-state',
+		saveConfig: 'mining:save-config',
+		selectMinerPath: 'mining:select-miner-path',
+		start: 'mining:start',
+		stop: 'mining:stop',
+		resetStats: 'mining:reset-stats'
+	},
 	wow: {
 		validatePath: 'wow:validate-path',
 		previewAccountConfig: 'wow:preview-account-config',
@@ -349,6 +357,35 @@ export interface CustomAddonsTransferResult {
 	addons: AddonCatalogEntry[]
 }
 
+export type MiningStatus = 'not-configured' | 'stopped' | 'running' | 'failed'
+
+export interface MiningConfig {
+	consentAccepted: boolean
+	minerPath: string
+	arguments: string
+	poolUrl: string
+	walletAddress: string
+	workerName: string
+	coinSymbol: string
+}
+
+export type MiningConfigInput = Partial<MiningConfig>
+
+export interface MiningState {
+	status: MiningStatus
+	config: MiningConfig
+	commandPreview: string
+	startedAt?: string
+	stoppedAt?: string
+	hashrate: string
+	acceptedSharesTotal: number
+	acceptedSharesSession: number
+	receivedTotal: number
+	receivedSession: number
+	lastOutput: string
+	error?: string
+}
+
 export interface AddCustomAddonInput {
 	name: string
 	githubUrl: string
@@ -408,6 +445,14 @@ export interface LauncherApi {
 		addCustom(input: AddCustomAddonInput): Promise<AddonsListResult>
 		exportCustom(): Promise<CustomAddonsTransferResult | undefined>
 		importCustom(): Promise<CustomAddonsTransferResult | undefined>
+	}
+	mining: {
+		getState(): Promise<MiningState>
+		saveConfig(input: MiningConfigInput): Promise<MiningState>
+		selectMinerPath(): Promise<MiningState>
+		start(): Promise<MiningState>
+		stop(): Promise<MiningState>
+		resetStats(): Promise<MiningState>
 	}
 	wow: {
 		validatePath(wowPath: string): Promise<WowPathValidation>
