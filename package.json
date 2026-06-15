@@ -1,6 +1,6 @@
 {
 	"name": "awesome-sirus-launcher",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "Electron/Vue launcher for Sirus WoW addons, patches, backups, accounts and game launch.",
 	"author": "fxpw accidev",
 	"license": "MIT",
