@@ -210,6 +210,46 @@ nav {
 	flex: 0 0 auto;
 }
 
+.workspace-section {
+	display: grid;
+	gap: 12px;
+	min-width: 0;
+}
+
+.section-fade-enter-active,
+.section-fade-leave-active {
+	transition:
+		opacity 170ms ease,
+		transform 170ms ease,
+		filter 170ms ease;
+}
+
+.section-fade-enter-from {
+	opacity: 0;
+	transform: translateY(8px);
+	filter: blur(3px);
+}
+
+.section-fade-leave-to {
+	opacity: 0;
+	transform: translateY(-6px);
+	filter: blur(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.section-fade-enter-active,
+	.section-fade-leave-active {
+		transition: none;
+	}
+
+	.section-fade-enter-from,
+	.section-fade-leave-to {
+		opacity: 1;
+		transform: none;
+		filter: none;
+	}
+}
+
 .workspace::-webkit-scrollbar {
 	width: 6px;
 }

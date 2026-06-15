@@ -655,108 +655,116 @@ async function refreshMiningState(): Promise<void> {
 		<AppSidebar :app-info="appInfo" :active-section="activeSection" @navigate="navigate" />
 
 		<section class="workspace">
-			<DashboardOverviewPanel
-				v-if="activeSection === 'dashboard'"
-				:wow-validation="wowValidation"
-				:fps-patch-status="fpsPatchStatus"
-				:client-check-result="clientCheckResult"
-				:latest-backup="latestBackup"
-				:app-update-check="appUpdateCheck"
-				:addon-update-count="addonUpdateCount"
-				:addons-checked="Boolean(addonCheckResult)"
-				:checking-app-update="appUpdateChecking"
-				:installing-app-update="appUpdateInstalling"
-				:checking-addons="addonChecking"
-				:checking-client="clientChecking"
-				:installing-fps-patch="fpsPatchInstalling"
-				:creating-backup="wtfBackupCreating"
-				:launching-game="gameLaunching"
-				@select-wow-path="selectWowPath"
-				@launch-game="launchGame"
-				@install-fps-patch="installFpsPatch"
-				@delete-fps-patch="deleteFpsPatch"
-				@check-app-update="checkAppUpdate"
-				@install-app-update="installAppUpdate"
-				@open-addons="checkAddons"
-				@check-client="checkClient"
-				@create-backup="createWtfBackup"
-			/>
+			<Transition name="section-fade" mode="out-in">
+				<div :key="activeSection" class="workspace-section">
+					<DashboardOverviewPanel
+						v-if="activeSection === 'dashboard'"
+						:wow-validation="wowValidation"
+						:fps-patch-status="fpsPatchStatus"
+						:client-check-result="clientCheckResult"
+						:latest-backup="latestBackup"
+						:app-update-check="appUpdateCheck"
+						:addon-update-count="addonUpdateCount"
+						:addons-checked="Boolean(addonCheckResult)"
+						:checking-app-update="appUpdateChecking"
+						:installing-app-update="appUpdateInstalling"
+						:checking-addons="addonChecking"
+						:checking-client="clientChecking"
+						:installing-fps-patch="fpsPatchInstalling"
+						:creating-backup="wtfBackupCreating"
+						:launching-game="gameLaunching"
+						@select-wow-path="selectWowPath"
+						@launch-game="launchGame"
+						@install-fps-patch="installFpsPatch"
+						@delete-fps-patch="deleteFpsPatch"
+						@check-app-update="checkAppUpdate"
+						@install-app-update="installAppUpdate"
+						@open-addons="checkAddons"
+						@check-client="checkClient"
+						@create-backup="createWtfBackup"
+					/>
 
-			<AddonsPanel
-				v-else-if="activeSection === 'addons'"
-				:addon-result="addonCheckResult"
-				:checking-external="addonChecking"
-				@checked="updateAddonCheckResult"
-			/>
+					<AddonsPanel
+						v-else-if="activeSection === 'addons'"
+						:addon-result="addonCheckResult"
+						:checking-external="addonChecking"
+						@checked="updateAddonCheckResult"
+					/>
 
-			<ClientCheckPanel
-				v-else-if="activeSection === 'client'"
-				:manifest="clientPatchManifest"
-				:result="clientCheckResult"
-				:source-urls="[...clientPatchSourceUrls]"
-				:selected-source-url="selectedClientPatchSourceUrl"
-				:checking="clientChecking"
-				:loading-manifest="clientManifestLoading"
-				:downloading-key="clientDownloadingKey"
-				:downloading-all="clientDownloadingAll"
-				@select-source="selectClientPatchSource"
-				@load="loadClientManifest"
-				@check="checkClient"
-				@download-file="downloadClientFile"
-				@download-missing="downloadMissingClientFiles"
-			/>
+					<ClientCheckPanel
+						v-else-if="activeSection === 'client'"
+						:manifest="clientPatchManifest"
+						:result="clientCheckResult"
+						:source-urls="[...clientPatchSourceUrls]"
+						:selected-source-url="selectedClientPatchSourceUrl"
+						:checking="clientChecking"
+						:loading-manifest="clientManifestLoading"
+						:downloading-key="clientDownloadingKey"
+						:downloading-all="clientDownloadingAll"
+						@select-source="selectClientPatchSource"
+						@load="loadClientManifest"
+						@check="checkClient"
+						@download-file="downloadClientFile"
+						@download-missing="downloadMissingClientFiles"
+					/>
 
-			<FpsPatchPanel
-				v-else-if="activeSection === 'patch'"
-				:status="fpsPatchStatus"
-				:installing="fpsPatchInstalling"
-				@install="installFpsPatch"
-				@delete="deleteFpsPatch"
-			/>
+					<FpsPatchPanel
+						v-else-if="activeSection === 'patch'"
+						:status="fpsPatchStatus"
+						:installing="fpsPatchInstalling"
+						@install="installFpsPatch"
+						@delete="deleteFpsPatch"
+					/>
 
-			<WtfBackupPanel
-				v-else-if="activeSection === 'wtf'"
-				:backups="backups"
-				:creating="wtfBackupCreating"
-				@create="createWtfBackup"
-				@restore="restoreWtfBackup"
-				@delete="deleteWtfBackup"
-				@open-folder="openWtfBackupFolder"
-			/>
+					<WtfBackupPanel
+						v-else-if="activeSection === 'wtf'"
+						:backups="backups"
+						:creating="wtfBackupCreating"
+						@create="createWtfBackup"
+						@restore="restoreWtfBackup"
+						@delete="deleteWtfBackup"
+						@open-folder="openWtfBackupFolder"
+					/>
 
-			<MiningPanel
-				v-else-if="activeSection === 'mining'"
-				:state="miningState"
-				:working="miningWorking"
-				:error="error"
-				:notice="notice"
-				@save="saveMiningConfig"
-				@select-miner="selectMinerPath"
-				@start="startMining"
-				@stop="stopMining"
-				@reset-stats="resetMiningStats"
-			/>
+					<MiningPanel
+						v-else-if="activeSection === 'mining'"
+						:state="miningState"
+						:working="miningWorking"
+						:error="error"
+						:notice="notice"
+						@save="saveMiningConfig"
+						@select-miner="selectMinerPath"
+						@start="startMining"
+						@stop="stopMining"
+						@reset-stats="resetMiningStats"
+					/>
 
-			<ThanksPanel v-else-if="activeSection === 'thanks'" />
+					<ThanksPanel v-else-if="activeSection === 'thanks'" />
 
-			<template v-else>
-				<WowPathForm
-					v-model:wow-path="wowPath"
-					:validation="wowValidation"
-					:error="error"
-					:notice="notice"
-					@select="selectWowPath"
-					@save="saveWowPath"
-				/>
+					<template v-else>
+						<WowPathForm
+							v-model:wow-path="wowPath"
+							:validation="wowValidation"
+							:error="error"
+							:notice="notice"
+							@select="selectWowPath"
+							@save="saveWowPath"
+						/>
 
-				<LaunchBehaviorForm v-if="settings" :settings="settings" @toggle="toggleSetting" />
+						<LaunchBehaviorForm
+							v-if="settings"
+							:settings="settings"
+							@toggle="toggleSetting"
+						/>
 
-				<GitHubTokenForm
-					v-model:token="githubToken"
-					@save="saveGitHubToken"
-					@clear="clearGitHubToken"
-				/>
-			</template>
+						<GitHubTokenForm
+							v-model:token="githubToken"
+							@save="saveGitHubToken"
+							@clear="clearGitHubToken"
+						/>
+					</template>
+				</div>
+			</Transition>
 		</section>
 
 		<DashboardFooter
