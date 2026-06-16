@@ -36,6 +36,11 @@ function formatSize(size?: number): string {
 	if (!size) return ''
 	return t('fpsPatch.size', { size: Math.max(1, Math.round(size / 1024)) })
 }
+
+function formatHash(hash?: string): string {
+	if (!hash) return ''
+	return `${hash.slice(0, 8)}...${hash.slice(-6)}`
+}
 </script>
 
 <template>
@@ -79,6 +84,15 @@ function formatSize(size?: number): string {
 			</p>
 			<p v-if="status?.remoteSize">
 				{{ t('fpsPatch.remoteSize', { size: formatSize(status.remoteSize) }) }}
+			</p>
+			<p v-if="status?.remoteBuild">
+				{{ t('fpsPatch.remoteBuild', { build: status.remoteBuild }) }}
+			</p>
+			<p v-if="status?.remoteHash">
+				{{ t('fpsPatch.remoteHash', { hash: formatHash(status.remoteHash) }) }}
+			</p>
+			<p v-if="status?.localHash">
+				{{ t('fpsPatch.localHash', { hash: formatHash(status.localHash) }) }}
 			</p>
 			<p v-if="status?.remoteUpdatedAt">
 				{{

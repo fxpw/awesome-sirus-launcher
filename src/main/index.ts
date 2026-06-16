@@ -73,7 +73,10 @@ const wtfBackupService = createWtfBackupService(() => app.getPath('userData'), s
 const fpsPatchService = createFpsPatchService(
 	() => app.getPath('userData'),
 	settingsStore,
-	downloadFile
+	downloadFile,
+	undefined,
+	undefined,
+	md5File
 )
 const clientPatchService = createClientPatchService(
 	settingsStore,

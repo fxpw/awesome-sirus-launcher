@@ -1,10 +1,12 @@
 import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
 	createFpsPatchInstallPlan,
 	fpsPatchFileName,
+	fpsPatchMetadataUrls,
 	fpsPatchSourceUrls
 } from '../src/core/fpsPatch/fpsPatch'
 import {
@@ -135,7 +137,64 @@ describe('fps patch service', () => {
 		expect(status.installed).toBe(true)
 		expect(status.freshness).toBe('outdated')
 		expect(status.remoteSize).toBe(999)
-		expect(status.remoteSourceUrl).toBe(fpsPatchSourceUrls[0])
+		expect(status.remoteSourceUrl).toBe(fpsPatchMetadataUrls[0])
+	})
+
+	it('checks installed fps patch freshness by remote hash when available', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-fps-patch-hash-'))
+		const wowPath = join(root, 'wow')
+		const userDataPath = join(root, 'user-data')
+		const targetPath = join(wowPath, 'Data', 'ruRU', fpsPatchFileName)
+		const content = 'patch bytes'
+		await mkdir(join(wowPath, 'Data', 'ruRU'), { recursive: true })
+		await writeFile(targetPath, content)
+
+		const service = createFpsPatchService(
+			() => userDataPath,
+			createMemorySettingsStore({ wowPath }),
+			async () => undefined,
+			undefined,
+			createMetadataFetcher({
+				build: 355,
+				hash: createHash('md5').update(content).digest('hex')
+			}),
+			hashTestFile
+		)
+
+		const status = await service.getStatus()
+
+		expect(status.installed).toBe(true)
+		expect(status.freshness).toBe('latest')
+		expect(status.localHash).toBe(status.remoteHash)
+		expect(status.remoteBuild).toBe(355)
+	})
+
+	it('marks installed fps patch as outdated when remote hash differs', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-fps-patch-hash-outdated-'))
+		const wowPath = join(root, 'wow')
+		const userDataPath = join(root, 'user-data')
+		const targetPath = join(wowPath, 'Data', 'ruRU', fpsPatchFileName)
+		await mkdir(join(wowPath, 'Data', 'ruRU'), { recursive: true })
+		await writeFile(targetPath, 'patch bytes')
+
+		const service = createFpsPatchService(
+			() => userDataPath,
+			createMemorySettingsStore({ wowPath }),
+			async () => undefined,
+			undefined,
+			createMetadataFetcher({
+				build: 356,
+				hash: 'f325d73bbb7ae38772d4c103408247cc',
+				size: 'patch bytes'.length
+			}),
+			hashTestFile
+		)
+
+		const status = await service.getStatus()
+
+		expect(status.installed).toBe(true)
+		expect(status.freshness).toBe('outdated')
+		expect(status.remoteHash).toBe('f325d73bbb7ae38772d4c103408247cc')
 	})
 
 	it('keeps installed fps patch status when remote metadata is unavailable', async () => {
@@ -189,6 +248,8 @@ describe('fps patch service', () => {
 })
 
 function createMetadataFetcher(metadata: {
+	build?: number
+	hash?: string
 	size?: number
 	updatedAt?: string
 }): FetchFpsPatchMetadata {
@@ -196,6 +257,12 @@ function createMetadataFetcher(metadata: {
 		sourceUrl,
 		...metadata
 	})
+}
+
+async function hashTestFile(filePath: string): Promise<string> {
+	return createHash('md5')
+		.update(await readFile(filePath))
+		.digest('hex')
 }
 
 function createMemorySettingsStore(patch: Partial<LauncherSettings>): SettingsStore {

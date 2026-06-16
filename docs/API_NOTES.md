@@ -42,8 +42,18 @@ export interface ClientPatchManifest {
 
 Источники:
 
+- metadata: `https://api.d1st4r.ru/patchfx`
 - `https://d1st4r.ru/patch/patch-ruRU-[.mpq`
 - `http://d1st4r.stream/patch/patch-ruRU-[.mpq`
+
+Ответ metadata:
+
+```json
+{
+	"build": 355,
+	"hash": "f325d73bbb7ae38772d4c103408247cc"
+}
+```
 
 Целевой путь:
 
@@ -63,6 +73,9 @@ export interface FpsPatchStatus {
 	targetPath: string
 	size?: number
 	modifiedAt?: string
+	localHash?: string
+	remoteBuild?: number
+	remoteHash?: string
 }
 ```
 

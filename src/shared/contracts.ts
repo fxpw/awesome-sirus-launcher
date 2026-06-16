@@ -201,6 +201,9 @@ export interface FpsPatchStatus {
 	size?: number
 	updatedAt?: string
 	freshness: FpsPatchFreshness
+	localHash?: string
+	remoteBuild?: number
+	remoteHash?: string
 	remoteSize?: number
 	remoteUpdatedAt?: string
 	remoteSourceUrl?: string

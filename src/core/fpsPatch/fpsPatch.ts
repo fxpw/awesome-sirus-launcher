@@ -8,6 +8,11 @@ export const fpsPatchSourceUrls = [
 	'http://d1st4r.stream/patch/patch-ruRU-[.mpq'
 ] as const
 
+export const fpsPatchMetadataUrls = [
+	'https://api.d1st4r.ru/patchfx',
+	...fpsPatchSourceUrls
+] as const
+
 export interface FpsPatchInstallPlan {
 	targetPath: string
 	tempPath: string

@@ -7,14 +7,21 @@ import type {
 	FpsPatchInstallResult,
 	FpsPatchStatus
 } from '@shared/contracts'
-import { createFpsPatchInstallPlan, fpsPatchSourceUrls } from '../../core/fpsPatch/fpsPatch'
+import {
+	createFpsPatchInstallPlan,
+	fpsPatchMetadataUrls,
+	fpsPatchSourceUrls
+} from '../../core/fpsPatch/fpsPatch'
 import type { SettingsStore } from '@main/settings/fileSettingsStore'
 
 export type DownloadFile = (url: string, targetPath: string) => Promise<void>
+export type HashFile = (filePath: string) => Promise<string>
 export type FetchFpsPatchMetadata = (url: string) => Promise<FpsPatchRemoteMetadata>
 
 export interface FpsPatchRemoteMetadata {
 	sourceUrl: string
+	build?: number
+	hash?: string
 	size?: number
 	updatedAt?: string
 }
@@ -36,6 +43,10 @@ const defaultFileSystem: FpsPatchFileSystem = {
 }
 
 const defaultFetchFpsPatchMetadata: FetchFpsPatchMetadata = async (url) => {
+	if (url.endsWith('/patchfx')) {
+		return fetchPatchFxMetadata(url)
+	}
+
 	const response = await fetch(url, { method: 'HEAD' })
 	if (!response.ok) {
 		throw new Error(`Request failed ${response.status} ${response.statusText}`.trim())
@@ -51,6 +62,31 @@ const defaultFetchFpsPatchMetadata: FetchFpsPatchMetadata = async (url) => {
 	}
 }
 
+async function fetchPatchFxMetadata(url: string): Promise<FpsPatchRemoteMetadata> {
+	const response = await fetch(url)
+	if (!response.ok) {
+		throw new Error(`Request failed ${response.status} ${response.statusText}`.trim())
+	}
+
+	const body = (await response.json()) as unknown
+	if (!body || typeof body !== 'object') throw new Error('Некорректный manifest FPS-патча')
+
+	const build = (body as { build?: unknown }).build
+	const hash = (body as { hash?: unknown }).hash
+	if (typeof build !== 'number' || !Number.isFinite(build)) {
+		throw new Error('Некорректная версия FPS-патча')
+	}
+	if (typeof hash !== 'string' || !/^[a-f0-9]{32}$/i.test(hash)) {
+		throw new Error('Некорректный хеш FPS-патча')
+	}
+
+	return {
+		sourceUrl: url,
+		build,
+		hash: hash.toLowerCase()
+	}
+}
+
 export interface FpsPatchService {
 	getStatus(): Promise<FpsPatchStatus>
 	install(): Promise<FpsPatchInstallResult>
@@ -62,7 +98,8 @@ export function createFpsPatchService(
 	settingsStore: SettingsStore,
 	downloadFile: DownloadFile,
 	fileSystem: FpsPatchFileSystem = defaultFileSystem,
-	fetchMetadata: FetchFpsPatchMetadata = defaultFetchFpsPatchMetadata
+	fetchMetadata: FetchFpsPatchMetadata = defaultFetchFpsPatchMetadata,
+	hashFile?: HashFile
 ): FpsPatchService {
 	const getTempDir = () => join(getUserDataPath(), 'downloads', 'fps-patch')
 
@@ -72,7 +109,7 @@ export function createFpsPatchService(
 			if (!settings.wowPath) return createMissingStatus('')
 
 			const plan = createFpsPatchInstallPlan(settings.wowPath, getTempDir())
-			return readFpsPatchStatus(plan.targetPath, fileSystem, fetchMetadata)
+			return readFpsPatchStatus(plan.targetPath, fileSystem, fetchMetadata, hashFile)
 		},
 		async install() {
 			const settings = await settingsStore.get()
@@ -93,7 +130,12 @@ export function createFpsPatchService(
 			await moveDownloadedFile(plan.tempPath, plan.targetPath, fileSystem)
 
 			return {
-				status: await readFpsPatchStatus(plan.targetPath, fileSystem, fetchMetadata),
+				status: await readFpsPatchStatus(
+					plan.targetPath,
+					fileSystem,
+					fetchMetadata,
+					hashFile
+				),
 				sourceUrl
 			}
 		},
@@ -105,7 +147,12 @@ export function createFpsPatchService(
 			await fileSystem.rm(plan.targetPath, { force: true })
 
 			return {
-				status: await readFpsPatchStatus(plan.targetPath, fileSystem, fetchMetadata),
+				status: await readFpsPatchStatus(
+					plan.targetPath,
+					fileSystem,
+					fetchMetadata,
+					hashFile
+				),
 				deleted: true
 			}
 		}
@@ -139,14 +186,17 @@ function isCrossDeviceRenameError(error: unknown): boolean {
 async function readFpsPatchStatus(
 	patchPath: string,
 	fileSystem: FpsPatchFileSystem,
-	fetchMetadata: FetchFpsPatchMetadata
+	fetchMetadata: FetchFpsPatchMetadata,
+	hashFile?: HashFile
 ): Promise<FpsPatchStatus> {
 	const remote = await readRemoteMetadata(fetchMetadata)
 	try {
 		const patchStat = await fileSystem.stat(patchPath)
 		const installed = patchStat.isFile()
+		const localHash =
+			installed && remote.metadata?.hash && hashFile ? await hashFile(patchPath) : undefined
 		const freshness = installed
-			? compareFpsPatchFreshness(patchStat, remote.metadata)
+			? compareFpsPatchFreshness(patchStat, remote.metadata, localHash)
 			: 'missing'
 
 		return {
@@ -155,6 +205,9 @@ async function readFpsPatchStatus(
 			size: patchStat.size,
 			updatedAt: patchStat.mtime.toISOString(),
 			freshness,
+			localHash,
+			remoteBuild: remote.metadata?.build,
+			remoteHash: remote.metadata?.hash,
 			remoteSize: remote.metadata?.size,
 			remoteUpdatedAt: remote.metadata?.updatedAt,
 			remoteSourceUrl: remote.metadata?.sourceUrl,
@@ -171,7 +224,7 @@ async function readRemoteMetadata(
 ): Promise<{ metadata?: FpsPatchRemoteMetadata; error?: string }> {
 	const errors: string[] = []
 
-	for (const sourceUrl of fpsPatchSourceUrls) {
+	for (const sourceUrl of fpsPatchMetadataUrls) {
 		try {
 			return { metadata: await fetchMetadata(sourceUrl) }
 		} catch (error) {
@@ -186,9 +239,13 @@ async function readRemoteMetadata(
 
 function compareFpsPatchFreshness(
 	patchStat: Stats,
-	remote?: FpsPatchRemoteMetadata
+	remote?: FpsPatchRemoteMetadata,
+	localHash?: string
 ): FpsPatchFreshness {
 	if (!remote) return 'unknown'
+	if (remote.hash && localHash)
+		return remote.hash === localHash.toLowerCase() ? 'latest' : 'outdated'
+	if (remote.hash && !localHash) return 'unknown'
 	if (typeof remote.size === 'number' && remote.size !== patchStat.size) return 'outdated'
 	if (
 		remote.updatedAt &&
@@ -209,6 +266,8 @@ function createMissingStatus(
 		installed: false,
 		patchPath,
 		freshness: 'missing',
+		remoteBuild: remote?.build,
+		remoteHash: remote?.hash,
 		remoteSize: remote?.size,
 		remoteUpdatedAt: remote?.updatedAt,
 		remoteSourceUrl: remote?.sourceUrl,
