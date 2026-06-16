@@ -309,12 +309,7 @@
 				"DBM-WorldBoss",
 				"DBM-WorldEvents",
 				"DBM-ZG",
-				"DBM-ZulAman",
-				"DBM-BronzeSanctuary",
-				"DBM-BurningCrusade",
-				"DBM-DefaultSkin",
-				"DBM-Tol'Garod",
-				"DBM-Tol'GarodePrison"
+				"DBM-ZulAman"
 			],
 			"description": "Deadly Boss Mods - аддон, который оповещает об особых атаках боссов. Данный аддон вам очень пригодится, если вы собираетесь покорять PvE-контент, и особенно, если вы новичок в игре. Аддон также используется и в PvP, например, он может показывать время до захвата пунктов на бг.",
 			"githubUrl": "https://github.com/Waini4/DBM_For_Sirus",
@@ -336,16 +331,11 @@
 				"Details",
 				"Details_3DModelsPaths",
 				"Details_ChartViewer",
-				"Details_CustomDmgAtSkull",
-				"Details_CustomPotions",
 				"Details_DataStorage",
 				"Details_DeathGraphs",
 				"Details_EncounterDetails",
-				"Details_SunderCount",
 				"Details_TimeLine",
-				"Details_TinyThreat",
-				"Details_CustomTankInfo",
-				"Details_CustomAbsorbDmg"
+				"Details_TinyThreat"
 			],
 			"description": "Details - Незаменимый инструмент, чтобы произвести впечатление на ту самую девчонку в вашем рейде.",
 			"githubUrl": "https://github.com/fxpw/Details_Sirus",
@@ -617,8 +607,7 @@
 				"EPGP",
 				"EPGP_Attendance",
 				"EPGP_Lootmaster",
-				"EPGP_Lootmaster_ML",
-				"EPGP_Auction"
+				"EPGP_Lootmaster_ML"
 			],
 			"description": "EPGP один из самых полезных аддонов для гильдий и рлов (рейд лидеров). Аддон распределяет очки EP (effort points) и GP (gear points) и в зависимости от их количества рл видит, кто больше заслуживает тот или иной предмет.",
 			"githubUrl": "https://github.com/fxpw/EPGP",
@@ -634,13 +623,7 @@
 			"name": "EPGP_Auction",
 			"versionUrl": "https://raw.githubusercontent.com/fxpw/EPGP_Auction/master/EPGP_Auction.toc",
 			"branch": "master",
-			"folders": [
-				"EPGP_Auction",
-				"EPGP",
-				"EPGP_Attendance",
-				"EPGP_Lootmaster",
-				"EPGP_Lootmaster_ML"
-			],
+			"folders": ["EPGP_Auction"],
 			"description": "EPGP_Auction один из самых полезных аддонов для гильдий и рлов (рейд лидеров). Аддон распределяет очки EP (effort points) зависимости от количества рл видит, кто больше заслуживает тот или иной предмет.",
 			"githubUrl": "https://github.com/fxpw/EPGP_Auction",
 			"repo": "fxpw/EPGP_Auction",
@@ -869,8 +852,8 @@
 			"id": "community:nezvezdi",
 			"source": "community",
 			"name": "Nezvezdi",
-			"versionUrl": "https://raw.githubusercontent.com/L0uten/NezvezdiSirus/main/Nezvezdi/Nezvezdi.toc",
-			"branch": "main",
+			"versionUrl": "https://raw.githubusercontent.com/L0uten/NezvezdiSirus/master/Nezvezdi/Nezvezdi.toc",
+			"branch": "master",
 			"folders": ["Nezvezdi"],
 			"description": "Удобно отображает созвездия/ауры в рейде.",
 			"githubUrl": "https://github.com/L0uten/NezvezdiSirus/",
@@ -1147,8 +1130,7 @@
 				"WeakAurasModelPaths",
 				"WeakAurasOptions",
 				"WeakAurasTemplates",
-				"WeakAurasStopMotion",
-				"WeakAurasSounds"
+				"WeakAurasStopMotion"
 			],
 			"description": "WeakAuras мощный и при этом гибкий модификатор интерфейса, который позволит вам видеть на экране самые разные версии отображения положительных/отрицательных эффектов и любой другой информации по состоянию вашего персонажа.",
 			"githubUrl": "https://github.com/fxpw/WeakAuras-Sirus.su/",
@@ -1172,34 +1154,6 @@
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Чат и общение"
-		},
-		{
-			"id": "sirus:advancedwotlkcombatlog",
-			"source": "sirus",
-			"name": "AdvancedWotLKCombatLog",
-			"versionUrl": "https://raw.githubusercontent.com/sirus-addons/AdvancedWotLKCombatLog/master/AdvancedWotLKCombatLog/AdvancedWotLkCombatLog.toc",
-			"branch": "master",
-			"folders": ["AdvancedWotLKCombatLog"],
-			"description": "AdvancedWotLKCombatLog - Аддон для корректной записи файла комбат-лога.",
-			"githubUrl": "https://github.com/sirus-addons/AdvancedWotLKCombatLog",
-			"repo": "sirus-addons/AdvancedWotLKCombatLog",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
-			"author": "Sirus",
-			"category": "Бой"
-		},
-		{
-			"id": "sirus:advancedwotlkcombatlog_helper",
-			"source": "sirus",
-			"name": "AdvancedWotLKCombatLog_Helper",
-			"versionUrl": "https://raw.githubusercontent.com/sirus-addons/AdvancedWotLKCombatLog_Helper/master/AdvancedWotLKCombatLog_Helper/AdvancedWotLKCombatLog_Helper.toc",
-			"branch": "master",
-			"folders": ["AdvancedWotLKCombatLog_Helper"],
-			"description": "AdvancedCombatLog_Helper нужен для повышения точности для другого аддона AdvancedCombatLog.",
-			"githubUrl": "https://github.com/sirus-addons/AdvancedWotLKCombatLog_Helper",
-			"repo": "sirus-addons/AdvancedWotLKCombatLog_Helper",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
-			"author": "Sirus",
-			"category": "Бой"
 		},
 		{
 			"id": "sirus:att",

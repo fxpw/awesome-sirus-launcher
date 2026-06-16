@@ -61,16 +61,9 @@ describe('addons core', () => {
 			'EPGP',
 			'EPGP_Attendance',
 			'EPGP_Lootmaster',
-			'EPGP_Lootmaster_ML',
-			'EPGP_Auction'
-		])
-		expect(epgpAuction?.folders).toEqual([
-			'EPGP_Auction',
-			'EPGP',
-			'EPGP_Attendance',
-			'EPGP_Lootmaster',
 			'EPGP_Lootmaster_ML'
 		])
+		expect(epgpAuction?.folders).toEqual(['EPGP_Auction'])
 	})
 
 	it('defines explicit version toc paths for DBM and Details packages', () => {
@@ -82,22 +75,26 @@ describe('addons core', () => {
 			versionFolder: 'DBM-Core',
 			versionFile: 'DBM-Core.toc'
 		})
-		expect(dbm?.folders).toContain("DBM-Tol'GarodePrison")
-		expect(dbm?.folders).toContain('DBM-BronzeSanctuary')
+		expect(dbm?.folders).toContain('DBM-TolGarodePrison')
+		expect(dbm?.folders).not.toContain("DBM-Tol'GarodePrison")
+		expect(dbm?.folders).not.toContain('DBM-BronzeSanctuary')
 		expect(details).toMatchObject({
 			versionUrl:
 				'https://raw.githubusercontent.com/fxpw/Details-WotLK/master/Details/Details.toc',
 			versionFolder: 'Details',
 			versionFile: 'Details.toc'
 		})
-		expect(details?.folders).toContain('Details_CustomAbsorbDmg')
-		expect(details?.folders).toContain('Details_CustomTankInfo')
+		expect(details?.folders).toContain('Details_TinyThreat')
+		expect(details?.folders).not.toContain('Details_CustomAbsorbDmg')
+		expect(details?.folders).not.toContain('Details_CustomTankInfo')
 	})
 
 	it('includes the full Mr-Dan community catalog snapshot', () => {
 		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
 		const community = addons.filter((addon) => addon.source === 'community')
 		const aeonoPlates = community.find((addon) => addon.id === 'community:aeonoplates')
+		const nezvezdi = community.find((addon) => addon.id === 'community:nezvezdi')
+		const weakAuras = community.find((addon) => addon.id === 'community:weakauras')
 
 		expect(community).toHaveLength(72)
 		expect(aeonoPlates).toMatchObject({
@@ -105,6 +102,20 @@ describe('addons core', () => {
 			repo: 'Aeonoscul/AeonoPlates',
 			folders: ['AeonoPlates']
 		})
+		expect(nezvezdi).toMatchObject({
+			repo: 'L0uten/NezvezdiSirus',
+			branch: 'master'
+		})
+		expect(weakAuras?.folders).not.toContain('WeakAurasSounds')
+	})
+
+	it('does not include catalog entries whose GitHub repositories are unavailable', () => {
+		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
+
+		expect(addons.find((addon) => addon.id === 'sirus:advancedwotlkcombatlog')).toBeUndefined()
+		expect(
+			addons.find((addon) => addon.id === 'sirus:advancedwotlkcombatlog_helper')
+		).toBeUndefined()
 	})
 })
 
