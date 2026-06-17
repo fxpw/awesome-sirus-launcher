@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { AppInfo } from '@shared/contracts'
+import { ExternalLink } from '@lucide/vue'
+import { launcherReleasesUrl, type AppInfo } from '@shared/contracts'
 import { useLocale } from '@renderer/composables/useLocale'
 
 defineProps<{
@@ -43,8 +44,18 @@ const navItems = [
 				{{ t(item.label) }}
 			</button>
 		</nav>
-		<p class="version" v-if="appInfo">
-			{{ t('app.versionToken', { name: appInfo.name, version: appInfo.version }) }}
-		</p>
+		<a
+			v-if="appInfo"
+			class="app-release-link"
+			:href="launcherReleasesUrl"
+			target="_blank"
+			rel="noreferrer"
+			:aria-label="t('app.openReleases')"
+		>
+			<span class="version">
+				{{ t('app.versionToken', { name: appInfo.name, version: appInfo.version }) }}
+			</span>
+			<ExternalLink :size="14" aria-hidden="true" />
+		</a>
 	</aside>
 </template>

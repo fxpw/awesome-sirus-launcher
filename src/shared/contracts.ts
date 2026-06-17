@@ -1,3 +1,5 @@
+export const launcherReleasesUrl = 'https://github.com/fxpw/awesome-sirus-launcher/releases'
+
 export const ipcChannels = {
 	app: {
 		getInfo: 'app:get-info',

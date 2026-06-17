@@ -196,6 +196,37 @@ nav {
 	color: #ffffff;
 }
 
+.app-release-link {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	min-width: 0;
+	color: inherit;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.app-release-link .version,
+.app-release-link svg {
+	cursor: pointer;
+}
+
+.app-release-link:hover,
+.app-release-link:focus-visible {
+	color: rgba(247, 244, 238, 0.92);
+}
+
+.app-release-link:hover .version,
+.app-release-link:focus-visible .version {
+	color: #ffffff;
+}
+
+.app-release-link svg {
+	flex: 0 0 auto;
+	color: var(--accent);
+}
+
 .version {
 	color: var(--text-inverted-muted);
 	font-size: 13px;
