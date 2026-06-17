@@ -255,7 +255,9 @@ describe('app update service', () => {
 		const result = await service.install()
 
 		expect(result.asset.downloadUrl).toBe('https://example.test/portable.exe')
-		expect(basename(result.downloadedPath)).toBe('Awesome-Sirus-Launcher-Portable-1.2.0.exe')
+		expect(basename(result.downloadedPath)).toBe(
+			'Awesome-Sirus-Launcher-Portable-1.2.0.exe.download'
+		)
 		expect(portableUpdates).toEqual([
 			{
 				downloadedPath: result.downloadedPath,

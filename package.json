@@ -1,6 +1,6 @@
 {
 	"name": "awesome-sirus-launcher",
-	"version": "1.0.10",
+	"version": "1.0.11",
 	"description": "Electron/Vue launcher for Sirus WoW addons, patches, backups, accounts and game launch.",
 	"author": "fxpw accidev",
 	"license": "MIT",
@@ -73,7 +73,11 @@
 			]
 		},
 		"nsis": {
-			"artifactName": "Awesome-Sirus-Launcher-Setup-${version}.${ext}"
+			"artifactName": "Awesome-Sirus-Launcher-Setup-${version}.${ext}",
+			"oneClick": true,
+			"perMachine": false,
+			"allowToChangeInstallationDirectory": false,
+			"runAfterFinish": true
 		},
 		"portable": {
 			"artifactName": "Awesome-Sirus-Launcher-Portable-${version}.${ext}"

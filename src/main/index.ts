@@ -1,4 +1,6 @@
 import { dirname, join } from 'node:path'
+import { writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { spawn } from 'node:child_process'
 import { app, BrowserWindow, dialog, shell, type OpenDialogOptions } from 'electron'
 import { is } from '@electron-toolkit/utils'
@@ -17,6 +19,7 @@ import { createFpsPatchService } from '@main/fpsPatch/fpsPatchService'
 import { registerIpcHandler } from '@main/ipc/ipcHandler'
 import { createGameLaunchService } from '@main/launcher/gameLaunchService'
 import { createChildProcessMiningRunner, createMiningService } from '@main/mining/miningService'
+import { createPortableUpdateScript } from '@core/updater/portableUpdateScript'
 import { createAppUpdateService } from '@main/updater/appUpdateService'
 import { getPreloadPath } from '@main/windowPaths'
 import {
@@ -134,10 +137,10 @@ const appUpdateService = createAppUpdateService(
 	},
 	downloadFile,
 	async (installerPath) => {
-		const child = spawn(installerPath, [], {
+		const child = spawn(installerPath, ['/S'], {
 			detached: true,
 			stdio: 'ignore',
-			windowsHide: false
+			windowsHide: true
 		})
 		child.unref()
 	},
@@ -146,14 +149,19 @@ const appUpdateService = createAppUpdateService(
 		isPortableLaunch: () => isPortableLaunch(),
 		getExecutablePath: () => process.env.PORTABLE_EXECUTABLE_FILE ?? process.execPath,
 		runPortableUpdate: async ({ downloadedPath, executablePath }) => {
-			const script = createPortableUpdateScript({
-				currentPid: process.pid,
-				downloadedPath,
-				executablePath
-			})
+			const scriptPath = join(tmpdir(), `awesome-sirus-launcher-update-${process.pid}.ps1`)
+			await writeFile(
+				scriptPath,
+				createPortableUpdateScript({
+					currentPid: process.pid,
+					downloadedPath,
+					executablePath
+				}),
+				'utf8'
+			)
 			const child = spawn(
 				'powershell.exe',
-				['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
+				['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath],
 				{
 					detached: true,
 					stdio: 'ignore',
@@ -171,37 +179,6 @@ function isPortableLaunch(): boolean {
 		Boolean(process.env.PORTABLE_EXECUTABLE_FILE) ||
 		/portable/i.test(process.execPath)
 	)
-}
-
-function createPortableUpdateScript(input: {
-	currentPid: number
-	downloadedPath: string
-	executablePath: string
-}): string {
-	const downloadedPath = toPowerShellLiteral(input.downloadedPath)
-	const executablePath = toPowerShellLiteral(input.executablePath)
-
-	return [
-		"$ErrorActionPreference = 'Stop'",
-		`$launcherPid = ${input.currentPid}`,
-		`$downloadedPath = ${downloadedPath}`,
-		`$executablePath = ${executablePath}`,
-		'Start-Sleep -Milliseconds 500',
-		'Wait-Process -Id $launcherPid -ErrorAction SilentlyContinue',
-		'if ((Resolve-Path -LiteralPath $downloadedPath).Path -ne (Resolve-Path -LiteralPath $executablePath -ErrorAction SilentlyContinue).Path) {',
-		'	if (Test-Path -LiteralPath $executablePath) {',
-		'		Remove-Item -LiteralPath $executablePath -Force',
-		'	}',
-		'	Move-Item -LiteralPath $downloadedPath -Destination $executablePath -Force',
-		'} else {',
-		'	Move-Item -LiteralPath $downloadedPath -Destination $executablePath -Force',
-		'}',
-		'Start-Process -FilePath $executablePath -WorkingDirectory (Split-Path -Parent $executablePath)'
-	].join('\n')
-}
-
-function toPowerShellLiteral(value: string): string {
-	return `'${value.replace(/'/g, "''")}'`
 }
 
 function createWindow(): void {
@@ -255,7 +232,7 @@ function registerIpcHandlers(): void {
 		appUpdateInstallResultSchema,
 		async () => {
 			const result = await appUpdateService.install()
-			setTimeout(() => app.quit(), 1000)
+			setTimeout(() => app.quit(), 250)
 			return result
 		}
 	)

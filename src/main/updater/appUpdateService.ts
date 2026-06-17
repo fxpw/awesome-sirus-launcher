@@ -3,8 +3,9 @@ import {
 	mapGitHubRelease,
 	type GitHubReleaseResponse
 } from '../../core/updater/appUpdate'
+import { getPortableUpdateDownloadPath } from '../../core/updater/portableUpdateScript'
 import { mkdir } from 'node:fs/promises'
-import { dirname, join, normalize } from 'node:path'
+import { dirname, join } from 'node:path'
 import type { AppUpdateCheck, AppUpdateInstallResult, ReleaseAsset } from '../../shared/contracts'
 import type { SettingsStore } from '../settings/fileSettingsStore'
 import type { SecretStore } from '../secrets/memorySecretStore'
@@ -149,14 +150,6 @@ function getPortableExecutablePath(runtime: AppUpdateRuntime): string {
 	const executablePath = runtime.getExecutablePath?.()
 	if (!executablePath) throw new Error('Путь к portable лаунчеру не найден')
 	return executablePath
-}
-
-function getPortableUpdateDownloadPath(assetName: string, executablePath: string): string {
-	const targetPath = join(dirname(executablePath), sanitizeFileName(assetName))
-	if (normalize(targetPath).toLowerCase() === normalize(executablePath).toLowerCase()) {
-		return `${targetPath}.download`
-	}
-	return targetPath
 }
 
 function isGitHubReleasesUnavailable(err: unknown): boolean {
