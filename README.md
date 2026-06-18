@@ -25,7 +25,7 @@ Electron/Vue лаунчер для Sirus WoW: аддоны с GitHub, прове
 - **Обновление лаунчера** — release notes перед установкой, проверка checksum/signature артефактов.
 - **GitHub token** — проверка токена через API и отображение rate limit в интерфейсе.
 - **Долгие операции** — прогресс и отмена для backup/restore WTF.
-- **Качество релиза** — e2e smoke tests (Playwright), подпись Windows-сборок.
+- **Качество релиза** — e2e smoke tests (Playwright).
 
 Подробный roadmap: [План разработки](docs/PROJECT_PLAN.md), текущий статус реализации: [Чекпоинты](docs/CHECKPOINTS.md).
 
@@ -77,7 +77,7 @@ npm run package:dir
 
 ## Релизы и обновления
 
-Релиз создается GitHub Actions при push в `main`/`master`, если меняется `VERSION`, `package.json`, lockfile или workflow. Workflow сверяет `VERSION` с `package.json`, собирает Windows artifacts и публикует GitHub Release с тегом `v<version>`.
+Релиз создается GitHub Actions при push в `main`/`master`, если меняется `VERSION`, `package.json`, lockfile или workflow. Workflow сверяет `VERSION` с `package.json`, собирает Windows artifacts и публикует GitHub Release с тегом `v<version>`. Сборки **без code signing**: Windows может показать предупреждение SmartScreen при первой установке — это ожидаемо.
 
 Для нового теста обновления:
 
