@@ -18,6 +18,10 @@ import { md5File } from '@main/files/md5File'
 import { createFpsPatchService } from '@main/fpsPatch/fpsPatchService'
 import { registerIpcHandler } from '@main/ipc/ipcHandler'
 import { createGameLaunchService } from '@main/launcher/gameLaunchService'
+import { createClientRegistrationService } from '@main/device/clientRegistrationService'
+import { createClientRegistrationStore } from '@main/device/clientRegistrationStore'
+import { createSecureConnectionService } from '@main/secureConnection/secureConnectionService'
+import { createSirusLauncherVersionService } from '@main/sirus/sirusLauncherVersionService'
 import { createChildProcessMiningRunner, createMiningService } from '@main/mining/miningService'
 import { createPortableUpdateScript } from '@core/updater/portableUpdateScript'
 import { createAppUpdateService } from '@main/updater/appUpdateService'
@@ -107,6 +111,16 @@ const miningService = createMiningService(
 		})
 	)
 )
+const clientRegistrationStore = createClientRegistrationStore(() => app.getPath('userData'))
+const sirusLauncherVersionService = createSirusLauncherVersionService(
+	() => app.getPath('userData'),
+	app.getVersion()
+)
+const clientRegistrationService = createClientRegistrationService(
+	clientRegistrationStore,
+	sirusLauncherVersionService
+)
+const secureConnectionService = createSecureConnectionService(sirusLauncherVersionService)
 const gameLaunchService = createGameLaunchService(
 	settingsStore,
 	async (executablePath, cwd) => {
@@ -118,7 +132,25 @@ const gameLaunchService = createGameLaunchService(
 		})
 		child.unref()
 	},
-	(wowPath) => accountService.applySelectedToWowConfig(wowPath)
+	async (wowPath) => {
+		try {
+			await clientRegistrationService.ensureRegistered()
+		} catch (error) {
+			console.warn(
+				'[client] регистрация устройства не выполнена:',
+				error instanceof Error ? error.message : String(error)
+			)
+		}
+
+		const secureConnection = await secureConnectionService.verifyClient()
+		if (!secureConnection.verified) {
+			console.warn(
+				`[mcr] запуск без подтверждения IP: ${secureConnection.error ?? 'неизвестная ошибка'}`
+			)
+		}
+
+		await accountService.applySelectedToWowConfig(wowPath)
+	}
 )
 const appUpdateService = createAppUpdateService(
 	app.getVersion(),
@@ -567,6 +599,18 @@ function registerIpcHandlers(): void {
 app.whenReady().then(() => {
 	registerIpcHandlers()
 	createWindow()
+	void sirusLauncherVersionService.refresh().catch((error) => {
+		console.warn(
+			'[sirus] не удалось обновить версию лаунчера при старте:',
+			error instanceof Error ? error.message : String(error)
+		)
+	})
+	void clientRegistrationService.ensureRegistered().catch((error) => {
+		console.warn(
+			'[client] регистрация устройства при старте не выполнена:',
+			error instanceof Error ? error.message : String(error)
+		)
+	})
 
 	app.on('activate', () => {
 		if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -574,6 +618,7 @@ app.whenReady().then(() => {
 })
 
 app.on('before-quit', () => {
+	clientRegistrationService.stopHandshakePolling()
 	void miningService.stop()
 })
 

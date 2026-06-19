@@ -1,0 +1,30 @@
+{
+  "name": "sirus-launcher-v2",
+  "version": "2.0.8",
+  "private": true,
+  "description": "Sirus.su WoW private-server launcher - v2 rewrite",
+  "author": "Sirus.su",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "out/main/index.js",
+  "engines": {
+    "node": ">=22 <23",
+    "pnpm": ">=11"
+  },
+  "x-pinned-notes": {
+    "electron": "42.0.1",
+    "note": "Electron pinned exactly (no caret) to the newest stable v40+ release that ALSO satisfies the mandatory 7-day pnpm supply-chain cooldown (CONVENTIONS #13 reconciles #12). `npm view electron version` was 42.1.0 (published 2 days ago) - too fresh for minimumReleaseAge=10080; pnpm refuses it (ERR_PNPM_NO_MATURE_MATCHING_VERSION). 42.0.1 is the latest v42 patch >=7 days old (8.5d at scaffold). To re-pin in a future phase: run `npm view electron version`, pick the newest v40+ release that is >=7 days old, update this field and the devDependencies entry to that exact string, then re-run `pnpm install` and the full test suite. Never weaken the cooldown to grab a fresher Electron (CONVENTIONS #13)."
+  },
+  "dependencies": {
+    "@electron/notarize": "^2.5.0",
+    "archiver": "^7.0.1",
+    "decompress": "^4.2.1",
+    "electron-log": "^5.2.0",
+    "electron-updater": "^6.8.3",
+    "fs-extra": "^11.2.0",
+    "node-machine-id": "^1.1.12",
+    "sanitize-html": "^2.17.4",
+    "semver": "^7.6.3",
+    "undici": "^6.21.0"
+  }
+}
