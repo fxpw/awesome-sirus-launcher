@@ -40,11 +40,10 @@ const activeTooltip = ref<{
 	top: number
 	maxWidth: number
 	placement: 'above' | 'below'
-	anchorX?: number
-	anchorY?: number
+	anchorX: number
+	anchorY: number
 } | null>(null)
 const tooltipElement = ref<HTMLElement | null>(null)
-let activeTooltipRow: HTMLElement | null = null
 const tableSearch = ref<Record<string, string>>({
 	sirus: '',
 	community: '',
@@ -92,14 +91,14 @@ watch(
 )
 
 onMounted(() => {
-	window.addEventListener('resize', handleViewportChange)
-	document.addEventListener('scroll', handleViewportChange, true)
+	window.addEventListener('resize', handleViewportResize)
+	document.addEventListener('scroll', handleViewportScroll, true)
 	void loadAddons()
 })
 
 onUnmounted(() => {
-	window.removeEventListener('resize', handleViewportChange)
-	document.removeEventListener('scroll', handleViewportChange, true)
+	window.removeEventListener('resize', handleViewportResize)
+	document.removeEventListener('scroll', handleViewportScroll, true)
 })
 
 async function loadAddons(): Promise<void> {
@@ -381,12 +380,7 @@ function getTableSearchPlaceholder(title: string): string {
 	return `${title} (${t('addons.search.short')})`
 }
 
-async function showTooltip(addon: AddonSummary, event: MouseEvent | FocusEvent): Promise<void> {
-	const row = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
-	if (!row) return
-
-	const pointerEvent = event instanceof MouseEvent ? event : null
-	activeTooltipRow = row
+async function showTooltip(addon: AddonSummary, event: MouseEvent): Promise<void> {
 	activeTooltip.value = {
 		addonId: addon.id,
 		name: addon.name,
@@ -395,28 +389,26 @@ async function showTooltip(addon: AddonSummary, event: MouseEvent | FocusEvent):
 		top: 0,
 		maxWidth: Math.max(280, window.innerWidth - 32),
 		placement: 'below',
-		anchorX: pointerEvent?.clientX,
-		anchorY: pointerEvent?.clientY
+		anchorX: event.clientX,
+		anchorY: event.clientY
 	}
 	await positionTooltip()
 }
 
 async function positionTooltip(): Promise<void> {
 	const tooltip = activeTooltip.value
-	const row = activeTooltipRow
-	if (!tooltip || !row) return
+	if (!tooltip) return
 
 	await nextTick()
 
 	const tooltipNode = tooltipElement.value
 	if (!tooltipNode) return
 
-	const rowRect = row.getBoundingClientRect()
 	const tooltipRect = tooltipNode.getBoundingClientRect()
 	const gap = 10
 	const viewportPadding = 12
-	const anchorX = tooltip.anchorX ?? rowRect.left + 12
-	const anchorY = tooltip.anchorY ?? rowRect.top + rowRect.height / 2
+	const anchorX = tooltip.anchorX
+	const anchorY = tooltip.anchorY
 	const spaceBelow = window.innerHeight - anchorY - viewportPadding
 	const spaceAbove = anchorY - viewportPadding
 	const placeAbove = spaceBelow < tooltipRect.height + gap && spaceAbove > spaceBelow
@@ -455,13 +447,17 @@ function handleTooltipMouseMove(addon: AddonSummary, event: MouseEvent): void {
 
 function hideTooltip(addonId?: string): void {
 	if (addonId && activeTooltip.value?.addonId !== addonId) return
-	activeTooltipRow = null
 	activeTooltip.value = null
 }
 
-function handleViewportChange(): void {
-	if (!activeTooltip.value || !activeTooltipRow) return
-	void positionTooltip()
+function handleViewportResize(): void {
+	if (!activeTooltip.value) return
+	hideTooltip(activeTooltip.value.addonId)
+}
+
+function handleViewportScroll(): void {
+	if (!activeTooltip.value) return
+	hideTooltip(activeTooltip.value.addonId)
 }
 
 function handleRowContextMenu(addonId: string, event: MouseEvent): void {
@@ -598,12 +594,9 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 					v-for="addon in table.addons"
 					:key="addon.id"
 					class="addons-table__row"
-					tabindex="0"
 					@mouseenter="showTooltip(addon, $event)"
 					@mousemove="handleTooltipMouseMove(addon, $event)"
-					@focusin="showTooltip(addon, $event)"
 					@mouseleave="hideTooltip(addon.id)"
-					@focusout="hideTooltip(addon.id)"
 					@contextmenu="handleRowContextMenu(addon.id, $event)"
 				>
 					<div class="path-text">
