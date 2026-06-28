@@ -617,7 +617,10 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 					<StatusBadge :tone="getStatusTone(addon)" :title="getStatusReason(addon)">
 						{{ getStatusLabel(addon) }}
 					</StatusBadge>
-					<div class="addon-actions">
+					<div
+						class="addon-actions"
+						:class="{ 'addon-actions--with-delete': canDeleteAddon(addon) }"
+					>
 						<BaseButton
 							variant="secondary"
 							:disabled="
