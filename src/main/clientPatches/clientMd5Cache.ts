@@ -54,6 +54,17 @@ export function createFileClientMd5Cache(getUserDataPath: () => string): ClientM
 					await writeCacheDocument(cachePath, document)
 				})
 			await writeQueue
+		},
+		async clear() {
+			writeQueue = writeQueue
+				.catch(() => undefined)
+				.then(async () => {
+					const cachePath = getCachePath()
+					const document = createEmptyDocument()
+					cachedDocument = document
+					await writeCacheDocument(cachePath, document)
+				})
+			await writeQueue
 		}
 	}
 }

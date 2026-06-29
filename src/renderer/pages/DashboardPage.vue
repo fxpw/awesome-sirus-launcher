@@ -89,6 +89,7 @@ const clientPatchManifest = ref<ClientPatchManifestResult | null>(null)
 const selectedClientPatchSourceUrl = ref<string>(clientPatchSourceUrls[0])
 const clientChecking = ref(false)
 const clientManifestLoading = ref(false)
+const clientClearingCache = ref(false)
 const clientDownloadingKey = ref('')
 const clientDownloadingAll = ref(false)
 const addonChecking = ref(false)
@@ -468,6 +469,20 @@ async function cancelClientCheck(): Promise<void> {
 	}
 }
 
+async function clearClientCheckCache(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	clientClearingCache.value = true
+	try {
+		await launcherApi.client.clearCheckCache()
+		notice.value = t('clientCheck.cacheCleared')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('clientCheck.clearCacheError')
+	} finally {
+		clientClearingCache.value = false
+	}
+}
+
 async function loadClientManifest(): Promise<void> {
 	error.value = ''
 	notice.value = ''
@@ -728,12 +743,14 @@ async function refreshMiningState(): Promise<void> {
 						:selected-source-url="selectedClientPatchSourceUrl"
 						:checking="clientChecking"
 						:loading-manifest="clientManifestLoading"
+						:clearing-cache="clientClearingCache"
 						:downloading-key="clientDownloadingKey"
 						:downloading-all="clientDownloadingAll"
 						@select-source="selectClientPatchSource"
 						@load="loadClientManifest"
 						@check="checkClient"
 						@cancel-check="cancelClientCheck"
+						@clear-cache="clearClientCheckCache"
 						@download-file="downloadClientFile"
 						@download-missing="downloadMissingClientFiles"
 					/>

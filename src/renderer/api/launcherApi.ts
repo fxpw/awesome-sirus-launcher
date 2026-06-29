@@ -60,6 +60,7 @@ export const launcherApi = {
 		list: (input?: ClientPatchSourceInput) => getLauncher().client.list(input),
 		check: (input?: ClientPatchSourceInput) => getLauncher().client.check(input),
 		cancelCheck: () => getLauncher().client.cancelCheck(),
+		clearCheckCache: () => getLauncher().client.clearCheckCache(),
 		downloadFile: (input: ClientPatchFileInput) => getLauncher().client.downloadFile(input),
 		downloadMissing: (input?: ClientPatchSourceInput) =>
 			getLauncher().client.downloadMissing(input)

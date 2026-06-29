@@ -32,6 +32,7 @@ export interface ClientMd5CacheKey {
 export interface ClientMd5Cache {
 	get(key: ClientMd5CacheKey): Promise<string | undefined>
 	set(key: ClientMd5CacheKey, md5: string): Promise<void>
+	clear(): Promise<void>
 }
 
 export const emptyClientMd5Cache: ClientMd5Cache = {
@@ -40,6 +41,9 @@ export const emptyClientMd5Cache: ClientMd5Cache = {
 	},
 	async set() {
 		return undefined
+	},
+	async clear() {
+		return undefined
 	}
 }
 
@@ -47,6 +51,7 @@ export interface ClientPatchService {
 	list(input?: ClientPatchSourceInput): Promise<ClientPatchManifestResult>
 	check(input?: ClientPatchSourceInput): Promise<ClientCheckResult>
 	cancelCheck(): Promise<void>
+	clearCheckCache(): Promise<void>
 	downloadFile(input: ClientPatchFileInput): Promise<ClientPatchDownloadResult>
 	downloadMissing(input?: ClientPatchSourceInput): Promise<ClientPatchDownloadAllResult>
 }
@@ -114,6 +119,9 @@ export function createClientPatchService(
 		},
 		async cancelCheck() {
 			activeCheckController?.abort()
+		},
+		async clearCheckCache() {
+			await md5Cache.clear()
 		},
 		async downloadFile(input) {
 			const settings = await getSettingsWithWowPath(settingsStore)

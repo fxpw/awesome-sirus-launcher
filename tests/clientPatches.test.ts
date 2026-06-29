@@ -231,6 +231,12 @@ describe('client patch service', () => {
 		const secondResult = await service.check()
 		expect(secondResult.files.map((file) => file.status)).toEqual(['ok', 'outdated'])
 		expect(hashCalls).toBe(2)
+
+		await service.clearCheckCache()
+
+		const thirdResult = await service.check()
+		expect(thirdResult.files.map((file) => file.status)).toEqual(['ok', 'outdated'])
+		expect(hashCalls).toBe(4)
 	})
 
 	it('cancels a running client check', async () => {
@@ -286,6 +292,21 @@ describe('client patch service', () => {
 		expect(await cache.get({ ...key, size: 5 })).toBeUndefined()
 		expect(await cache.get({ ...key, mtimeMs: 101 })).toBeUndefined()
 	})
+
+	it('clears md5 cache entries', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-client-md5-clear-cache-'))
+		const cache = createFileClientMd5Cache(() => root)
+		const key = {
+			filePath: join(root, 'wow', 'Data', 'file.mpq'),
+			size: 4,
+			mtimeMs: 100
+		}
+
+		await cache.set(key, '6149eaf8791547a8f87454d687a46b29')
+		await cache.clear()
+
+		expect(await cache.get(key)).toBeUndefined()
+	})
 })
 
 function createManifestFile(filename: string, path: string, content: string) {
@@ -328,6 +349,9 @@ function createMemoryMd5Cache(): ClientMd5Cache {
 		},
 		async set(key, md5) {
 			entries.set(createMemoryMd5CacheKey(key), md5)
+		},
+		async clear() {
+			entries.clear()
 		}
 	}
 }

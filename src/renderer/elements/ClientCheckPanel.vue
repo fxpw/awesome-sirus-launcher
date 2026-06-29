@@ -19,6 +19,7 @@ const props = defineProps<{
 	selectedSourceUrl: string
 	checking: boolean
 	loadingManifest: boolean
+	clearingCache: boolean
 	downloadingKey: string
 	downloadingAll: boolean
 }>()
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 	load: []
 	check: []
 	cancelCheck: []
+	clearCache: []
 	downloadFile: [input: ClientPatchFileInput]
 	downloadMissing: []
 }>()
@@ -54,6 +56,7 @@ const sourceDisabled = computed(
 	() =>
 		props.loadingManifest ||
 		props.checking ||
+		props.clearingCache ||
 		props.downloadingAll ||
 		Boolean(props.downloadingKey)
 )
@@ -156,6 +159,19 @@ function closeSourceMenu(event: FocusEvent): void {
 					@click="checking ? $emit('cancelCheck') : $emit('check')"
 				>
 					{{ checking ? t('clientCheck.stop') : t('clientCheck.check') }}
+				</BaseButton>
+				<BaseButton
+					variant="secondary"
+					:disabled="
+						checking ||
+						loadingManifest ||
+						clearingCache ||
+						downloadingAll ||
+						Boolean(downloadingKey)
+					"
+					@click="$emit('clearCache')"
+				>
+					{{ clearingCache ? t('clientCheck.clearingCache') : t('clientCheck.clearCache') }}
 				</BaseButton>
 				<BaseButton
 					v-if="canDownloadMissing"

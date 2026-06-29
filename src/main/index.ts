@@ -434,6 +434,13 @@ function registerIpcHandlers(): void {
 	)
 
 	registerIpcHandler(
+		ipcChannels.client.clearCheckCache,
+		voidInputSchema,
+		voidOutputSchema,
+		async () => clientPatchService.clearCheckCache()
+	)
+
+	registerIpcHandler(
 		ipcChannels.client.downloadFile,
 		clientPatchFileInputSchema,
 		clientPatchDownloadResultSchema,
