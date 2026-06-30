@@ -45,6 +45,7 @@ export const githubTokenInputSchema = z.object({
 
 export const launcherSettingsSchema = z.object({
 	wowPath: z.string(),
+	wtfBackupPath: z.string(),
 	closeOnLaunch: z.boolean(),
 	checkClientBeforeLaunch: z.boolean(),
 	autoUpdateAddons: z.boolean(),
@@ -54,6 +55,7 @@ export const launcherSettingsSchema = z.object({
 export const launcherSettingsPatchSchema = z
 	.object({
 		wowPath: z.string().optional(),
+		wtfBackupPath: z.string().optional(),
 		closeOnLaunch: z.boolean().optional(),
 		checkClientBeforeLaunch: z.boolean().optional(),
 		autoUpdateAddons: z.boolean().optional(),

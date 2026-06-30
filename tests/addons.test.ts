@@ -372,6 +372,7 @@ describe('addon service', () => {
 function createMemorySettingsStore(patch: Partial<LauncherSettings>): SettingsStore {
 	const settings: LauncherSettings = {
 		wowPath: '',
+		wtfBackupPath: '',
 		closeOnLaunch: false,
 		checkClientBeforeLaunch: true,
 		autoUpdateAddons: false,

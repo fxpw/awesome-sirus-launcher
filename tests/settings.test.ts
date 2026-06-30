@@ -31,6 +31,7 @@ describe('launcher settings', () => {
 		const settings = applyLauncherSettingsPatch(
 			{
 				wowPath: 'F:/games/sirus',
+				wtfBackupPath: '',
 				closeOnLaunch: false,
 				checkClientBeforeLaunch: true,
 				autoUpdateAddons: false,

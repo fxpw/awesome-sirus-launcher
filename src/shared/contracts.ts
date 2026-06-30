@@ -14,7 +14,8 @@ export const ipcChannels = {
 	settings: {
 		get: 'settings:get',
 		save: 'settings:save',
-		selectWowPath: 'settings:select-wow-path'
+		selectWowPath: 'settings:select-wow-path',
+		selectWtfBackupPath: 'settings:select-wtf-backup-path'
 	},
 	backup: {
 		listWtf: 'backup:list-wtf',
@@ -93,6 +94,7 @@ export interface GitHubTokenInput {
 
 export interface LauncherSettings {
 	wowPath: string
+	wtfBackupPath: string
 	closeOnLaunch: boolean
 	checkClientBeforeLaunch: boolean
 	autoUpdateAddons: boolean
@@ -419,6 +421,7 @@ export interface LauncherApi {
 		get(): Promise<LauncherSettings>
 		save(patch: LauncherSettingsPatch): Promise<LauncherSettings>
 		selectWowPath(): Promise<LauncherSettings>
+		selectWtfBackupPath(): Promise<LauncherSettings>
 	}
 	backup: {
 		listWtf(): Promise<WtfBackupSummary[]>

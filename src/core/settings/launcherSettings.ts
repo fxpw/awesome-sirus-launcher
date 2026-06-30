@@ -3,6 +3,7 @@ import type { LauncherSettings, LauncherSettingsPatch } from '@shared/contracts'
 
 export const defaultLauncherSettings: LauncherSettings = {
 	wowPath: '',
+	wtfBackupPath: '',
 	closeOnLaunch: false,
 	checkClientBeforeLaunch: false,
 	autoUpdateAddons: false,
@@ -14,6 +15,7 @@ export function normalizeLauncherSettings(value: unknown): LauncherSettings {
 
 	return {
 		wowPath: normalizeWowPath(value.wowPath),
+		wtfBackupPath: normalizeOptionalPath(value.wtfBackupPath),
 		closeOnLaunch: value.closeOnLaunch === true,
 		checkClientBeforeLaunch: value.checkClientBeforeLaunch === true,
 		autoUpdateAddons: value.autoUpdateAddons === true,
@@ -32,6 +34,10 @@ export function applyLauncherSettingsPatch(
 }
 
 function normalizeWowPath(value: unknown): string {
+	return normalizeOptionalPath(value)
+}
+
+function normalizeOptionalPath(value: unknown): string {
 	if (typeof value !== 'string') return ''
 	const trimmed = value.trim()
 	return trimmed ? normalize(resolve(trimmed)) : ''

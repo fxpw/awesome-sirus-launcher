@@ -37,7 +37,8 @@ export const launcherApi = {
 	settings: {
 		get: () => getLauncher().settings.get(),
 		save: (patch: LauncherSettingsPatch) => getLauncher().settings.save(patch),
-		selectWowPath: () => getLauncher().settings.selectWowPath()
+		selectWowPath: () => getLauncher().settings.selectWowPath(),
+		selectWtfBackupPath: () => getLauncher().settings.selectWtfBackupPath()
 	},
 	backup: {
 		listWtf: () => getLauncher().backup.listWtf(),

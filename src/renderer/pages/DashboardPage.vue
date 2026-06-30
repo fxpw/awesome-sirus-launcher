@@ -32,6 +32,7 @@ import LaunchBehaviorForm from '@renderer/elements/LaunchBehaviorForm.vue'
 import MiningPanel from '@renderer/elements/MiningPanel.vue'
 import ThanksPanel from '@renderer/elements/ThanksPanel.vue'
 import WowPathForm from '@renderer/elements/WowPathForm.vue'
+import WtfBackupPathForm from '@renderer/elements/WtfBackupPathForm.vue'
 import WtfBackupPanel from '@renderer/elements/WtfBackupPanel.vue'
 import { launcherApi } from '@renderer/api/launcherApi'
 import { useLocale } from '@renderer/composables/useLocale'
@@ -78,6 +79,7 @@ const githubTokenStatus = ref<GitHubTokenStatus>({ configured: false })
 const accounts = ref<AccountListResult>({ accounts: [] })
 const settings = ref<LauncherSettings | null>(null)
 const wowPath = ref('')
+const wtfBackupPath = ref('')
 const wowValidation = ref<WowPathValidation | null>(null)
 const backups = ref<WtfBackupSummary[]>([])
 const wtfBackupCreating = ref(false)
@@ -112,6 +114,13 @@ const { t } = useLocale()
 useTheme()
 
 const latestBackup = computed(() => backups.value[0] ?? null)
+const effectiveWtfBackupPath = computed(() => {
+	if (!settings.value) return ''
+	if (settings.value.wtfBackupPath.trim()) return settings.value.wtfBackupPath
+	if (!wowPath.value.trim()) return ''
+	const base = wowPath.value.replace(/[/\\]+$/, '')
+	return `${base}\\wtf_backup`
+})
 const activeTitle = computed(() => t(sectionTitleKeys[activeSection.value]))
 const activeEyebrow = computed(() => t(sectionEyebrowKeys[activeSection.value]))
 const clientProblemCount = computed(
@@ -169,10 +178,11 @@ onMounted(async () => {
 		githubTokenStatus.value = await launcherApi.github.getTokenStatus()
 		accounts.value = await launcherApi.accounts.list()
 		settings.value = await launcherApi.settings.get()
-		backups.value = await launcherApi.backup.listWtf()
+		await reloadBackups()
 		fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 		miningState.value = await launcherApi.mining.getState()
 		wowPath.value = settings.value.wowPath
+		wtfBackupPath.value = settings.value.wtfBackupPath
 		if (wowPath.value) {
 			await validateWowPath()
 			if (wowValidation.value?.valid) {
@@ -210,8 +220,10 @@ async function selectWowPath(): Promise<void> {
 	try {
 		settings.value = await launcherApi.settings.selectWowPath()
 		wowPath.value = settings.value.wowPath
+		wtfBackupPath.value = settings.value.wtfBackupPath
 		fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 		if (wowPath.value) await validateWowPath()
+		await reloadBackups()
 	} catch (err) {
 		error.value = err instanceof Error ? err.message : t('wow.selectError')
 	}
@@ -223,11 +235,60 @@ async function saveWowPath(): Promise<void> {
 	try {
 		settings.value = await launcherApi.settings.save({ wowPath: wowPath.value })
 		wowPath.value = settings.value.wowPath
+		wtfBackupPath.value = settings.value.wtfBackupPath
 		await validateWowPath()
 		fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
+		await reloadBackups()
 		notice.value = t('wow.saved')
 	} catch (err) {
 		error.value = err instanceof Error ? err.message : t('wow.saveError')
+	}
+}
+
+async function selectWtfBackupPath(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	try {
+		settings.value = await launcherApi.settings.selectWtfBackupPath()
+		wtfBackupPath.value = settings.value.wtfBackupPath
+		await reloadBackups()
+		notice.value = t('backup.path.saved')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('backup.path.selectError')
+	}
+}
+
+async function saveWtfBackupPath(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	try {
+		settings.value = await launcherApi.settings.save({ wtfBackupPath: wtfBackupPath.value })
+		wtfBackupPath.value = settings.value.wtfBackupPath
+		await reloadBackups()
+		notice.value = t('backup.path.saved')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('backup.path.saveError')
+	}
+}
+
+async function resetWtfBackupPath(): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	try {
+		wtfBackupPath.value = ''
+		settings.value = await launcherApi.settings.save({ wtfBackupPath: '' })
+		await reloadBackups()
+		notice.value = t('backup.path.resetDone')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('backup.path.saveError')
+	}
+}
+
+async function reloadBackups(): Promise<void> {
+	try {
+		backups.value = await launcherApi.backup.listWtf()
+	} catch {
+		backups.value = []
 	}
 }
 
@@ -767,6 +828,7 @@ async function refreshMiningState(): Promise<void> {
 						v-else-if="activeSection === 'wtf'"
 						:backups="backups"
 						:creating="wtfBackupCreating"
+						:backup-path="effectiveWtfBackupPath"
 						@create="createWtfBackup"
 						@restore="restoreWtfBackup"
 						@delete="deleteWtfBackup"
@@ -796,6 +858,16 @@ async function refreshMiningState(): Promise<void> {
 							:notice="notice"
 							@select="selectWowPath"
 							@save="saveWowPath"
+						/>
+
+						<WtfBackupPathForm
+							v-model:wtf-backup-path="wtfBackupPath"
+							:wow-path="wowPath"
+							:error="error"
+							:notice="notice"
+							@select="selectWtfBackupPath"
+							@save="saveWtfBackupPath"
+							@reset="resetWtfBackupPath"
 						/>
 
 						<LaunchBehaviorForm

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { ArrowDown, ArrowUp, ArrowUpDown, Trash2 } from '@lucide/vue'
+import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Trash2 } from '@lucide/vue'
 import type { AddonsListResult, AddonSummary } from '@shared/contracts'
 import { launcherApi } from '@renderer/api/launcherApi'
 import BaseButton from '@renderer/components/BaseButton.vue'
@@ -332,6 +332,16 @@ function canDeleteAddon(addon: AddonSummary): boolean {
 	)
 }
 
+function getAddonGithubUrl(addon: AddonSummary): string | undefined {
+	if (addon.githubUrl?.trim()) return addon.githubUrl.trim()
+	if (addon.repo?.trim()) return `https://github.com/${addon.repo.trim()}`
+	return undefined
+}
+
+function hasAddonGithubUrl(addon: AddonSummary): boolean {
+	return Boolean(getAddonGithubUrl(addon))
+}
+
 function getInstallActionLabel(addon: AddonSummary): string {
 	if (updatingAddonId.value === addon.id) return t('addons.installing')
 	if (addon.status === 'installed') return t('addons.reinstall')
@@ -612,8 +622,22 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 					</StatusBadge>
 					<div
 						class="addon-actions"
-						:class="{ 'addon-actions--with-delete': canDeleteAddon(addon) }"
+						:class="{
+							'addon-actions--with-github': hasAddonGithubUrl(addon),
+							'addon-actions--with-delete': canDeleteAddon(addon)
+						}"
 					>
+						<a
+							v-if="hasAddonGithubUrl(addon)"
+							class="addon-github-button"
+							:href="getAddonGithubUrl(addon)"
+							target="_blank"
+							rel="noreferrer"
+							:title="t('addons.openGithub')"
+							:aria-label="t('addons.openGithub')"
+						>
+							<ExternalLink :size="18" />
+						</a>
 						<BaseButton
 							variant="secondary"
 							:disabled="

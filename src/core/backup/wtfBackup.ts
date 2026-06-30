@@ -56,6 +56,12 @@ export function createWtfBackupFileName(date = new Date()): string {
 	return `wtf-backup-${stamp}.zip`
 }
 
-export function getDefaultBackupsDir(userDataPath: string): string {
-	return join(userDataPath, 'backups', 'wtf')
+export function resolveWtfBackupsDir(wowPath: string, customPath?: string): string {
+	const trimmedCustom = customPath?.trim()
+	if (trimmedCustom) return normalize(resolve(trimmedCustom))
+
+	const trimmedWow = wowPath.trim()
+	if (!trimmedWow) return ''
+
+	return normalize(join(resolve(trimmedWow), 'wtf_backup'))
 }

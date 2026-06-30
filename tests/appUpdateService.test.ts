@@ -368,6 +368,7 @@ describe('app update service', () => {
 function createSettingsStore(allowPrereleaseUpdates: boolean) {
 	const settings: LauncherSettings = {
 		wowPath: '',
+		wtfBackupPath: '',
 		closeOnLaunch: false,
 		checkClientBeforeLaunch: false,
 		autoUpdateAddons: false,

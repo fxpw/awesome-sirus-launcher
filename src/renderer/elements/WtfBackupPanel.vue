@@ -7,6 +7,7 @@ import { useLocale } from '@renderer/composables/useLocale'
 defineProps<{
 	backups: WtfBackupSummary[]
 	creating: boolean
+	backupPath: string
 }>()
 
 defineEmits<{
@@ -39,6 +40,8 @@ function formatSize(size: number): string {
 				</BaseButton>
 			</div>
 		</div>
+
+		<p v-if="backupPath" class="path-text">{{ backupPath }}</p>
 
 		<p v-if="backups.length === 0">{{ t('backup.empty') }}</p>
 		<ul v-else class="backup-list">

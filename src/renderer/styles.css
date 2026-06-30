@@ -778,6 +778,15 @@ nav {
 	gap: 10px;
 }
 
+.backup-path-row {
+	grid-template-columns: minmax(0, 1fr) repeat(3, auto);
+}
+
+.path-hint {
+	color: var(--text-muted);
+	font-size: 12px;
+}
+
 .field {
 	min-width: 0;
 	padding: 10px 12px;
@@ -1759,6 +1768,33 @@ textarea.field {
 
 .addon-actions--with-delete {
 	grid-template-columns: minmax(0, 1fr) 42px;
+}
+
+.addon-actions--with-github {
+	grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.addon-actions--with-github.addon-actions--with-delete {
+	grid-template-columns: 42px minmax(0, 1fr) 42px;
+}
+
+.addon-github-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	min-width: 42px;
+	height: 42px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	color: var(--text-muted);
+	background: var(--surface-2);
+	text-decoration: none;
+}
+
+.addon-github-button:hover {
+	color: var(--text);
+	border-color: var(--border-strong);
 }
 
 .addon-actions .button {

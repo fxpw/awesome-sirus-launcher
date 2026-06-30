@@ -76,7 +76,7 @@ import { validateWowPath } from '@core/wow/wowPaths'
 const secretStore = createElectronSecretStore(() => app.getPath('userData'))
 const settingsStore = createFileSettingsStore(() => app.getPath('userData'))
 const accountService = createAccountService(() => app.getPath('userData'), secretStore)
-const wtfBackupService = createWtfBackupService(() => app.getPath('userData'), settingsStore)
+const wtfBackupService = createWtfBackupService(settingsStore)
 const fpsPatchService = createFpsPatchService(
 	() => app.getPath('userData'),
 	settingsStore,
@@ -354,6 +354,25 @@ function registerIpcHandlers(): void {
 		}
 	)
 
+	registerIpcHandler(
+		ipcChannels.settings.selectWtfBackupPath,
+		voidInputSchema,
+		launcherSettingsSchema,
+		async (_input, event) => {
+			const parentWindow = BrowserWindow.fromWebContents(event.sender)
+			const dialogOptions: OpenDialogOptions = {
+				title: 'Выбрать папку для бекапов WTF',
+				properties: ['openDirectory', 'createDirectory']
+			}
+			const result = parentWindow
+				? await dialog.showOpenDialog(parentWindow, dialogOptions)
+				: await dialog.showOpenDialog(dialogOptions)
+
+			if (result.canceled || !result.filePaths[0]) return settingsStore.get()
+			return settingsStore.save({ wtfBackupPath: result.filePaths[0] })
+		}
+	)
+
 	registerIpcHandler(ipcChannels.backup.listWtf, voidInputSchema, wtfBackupListSchema, async () =>
 		wtfBackupService.list()
 	)
@@ -385,7 +404,7 @@ function registerIpcHandlers(): void {
 		voidOutputSchema,
 		async () => {
 			await wtfBackupService.list()
-			const openError = await shell.openPath(wtfBackupService.getBackupsDir())
+			const openError = await shell.openPath(await wtfBackupService.getBackupsDir())
 			if (openError) throw new Error(openError)
 			return undefined
 		}

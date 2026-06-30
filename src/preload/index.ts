@@ -31,7 +31,8 @@ const api: LauncherApi = {
 		get: () => ipcRenderer.invoke(ipcChannels.settings.get),
 		save: (patch: LauncherSettingsPatch) =>
 			ipcRenderer.invoke(ipcChannels.settings.save, patch),
-		selectWowPath: () => ipcRenderer.invoke(ipcChannels.settings.selectWowPath)
+		selectWowPath: () => ipcRenderer.invoke(ipcChannels.settings.selectWowPath),
+		selectWtfBackupPath: () => ipcRenderer.invoke(ipcChannels.settings.selectWtfBackupPath)
 	},
 	backup: {
 		listWtf: () => ipcRenderer.invoke(ipcChannels.backup.listWtf),

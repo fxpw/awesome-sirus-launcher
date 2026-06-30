@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
 	createWtfBackupFileName,
 	createWtfBackupPlan,
-	createWtfRestorePlan
+	createWtfRestorePlan,
+	resolveWtfBackupsDir
 } from '../src/core/backup/wtfBackup'
 
 describe('wtf backup core', () => {
@@ -35,5 +36,17 @@ describe('wtf backup core', () => {
 		expect(plan.targetDir).toMatch(/World of Warcraft Sirus[\\/]WTF$/)
 		expect(plan.archivePath).toMatch(/wtf-backup-2026-06-14-10-20-30\.zip$/)
 		expect(plan.safetyBackupPlan.fileName).toBe('wtf-backup-2026-06-15-10-20-30.zip')
+	})
+
+	it('resolves default backups dir next to wow path', () => {
+		expect(
+			resolveWtfBackupsDir('F:/games/sirus/World of Warcraft Sirus')
+		).toMatch(/World of Warcraft Sirus[\\/]wtf_backup$/)
+	})
+
+	it('prefers custom backups dir when provided', () => {
+		expect(resolveWtfBackupsDir('F:/games/sirus', 'D:/backups/wtf')).toMatch(
+			/D:[\\/]backups[\\/]wtf$/
+		)
 	})
 })

@@ -10,7 +10,7 @@ import type {
 import {
 	createWtfBackupPlan,
 	createWtfRestorePlan,
-	getDefaultBackupsDir
+	resolveWtfBackupsDir
 } from '@core/backup/wtfBackup'
 import type { SettingsStore } from '@main/settings/fileSettingsStore'
 import { unzipToDirectory } from '@main/archive/unzipToDirectory'
@@ -21,24 +21,31 @@ export interface WtfBackupService {
 	create(): Promise<CreateWtfBackupResult>
 	restore(input: WtfBackupActionInput): Promise<RestoreWtfBackupResult>
 	delete(input: WtfBackupActionInput): Promise<DeleteWtfBackupResult>
-	getBackupsDir(): string
+	getBackupsDir(): Promise<string>
 }
 
-export function createWtfBackupService(
-	getUserDataPath: () => string,
-	settingsStore: SettingsStore
-): WtfBackupService {
-	const getBackupsDir = () => getDefaultBackupsDir(getUserDataPath())
+export function createWtfBackupService(settingsStore: SettingsStore): WtfBackupService {
+	async function getBackupsDir(): Promise<string> {
+		const settings = await settingsStore.get()
+		const backupsDir = resolveWtfBackupsDir(settings.wowPath, settings.wtfBackupPath)
+		if (!backupsDir) {
+			throw new Error('Сначала укажите папку WoW или выберите папку для бекапов WTF')
+		}
+
+		return backupsDir
+	}
 
 	return {
 		async list() {
-			return listWtfBackups(getBackupsDir())
+			const backupsDir = await getBackupsDir()
+			return listWtfBackups(backupsDir)
 		},
 		async create() {
 			const settings = await settingsStore.get()
 			if (!settings.wowPath) throw new Error('Сначала выберите папку WoW')
 
-			const plan = createWtfBackupPlan(settings.wowPath, getBackupsDir())
+			const backupsDir = await getBackupsDir()
+			const plan = createWtfBackupPlan(settings.wowPath, backupsDir)
 			await zipDirectory(plan.sourceDir, plan.archivePath)
 			const fileStat = await stat(plan.archivePath)
 
@@ -56,7 +63,7 @@ export function createWtfBackupService(
 			const settings = await settingsStore.get()
 			if (!settings.wowPath) throw new Error('Сначала выберите папку WoW')
 
-			const backupsDir = getBackupsDir()
+			const backupsDir = await getBackupsDir()
 			const restored = await getWtfBackupById(backupsDir, input.id)
 			const plan = createWtfRestorePlan(settings.wowPath, backupsDir, restored.archivePath)
 			await zipDirectory(plan.safetyBackupPlan.sourceDir, plan.safetyBackupPlan.archivePath)
@@ -78,7 +85,7 @@ export function createWtfBackupService(
 			}
 		},
 		async delete(input) {
-			const backupsDir = getBackupsDir()
+			const backupsDir = await getBackupsDir()
 			const backup = await getWtfBackupById(backupsDir, input.id)
 			await unlink(backup.archivePath)
 
@@ -86,9 +93,7 @@ export function createWtfBackupService(
 				deletedId: backup.id
 			}
 		},
-		getBackupsDir() {
-			return getBackupsDir()
-		}
+		getBackupsDir
 	}
 }
 
