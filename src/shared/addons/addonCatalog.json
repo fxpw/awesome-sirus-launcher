@@ -1507,6 +1507,20 @@
 			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Всплывающие подсказки"
-		}
-	]
+		},
+                {
+                        "id": "community:kui-nameplates-sirus",
+                        "source": "community",
+                        "name": "Kui Nameplates",
+                        "versionUrl": "https://raw.githubusercontent.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/main/Kui_Nameplates/KuiNameplates.toc",
+                        "branch": "main",
+                        "folders": ["Kui_Nameplates","Kui_Nameplates_Auras"],
+                        "description": "Kui Nameplates - аддон для полной кастомизации неймплейтов над персонажами и существами. Предоставляет широкие возможности настройки отображения здоровья, имени, баффов, дебаффов, полосы каста, угрозы и других элементов. Версия адаптирована специально для Sirus 3.3.5a.",
+                        "githubUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5",
+                        "repo": "Dozawow/Kui_Nameplates-Sirus-3.3.5",
+                        "bugReportUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/issues",
+                        "author": "Dozawow",
+                        "category": "Интерфейс"
+        }
+    ]
 }
