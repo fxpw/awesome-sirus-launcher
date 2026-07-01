@@ -96,7 +96,7 @@ describe('addons core', () => {
 		const nezvezdi = community.find((addon) => addon.id === 'community:nezvezdi')
 		const weakAuras = community.find((addon) => addon.id === 'community:weakauras')
 
-		expect(community).toHaveLength(72)
+		expect(community).toHaveLength(73)
 		expect(aeonoPlates).toMatchObject({
 			name: 'AeonoPlates',
 			repo: 'Aeonoscul/AeonoPlates',
