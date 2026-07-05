@@ -6,6 +6,7 @@ import type {
 	AppInfo,
 	AppUpdateCheck,
 	ClientCheckResult,
+	ClientCheckProgress,
 	ClientPatchFileInput,
 	ClientPatchManifestResult,
 	FpsPatchStatus,
@@ -90,6 +91,7 @@ const clientCheckResult = ref<ClientCheckResult | null>(null)
 const clientPatchManifest = ref<ClientPatchManifestResult | null>(null)
 const selectedClientPatchSourceUrl = ref<string>(clientPatchSourceUrls[0])
 const clientChecking = ref(false)
+const clientCheckProgress = ref<ClientCheckProgress | null>(null)
 const clientManifestLoading = ref(false)
 const clientClearingCache = ref(false)
 const clientDownloadingKey = ref('')
@@ -109,6 +111,7 @@ const accountPassword = ref('')
 const accountModalError = ref('')
 const activeSection = ref<LauncherSection>('dashboard')
 let miningPollTimer: number | undefined
+let removeClientCheckProgressListener: (() => void) | undefined
 
 const { t } = useLocale()
 useTheme()
@@ -172,6 +175,11 @@ const shouldShowClientPathModal = computed(
 )
 
 onMounted(async () => {
+	removeClientCheckProgressListener = launcherApi.client.onCheckProgress(
+		(progress: ClientCheckProgress) => {
+			clientCheckProgress.value = progress
+		}
+	)
 	try {
 		appInfo.value = await launcherApi.app.getInfo()
 		void checkAppUpdate()
@@ -202,6 +210,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+	removeClientCheckProgressListener?.()
 	if (miningPollTimer) window.clearInterval(miningPollTimer)
 })
 
@@ -492,6 +501,7 @@ async function checkClient(): Promise<void> {
 	error.value = ''
 	notice.value = ''
 	clientChecking.value = true
+	clientCheckProgress.value = null
 	try {
 		if (!clientPatchManifest.value) {
 			clientPatchManifest.value = await launcherApi.client.list({
@@ -565,6 +575,7 @@ async function downloadClientFile(input: ClientPatchFileInput): Promise<void> {
 	error.value = ''
 	notice.value = ''
 	clientDownloadingKey.value = createClientFileKey(input)
+	clientCheckProgress.value = null
 	try {
 		await launcherApi.client.downloadFile({
 			...input,
@@ -586,6 +597,7 @@ async function downloadMissingClientFiles(): Promise<void> {
 	error.value = ''
 	notice.value = ''
 	clientDownloadingAll.value = true
+	clientCheckProgress.value = null
 	try {
 		const result = await launcherApi.client.downloadMissing({
 			sourceUrl: selectedClientPatchSourceUrl.value
@@ -807,6 +819,7 @@ async function refreshMiningState(): Promise<void> {
 						:clearing-cache="clientClearingCache"
 						:downloading-key="clientDownloadingKey"
 						:downloading-all="clientDownloadingAll"
+						:progress="clientCheckProgress"
 						@select-source="selectClientPatchSource"
 						@load="loadClientManifest"
 						@check="checkClient"

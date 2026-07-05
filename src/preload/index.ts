@@ -59,6 +59,13 @@ const api: LauncherApi = {
 			ipcRenderer.invoke(ipcChannels.client.list, input),
 		check: (input?: ClientPatchSourceInput) =>
 			ipcRenderer.invoke(ipcChannels.client.check, input),
+		onCheckProgress: (listener) => {
+			const wrapped = (_event: unknown, progress: unknown) => {
+				listener(progress as Parameters<typeof listener>[0])
+			}
+			ipcRenderer.on(ipcChannels.progress.clientCheck, wrapped)
+			return () => ipcRenderer.removeListener(ipcChannels.progress.clientCheck, wrapped)
+		},
 		cancelCheck: () => ipcRenderer.invoke(ipcChannels.client.cancelCheck),
 		clearCheckCache: () => ipcRenderer.invoke(ipcChannels.client.clearCheckCache),
 		downloadFile: (input: ClientPatchFileInput) =>
@@ -69,6 +76,13 @@ const api: LauncherApi = {
 	addons: {
 		list: () => ipcRenderer.invoke(ipcChannels.addons.list),
 		check: () => ipcRenderer.invoke(ipcChannels.addons.check),
+		onProgress: (listener) => {
+			const wrapped = (_event: unknown, progress: unknown) => {
+				listener(progress as Parameters<typeof listener>[0])
+			}
+			ipcRenderer.on(ipcChannels.progress.addons, wrapped)
+			return () => ipcRenderer.removeListener(ipcChannels.progress.addons, wrapped)
+		},
 		install: (input: AddonActionInput) => ipcRenderer.invoke(ipcChannels.addons.install, input),
 		delete: (input: AddonActionInput) => ipcRenderer.invoke(ipcChannels.addons.delete, input),
 		updateAll: () => ipcRenderer.invoke(ipcChannels.addons.updateAll),

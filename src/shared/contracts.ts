@@ -52,6 +52,10 @@ export const ipcChannels = {
 		exportCustom: 'addons:export-custom',
 		importCustom: 'addons:import-custom'
 	},
+	progress: {
+		clientCheck: 'progress:client-check',
+		addons: 'progress:addons'
+	},
 	mining: {
 		getState: 'mining:get-state',
 		saveConfig: 'mining:save-config',
@@ -296,6 +300,18 @@ export interface ClientPatchDownloadAllResult {
 	files: ClientPatchCheckFile[]
 }
 
+export type ClientCheckProgressPhase = 'checking' | 'completed'
+
+export interface ClientCheckProgress {
+	phase: ClientCheckProgressPhase
+	current: number
+	total: number
+	percent: number
+	fileName?: string
+	relativePath?: string
+	sourceUrl?: string
+}
+
 export type AddonCatalogSource = 'community' | 'sirus' | 'custom'
 export type AddonStatus = 'not-installed' | 'installed' | 'outdated' | 'manual-git' | 'unknown'
 
@@ -358,6 +374,26 @@ export interface AddonsUpdateAllResult {
 	total: number
 	installed: AddonInstallResult[]
 	skipped: AddonSummary[]
+}
+
+export type AddonProgressOperation = 'install' | 'update-all'
+export type AddonProgressPhase =
+	| 'preparing'
+	| 'downloading'
+	| 'extracting'
+	| 'installing'
+	| 'completed'
+
+export interface AddonProgress {
+	operation: AddonProgressOperation
+	phase: AddonProgressPhase
+	addonId?: string
+	addonName?: string
+	completed: number
+	total: number
+	step: number
+	steps: number
+	percent: number
 }
 
 export interface CustomAddonsTransferResult {
@@ -443,6 +479,7 @@ export interface LauncherApi {
 	client: {
 		list(input?: ClientPatchSourceInput): Promise<ClientPatchManifestResult>
 		check(input?: ClientPatchSourceInput): Promise<ClientCheckResult>
+		onCheckProgress(listener: (progress: ClientCheckProgress) => void): () => void
 		cancelCheck(): Promise<void>
 		clearCheckCache(): Promise<void>
 		downloadFile(input: ClientPatchFileInput): Promise<ClientPatchDownloadResult>
@@ -451,6 +488,7 @@ export interface LauncherApi {
 	addons: {
 		list(): Promise<AddonsListResult>
 		check(): Promise<AddonsListResult>
+		onProgress(listener: (progress: AddonProgress) => void): () => void
 		install(input: AddonActionInput): Promise<AddonInstallResult>
 		delete(input: AddonActionInput): Promise<AddonDeleteResult>
 		updateAll(): Promise<AddonsUpdateAllResult>

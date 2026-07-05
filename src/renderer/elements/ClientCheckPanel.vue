@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { Check, ChevronDown } from '@lucide/vue'
 import type {
 	ClientCheckResult,
+	ClientCheckProgress,
 	ClientPatchCheckFile,
 	ClientPatchFileInput,
 	ClientPatchManifestResult
@@ -22,6 +23,7 @@ const props = defineProps<{
 	clearingCache: boolean
 	downloadingKey: string
 	downloadingAll: boolean
+	progress: ClientCheckProgress | null
 }>()
 
 const emit = defineEmits<{
@@ -60,6 +62,22 @@ const sourceDisabled = computed(
 		props.downloadingAll ||
 		Boolean(props.downloadingKey)
 )
+const progressLabel = computed(() => {
+	if (!props.progress) return ''
+	if (props.progress.phase === 'completed') return t('clientCheck.progress.completed')
+	if (props.progress.fileName) {
+		return t('clientCheck.progress.checkingFile', {
+			file: props.progress.fileName,
+			current: props.progress.current,
+			total: props.progress.total
+		})
+	}
+
+	return t('clientCheck.progress.checking', {
+		current: props.progress.current,
+		total: props.progress.total
+	})
+})
 
 function statusLabelKey(status: ClientCheckResult['files'][number]['status']) {
 	if (status === 'missing') return 'clientCheck.status.missing'
@@ -171,7 +189,9 @@ function closeSourceMenu(event: FocusEvent): void {
 					"
 					@click="$emit('clearCache')"
 				>
-					{{ clearingCache ? t('clientCheck.clearingCache') : t('clientCheck.clearCache') }}
+					{{
+						clearingCache ? t('clientCheck.clearingCache') : t('clientCheck.clearCache')
+					}}
 				</BaseButton>
 				<BaseButton
 					v-if="canDownloadMissing"
@@ -203,6 +223,20 @@ function closeSourceMenu(event: FocusEvent): void {
 			<div class="client-check-summary__meta">
 				<span>{{ t('clientCheck.manifestLoaded', { total: totalCount }) }}</span>
 				<span class="path-text">{{ manifest?.sourceUrl ?? selectedSourceUrl }}</span>
+			</div>
+		</div>
+
+		<div v-if="progress" class="operation-progress">
+			<div class="operation-progress__meta">
+				<strong>{{ t('clientCheck.progress.title') }}</strong>
+				<span>{{ progressLabel }}</span>
+			</div>
+			<div class="operation-progress__bar" aria-hidden="true">
+				<span :style="{ width: `${progress.percent}%` }" />
+			</div>
+			<div class="operation-progress__stats">
+				<span>{{ progress.percent }}%</span>
+				<span>{{ progress.current }} / {{ progress.total }}</span>
 			</div>
 		</div>
 

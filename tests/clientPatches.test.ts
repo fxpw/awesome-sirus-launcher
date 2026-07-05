@@ -101,6 +101,47 @@ describe('client patch service', () => {
 		expect(result.files.map((file) => file.status)).toEqual(['ok', 'outdated', 'missing'])
 	})
 
+	it('reports client check progress while scanning files', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-client-progress-'))
+		const wowPath = join(root, 'wow')
+		await mkdir(join(wowPath, 'Data'), { recursive: true })
+		await writeFile(join(wowPath, 'Data', 'ok.mpq'), 'ok')
+
+		const progress: Array<{ phase: string; current: number; total: number; percent: number }> =
+			[]
+		const service = createClientPatchService(
+			createMemorySettingsStore({ wowPath }),
+			async () => ({
+				patches: [
+					createManifestFile('ok.mpq', '/Data/', 'ok'),
+					createManifestFile('missing.mpq', '/Data/', 'missing')
+				]
+			}),
+			async (path) =>
+				createHash('md5')
+					.update(await readFile(path))
+					.digest('hex'),
+			async () => undefined,
+			() => root
+		)
+
+		await service.check(undefined, (entry) => {
+			progress.push({
+				phase: entry.phase,
+				current: entry.current,
+				total: entry.total,
+				percent: entry.percent
+			})
+		})
+
+		expect(progress).toEqual([
+			{ phase: 'checking', current: 0, total: 2, percent: 0 },
+			{ phase: 'checking', current: 1, total: 2, percent: 50 },
+			{ phase: 'checking', current: 2, total: 2, percent: 100 },
+			{ phase: 'completed', current: 2, total: 2, percent: 100 }
+		])
+	})
+
 	it('lists manifest files with target paths and downloads a selected file safely', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-client-download-'))
 		const wowPath = join(root, 'wow')

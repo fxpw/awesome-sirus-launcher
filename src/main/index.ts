@@ -2,7 +2,14 @@ import { dirname, join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { spawn } from 'node:child_process'
-import { app, BrowserWindow, dialog, shell, type OpenDialogOptions } from 'electron'
+import {
+	app,
+	BrowserWindow,
+	dialog,
+	shell,
+	type OpenDialogOptions,
+	type WebContents
+} from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { ipcChannels } from '@shared/contracts'
 import { updateAccountConfigText } from '@core/accounts/configWtf'
@@ -211,6 +218,10 @@ function isPortableLaunch(): boolean {
 		Boolean(process.env.PORTABLE_EXECUTABLE_FILE) ||
 		/portable/i.test(process.execPath)
 	)
+}
+
+function sendProgress(channel: string, sender: WebContents, payload: unknown): void {
+	if (!sender.isDestroyed()) sender.send(channel, payload)
 }
 
 function createWindow(): void {
@@ -442,7 +453,10 @@ function registerIpcHandlers(): void {
 		ipcChannels.client.check,
 		clientPatchSourceInputSchema,
 		clientCheckResultSchema,
-		async (input) => clientPatchService.check(input)
+		async (input, event) =>
+			clientPatchService.check(input, (progress) =>
+				sendProgress(ipcChannels.progress.clientCheck, event.sender, progress)
+			)
 	)
 
 	registerIpcHandler(
@@ -488,7 +502,10 @@ function registerIpcHandlers(): void {
 		ipcChannels.addons.install,
 		addonActionInputSchema,
 		addonInstallResultSchema,
-		async (input) => addonService.install(input)
+		async (input, event) =>
+			addonService.install(input, (progress) =>
+				sendProgress(ipcChannels.progress.addons, event.sender, progress)
+			)
 	)
 
 	registerIpcHandler(
@@ -502,7 +519,10 @@ function registerIpcHandlers(): void {
 		ipcChannels.addons.updateAll,
 		voidInputSchema,
 		addonsUpdateAllResultSchema,
-		async () => addonService.updateAll()
+		async (_input, event) =>
+			addonService.updateAll((progress) =>
+				sendProgress(ipcChannels.progress.addons, event.sender, progress)
+			)
 	)
 
 	registerIpcHandler(

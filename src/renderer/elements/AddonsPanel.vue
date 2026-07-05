@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Trash2 } from '@lucide/vue'
-import type { AddonsListResult, AddonSummary } from '@shared/contracts'
+import type { AddonProgress, AddonsListResult, AddonSummary } from '@shared/contracts'
 import { launcherApi } from '@renderer/api/launcherApi'
 import BaseButton from '@renderer/components/BaseButton.vue'
 import BasePanel from '@renderer/components/BasePanel.vue'
@@ -49,6 +49,8 @@ const tableSearch = ref<Record<string, string>>({
 	community: '',
 	custom: ''
 })
+const addonProgress = ref<AddonProgress | null>(null)
+let removeAddonProgressListener: (() => void) | undefined
 
 const addons = computed(() => mergeAddonLists(catalogAddons.value, checkedAddons.value))
 const communityCount = computed(
@@ -91,12 +93,16 @@ watch(
 )
 
 onMounted(() => {
+	removeAddonProgressListener = launcherApi.addons.onProgress((progress: AddonProgress) => {
+		addonProgress.value = progress
+	})
 	window.addEventListener('resize', handleViewportResize)
 	document.addEventListener('scroll', handleViewportScroll, true)
 	void loadAddons()
 })
 
 onUnmounted(() => {
+	removeAddonProgressListener?.()
 	window.removeEventListener('resize', handleViewportResize)
 	document.removeEventListener('scroll', handleViewportScroll, true)
 })
@@ -212,6 +218,7 @@ async function importCustomAddons(): Promise<void> {
 async function run(action: () => Promise<void>): Promise<void> {
 	error.value = ''
 	notice.value = ''
+	addonProgress.value = null
 	try {
 		await action()
 	} catch (err) {
@@ -223,6 +230,34 @@ async function run(action: () => Promise<void>): Promise<void> {
 		deletingAddonId.value = ''
 	}
 }
+
+const addonProgressLabel = computed(() => {
+	const progress = addonProgress.value
+	if (!progress) return ''
+	const name = progress.addonName ?? t('addons.progress.unknown')
+	if (progress.phase === 'completed') {
+		return t('addons.progress.completed', {
+			name,
+			current: progress.completed,
+			total: Math.max(progress.total, 1)
+		})
+	}
+
+	const key =
+		progress.phase === 'preparing'
+			? 'addons.progress.preparing'
+			: progress.phase === 'downloading'
+				? 'addons.progress.downloading'
+				: progress.phase === 'extracting'
+					? 'addons.progress.extracting'
+					: 'addons.progress.installing'
+
+	return t(key, {
+		name,
+		current: Math.min(progress.completed + 1, Math.max(progress.total, 1)),
+		total: Math.max(progress.total, 1)
+	})
+})
 
 function upsertCheckedAddon(addon: AddonSummary): void {
 	const index = checkedAddons.value.findIndex((item) => item.id === addon.id)
@@ -520,6 +555,23 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 			</StatusBadge>
 		</div>
 
+		<div v-if="addonProgress" class="operation-progress">
+			<div class="operation-progress__meta">
+				<strong>{{ t('addons.progress.title') }}</strong>
+				<span>{{ addonProgressLabel }}</span>
+			</div>
+			<div class="operation-progress__bar" aria-hidden="true">
+				<span :style="{ width: `${addonProgress.percent}%` }" />
+			</div>
+			<div class="operation-progress__stats">
+				<span>{{ addonProgress.percent }}%</span>
+				<span>
+					{{ Math.min(addonProgress.completed, Math.max(addonProgress.total, 1)) }} /
+					{{ Math.max(addonProgress.total, 1) }}
+				</span>
+			</div>
+		</div>
+
 		<div class="addon-custom-form">
 			<TextField v-model="customName" :placeholder="t('addons.customName')" />
 			<TextField v-model="customUrl" :placeholder="t('addons.customUrl')" />
@@ -584,14 +636,8 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 							:aria-sort="getSortAria('status')"
 							@click="toggleSort('status')"
 						>
-							<ArrowUpDown
-								v-if="sortKey !== 'status'"
-								:size="14"
-							/>
-							<ArrowDown
-								v-else-if="sortDirection === 'asc'"
-								:size="14"
-							/>
+							<ArrowUpDown v-if="sortKey !== 'status'" :size="14" />
+							<ArrowDown v-else-if="sortDirection === 'asc'" :size="14" />
 							<ArrowUp v-else :size="14" />
 						</button>
 					</div>

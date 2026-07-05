@@ -3,6 +3,8 @@ import type {
 	AddCustomAddonInput,
 	AddAccountInput,
 	AddonActionInput,
+	AddonProgress,
+	ClientCheckProgress,
 	ClientPatchFileInput,
 	ClientPatchSourceInput,
 	GitHubTokenInput,
@@ -60,6 +62,8 @@ export const launcherApi = {
 	client: {
 		list: (input?: ClientPatchSourceInput) => getLauncher().client.list(input),
 		check: (input?: ClientPatchSourceInput) => getLauncher().client.check(input),
+		onCheckProgress: (listener: (progress: ClientCheckProgress) => void) =>
+			getLauncher().client.onCheckProgress(listener),
 		cancelCheck: () => getLauncher().client.cancelCheck(),
 		clearCheckCache: () => getLauncher().client.clearCheckCache(),
 		downloadFile: (input: ClientPatchFileInput) => getLauncher().client.downloadFile(input),
@@ -69,6 +73,8 @@ export const launcherApi = {
 	addons: {
 		list: () => getLauncher().addons.list(),
 		check: () => getLauncher().addons.check(),
+		onProgress: (listener: (progress: AddonProgress) => void) =>
+			getLauncher().addons.onProgress(listener),
 		install: (input: AddonActionInput) => getLauncher().addons.install(input),
 		delete: (input: AddonActionInput) => getLauncher().addons.delete(input),
 		updateAll: () => getLauncher().addons.updateAll(),

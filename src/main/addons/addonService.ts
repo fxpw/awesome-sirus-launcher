@@ -10,6 +10,7 @@ import type {
 	AddonDeleteResult,
 	AddonInstallResult,
 	AddonsListResult,
+	AddonProgress,
 	AddonSummary,
 	AddonsUpdateAllResult,
 	AddonStatus,
@@ -33,6 +34,8 @@ type UnzipToDirectory = (archivePath: string, targetDir: string) => Promise<void
 interface AddonCatalogFile {
 	addons: AddonCatalogEntry[]
 }
+
+type AddonProgressHandler = (progress: AddonProgress) => void
 
 export function createAddonService(
 	getUserDataPath: () => string,
@@ -59,7 +62,10 @@ export function createAddonService(
 		}
 	}
 
-	async function install(input: AddonActionInput): Promise<AddonInstallResult> {
+	async function install(
+		input: AddonActionInput,
+		onProgress?: AddonProgressHandler
+	): Promise<AddonInstallResult> {
 		const entries = await getCatalogEntries()
 		const entry = entries.find((addon) => addon.id === input.addonId)
 		if (!entry) throw new Error('Аддон не найден в каталоге')
@@ -78,15 +84,20 @@ export function createAddonService(
 		const archivePath = join(tempRoot, `${entry.name}.zip`)
 		const unpackPath = join(tempRoot, 'unpacked')
 		const token = await secretStore.get('github-token')
+		const progressState = createAddonProgressState('install', 1, 0)
 
 		try {
+			reportAddonProgress(onProgress, progressState, entry, 'preparing')
 			const zipUrl = buildGitHubSourceZipUrl({ repo: entry.repo, ref: entry.branch })
+			reportAddonProgress(onProgress, progressState, entry, 'downloading')
 			await downloadFile(zipUrl, archivePath, { token })
+			reportAddonProgress(onProgress, progressState, entry, 'extracting')
 			await unzipToDirectory(archivePath, unpackPath)
 
 			const addonDirs = await findAddonDirs(unpackPath)
 			const installedFolders: string[] = []
 			const skippedGitFolders: string[] = []
+			reportAddonProgress(onProgress, progressState, entry, 'installing')
 
 			for (const addonDir of addonDirs) {
 				const folderName = await resolveInstallFolderName(addonDir, entry)
@@ -109,6 +120,7 @@ export function createAddonService(
 			}
 
 			const addon = await summarizeAddon(entry, true)
+			reportAddonProgress(onProgress, progressState, entry, 'completed', 1)
 			return {
 				installedAt: new Date().toISOString(),
 				addon,
@@ -145,19 +157,52 @@ export function createAddonService(
 		}
 	}
 
-	async function updateAll(): Promise<AddonsUpdateAllResult> {
+	async function updateAll(onProgress?: AddonProgressHandler): Promise<AddonsUpdateAllResult> {
 		const checked = await list(true, true)
 		const candidates = checked.addons.filter(
 			(addon) => addon.status === 'outdated' || addon.status === 'not-installed'
 		)
 		const installed: AddonInstallResult[] = []
 		const skipped = checked.addons.filter((addon) => addon.status === 'manual-git')
+		const total = candidates.length
 
-		for (const addon of candidates) {
+		if (total === 0) {
+			onProgress?.({
+				operation: 'update-all',
+				phase: 'completed',
+				completed: 0,
+				total: 0,
+				step: addonInstallSteps,
+				steps: addonInstallSteps,
+				percent: 100
+			})
+		}
+
+		for (const [index, addon] of candidates.entries()) {
+			const progressState = createAddonProgressState('update-all', total, index)
 			try {
-				installed.push(await install({ addonId: addon.id }))
+				installed.push(
+					await install({ addonId: addon.id }, (progress) => {
+						const completed =
+							progress.phase === 'completed'
+								? progressState.completed + 1
+								: progressState.completed
+						onProgress?.({
+							...progress,
+							operation: 'update-all',
+							completed,
+							total: progressState.total,
+							percent: calculateAddonPercent(
+								progressState.total,
+								progressState.completed,
+								progress.step
+							)
+						})
+					})
+				)
 			} catch {
 				skipped.push(addon)
+				reportAddonProgress(onProgress, progressState, addon, 'completed', 1)
 			}
 		}
 
@@ -403,6 +448,55 @@ function countSources(
 		sirus: addons.filter((addon) => addon.source === 'sirus').length,
 		custom: addons.filter((addon) => addon.source === 'custom').length
 	}
+}
+
+const addonInstallSteps = 4
+
+function createAddonProgressState(
+	operation: AddonProgress['operation'],
+	total: number,
+	completed: number
+) {
+	return { operation, total, completed }
+}
+
+function reportAddonProgress(
+	onProgress: AddonProgressHandler | undefined,
+	state: ReturnType<typeof createAddonProgressState>,
+	addon: Pick<AddonCatalogEntry, 'id' | 'name'>,
+	phase: AddonProgress['phase'],
+	completedOffset = 0
+): void {
+	if (!onProgress) return
+
+	const step =
+		phase === 'preparing'
+			? 0
+			: phase === 'downloading'
+				? 1
+				: phase === 'extracting'
+					? 2
+					: phase === 'installing'
+						? 3
+						: addonInstallSteps
+
+	onProgress({
+		operation: state.operation,
+		phase,
+		addonId: addon.id,
+		addonName: addon.name,
+		completed: state.completed + completedOffset,
+		total: state.total,
+		step,
+		steps: addonInstallSteps,
+		percent: calculateAddonPercent(state.total, state.completed, step)
+	})
+}
+
+function calculateAddonPercent(total: number, completed: number, step: number): number {
+	if (total <= 0) return 100
+	const value = ((completed * addonInstallSteps + step) / (total * addonInstallSteps)) * 100
+	return Math.max(0, Math.min(100, Math.round(value)))
 }
 
 function getAddonFolderNames(entry: AddonCatalogEntry): string[] {

@@ -3,6 +3,7 @@ import type { Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type {
 	ClientCheckResult,
+	ClientCheckProgress,
 	ClientPatchDownloadAllResult,
 	ClientPatchDownloadResult,
 	ClientPatchFileInput,
@@ -22,6 +23,7 @@ import {
 export type FetchJson = (url: string, options?: { signal?: AbortSignal }) => Promise<unknown>
 export type HashFile = (filePath: string, options?: { signal?: AbortSignal }) => Promise<string>
 export type DownloadFile = (url: string, targetPath: string) => Promise<void>
+type ClientCheckProgressHandler = (progress: ClientCheckProgress) => void
 
 export interface ClientMd5CacheKey {
 	filePath: string
@@ -49,7 +51,10 @@ export const emptyClientMd5Cache: ClientMd5Cache = {
 
 export interface ClientPatchService {
 	list(input?: ClientPatchSourceInput): Promise<ClientPatchManifestResult>
-	check(input?: ClientPatchSourceInput): Promise<ClientCheckResult>
+	check(
+		input?: ClientPatchSourceInput,
+		onProgress?: ClientCheckProgressHandler
+	): Promise<ClientCheckResult>
 	cancelCheck(): Promise<void>
 	clearCheckCache(): Promise<void>
 	downloadFile(input: ClientPatchFileInput): Promise<ClientPatchDownloadResult>
@@ -89,7 +94,7 @@ export function createClientPatchService(
 				files
 			}
 		},
-		async check(input) {
+		async check(input, onProgress) {
 			const checkController = createCheckController()
 			const { signal } = checkController
 
@@ -98,14 +103,32 @@ export function createClientPatchService(
 				throwIfClientCheckCancelled(signal)
 				const manifest = await fetchManifest(fetchJson, input?.sourceUrl, signal)
 				throwIfClientCheckCancelled(signal)
-				const files = await Promise.all(
-					manifest.patches.map((patch) =>
-						checkPatchFile(settings.wowPath, patch, hashFile, md5Cache, signal)
+				const files: ClientCheckResult['files'] = []
+				onProgress?.({
+					phase: 'checking',
+					current: 0,
+					total: manifest.patches.length,
+					percent: 0,
+					sourceUrl: manifest.sourceUrl
+				})
+
+				for (const [index, patch] of manifest.patches.entries()) {
+					files.push(
+						await checkPatchFile(settings.wowPath, patch, hashFile, md5Cache, signal)
 					)
-				)
+					onProgress?.({
+						phase: 'checking',
+						current: index + 1,
+						total: manifest.patches.length,
+						percent: calculateClientCheckPercent(index + 1, manifest.patches.length),
+						fileName: patch.fileName,
+						relativePath: patch.relativePath,
+						sourceUrl: manifest.sourceUrl
+					})
+				}
 				throwIfClientCheckCancelled(signal)
 
-				return {
+				const result = {
 					checkedAt: new Date().toISOString(),
 					sourceUrl: manifest.sourceUrl,
 					availableSourceUrls: [...clientPatchManifestUrls],
@@ -113,6 +136,14 @@ export function createClientPatchService(
 					...countPatchStatuses(files),
 					files
 				}
+				onProgress?.({
+					phase: 'completed',
+					current: files.length,
+					total: files.length,
+					percent: 100,
+					sourceUrl: manifest.sourceUrl
+				})
+				return result
 			} finally {
 				if (activeCheckController === checkController) activeCheckController = undefined
 			}
@@ -330,6 +361,11 @@ async function getCachedOrCalculateMd5(
 	await md5Cache.set(cacheKey, actualMd5)
 
 	return actualMd5
+}
+
+function calculateClientCheckPercent(current: number, total: number): number {
+	if (total <= 0) return 100
+	return Math.max(0, Math.min(100, Math.round((current / total) * 100)))
 }
 
 function createMd5CacheKey(filePath: string, fileStat: Stats): ClientMd5CacheKey {

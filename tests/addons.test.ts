@@ -96,7 +96,7 @@ describe('addons core', () => {
 		const nezvezdi = community.find((addon) => addon.id === 'community:nezvezdi')
 		const weakAuras = community.find((addon) => addon.id === 'community:weakauras')
 
-		expect(community).toHaveLength(72)
+		expect(community).toHaveLength(73)
 		expect(aeonoPlates).toMatchObject({
 			name: 'AeonoPlates',
 			repo: 'Aeonoscul/AeonoPlates',
@@ -185,6 +185,50 @@ describe('addon service', () => {
 			)
 			expect(result.addon.status).toBe('installed')
 			expect(result.addon.installedVersion).toBe('1.0.0')
+		} finally {
+			vi.unstubAllGlobals()
+		}
+	})
+
+	it('reports addon install progress', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => new Response('## Version: 1.0.0\n'))
+		)
+
+		const root = await mkdtemp(join(tmpdir(), 'sirus-addons-progress-'))
+		const wowPath = join(root, 'wow')
+		const progress: Array<{ phase: string; percent: number }> = []
+
+		try {
+			await mkdir(join(wowPath, 'Data'), { recursive: true })
+			await mkdir(join(wowPath, 'Interface'), { recursive: true })
+			await mkdir(join(wowPath, 'WTF'), { recursive: true })
+			await writeFile(join(wowPath, 'run.exe'), '')
+
+			const service = createAddonService(
+				() => root,
+				createMemorySettingsStore({ wowPath }),
+				createMemorySecretStore(),
+				async () => undefined,
+				async (_archivePath, targetDir) => {
+					const archiveRoot = join(targetDir, 'AeonoPlates-main')
+					await mkdir(archiveRoot, { recursive: true })
+					await writeFile(join(archiveRoot, 'AeonoPlates.toc'), '## Version: 1.0.0\n')
+				}
+			)
+
+			await service.install({ addonId: 'community:aeonoplates' }, (entry) => {
+				progress.push({ phase: entry.phase, percent: entry.percent })
+			})
+
+			expect(progress).toEqual([
+				{ phase: 'preparing', percent: 0 },
+				{ phase: 'downloading', percent: 25 },
+				{ phase: 'extracting', percent: 50 },
+				{ phase: 'installing', percent: 75 },
+				{ phase: 'completed', percent: 100 }
+			])
 		} finally {
 			vi.unstubAllGlobals()
 		}

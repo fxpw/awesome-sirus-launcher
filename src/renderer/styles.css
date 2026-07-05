@@ -1555,6 +1555,51 @@ textarea.field {
 	font-size: 13px;
 }
 
+.operation-progress {
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background:
+		linear-gradient(145deg, rgba(247, 244, 238, 0.12), rgba(143, 201, 203, 0.08)),
+		rgba(143, 201, 203, 0.08);
+	backdrop-filter: blur(30px) saturate(180%);
+	box-shadow: var(--glass-inset);
+}
+
+.operation-progress__meta,
+.operation-progress__stats {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-width: 0;
+}
+
+.operation-progress__meta span,
+.operation-progress__stats {
+	color: var(--text-muted);
+	font-size: 13px;
+}
+
+.operation-progress__bar {
+	height: 10px;
+	overflow: hidden;
+	border-radius: 999px;
+	background: rgba(16, 22, 28, 0.46);
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.operation-progress__bar span {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: linear-gradient(90deg, rgba(188, 246, 248, 0.95), rgba(92, 210, 177, 0.92));
+	box-shadow: 0 0 18px rgba(92, 210, 177, 0.3);
+	transition: width 180ms ease;
+}
+
 .client-files-table {
 	display: grid;
 	overflow: hidden;
