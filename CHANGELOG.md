@@ -6,6 +6,16 @@
 
 ## [Unreleased]
 
+## [1.0.24] - 2026-07-10
+
+### Added
+
+- В каталог аддонов добавлен SirusMythicPlus.
+
+### Fixed
+
+- Обновлён snapshot-тест catalog community-аддонов (73 → 74) после добавления SirusMythicPlus.
+
 ## [1.0.23] - 2026-07-05
 
 ### Added
