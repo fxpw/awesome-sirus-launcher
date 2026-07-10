@@ -1508,19 +1508,33 @@
 			"author": "Sirus",
 			"category": "Всплывающие подсказки"
 		},
-                {
-                        "id": "community:kui-nameplates-sirus",
-                        "source": "community",
-                        "name": "Kui Nameplates",
-                        "versionUrl": "https://raw.githubusercontent.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/main/Kui_Nameplates/Kui_Nameplates.toc",
-                        "branch": "main",
-                        "folders": ["Kui_Nameplates","Kui_Nameplates_Auras"],
-                        "description": "Kui Nameplates - аддон для полной кастомизации неймплейтов над персонажами и существами. Предоставляет широкие возможности настройки отображения здоровья, имени, баффов, дебаффов, полосы каста, угрозы и других элементов. Версия адаптирована специально для Sirus 3.3.5a.",
-                        "githubUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5",
-                        "repo": "Dozawow/Kui_Nameplates-Sirus-3.3.5",
-                        "bugReportUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/issues",
-                        "author": "Dozawow",
-                        "category": "Интерфейс"
+		{
+			"id": "community:kui-nameplates-sirus",
+			"source": "community",
+			"name": "Kui Nameplates",
+			"versionUrl": "https://raw.githubusercontent.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/main/Kui_Nameplates/Kui_Nameplates.toc",
+			"branch": "main",
+			"folders": ["Kui_Nameplates","Kui_Nameplates_Auras"],
+			"description": "Kui Nameplates - аддон для полной кастомизации неймплейтов над персонажами и существами. Предоставляет широкие возможности настройки отображения здоровья, имени, баффов, дебаффов, полосы каста, угрозы и других элементов. Версия адаптирована специально для Sirus 3.3.5a.",
+			"githubUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5",
+			"repo": "Dozawow/Kui_Nameplates-Sirus-3.3.5",
+			"bugReportUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/issues",
+			"author": "Dozawow",
+			"category": "Интерфейс"
+        },
+		{
+			"id": "community:sirusmythicplus",
+			"source": "community",
+			"name": "SirusMythicPlus",
+			"versionUrl": "https://raw.githubusercontent.com/KataLoved/SirusMythicPlus/refs/heads/master/SirusMythicPlus/SirusMythicPlus.toc",
+			"branch": "master",
+			"folders": ["SirusMythicPlus"],
+			"description": "Показывает рейтинг Mythic+, лучший ключ и список данжей в тултипе.",
+			"githubUrl": "https://github.com/KataLoved/SirusMythicPlus",
+			"repo": "KataLoved/SirusMythicPlus",
+			"bugReportUrl": "https://github.com/KataLoved/SirusMythicPlus/issues",
+			"author": "NastyaLuve",
+			"category": "Всплывающие подсказки"
         }
     ]
 }
