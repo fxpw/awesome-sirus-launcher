@@ -1535,6 +1535,20 @@
 			"bugReportUrl": "https://github.com/KataLoved/SirusMythicPlus/issues",
 			"author": "NastyaLuve",
 			"category": "Всплывающие подсказки"
-        }
+        },
+		{
+    		"id": "community:autoheroicqueue",
+    		"source": "community",
+    		"name": "AutoHeroicQueue",
+    		"versionUrl": "https://raw.githubusercontent.com/aliveins1de/AutoHeroicQueue-Sirus/main/AutoHeroicQueue/AutoHeroicQueue.toc",
+    		"branch": "main",
+    		"folders": ["AutoHeroicQueue"],
+    		"description": "AutoHeroicQueue — автоматически выставляет сохранённый тип очереди в дропдауне «Тип» окна Dungeon Finder при входе в игру и при каждом открытии окна.",
+    		"githubUrl": "https://github.com/aliveins1de/AutoHeroicQueue-Sirus",
+    		"repo": "aliveins1de/AutoHeroicQueue-Sirus",
+    		"bugReportUrl": "https://github.com/aliveins1de/AutoHeroicQueue-Sirus/issues",
+    		"author": "aliveins1de",
+    		"category": "Интерфейс"
+		}
     ]
 }
