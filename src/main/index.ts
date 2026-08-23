@@ -55,6 +55,7 @@ import {
 	clientCheckResultSchema,
 	createWtfBackupResultSchema,
 	customAddonsTransferResultSchema,
+	deleteAccountInputSchema,
 	deleteWtfBackupResultSchema,
 	fpsPatchDeleteResultSchema,
 	fpsPatchInstallResultSchema,
@@ -330,6 +331,13 @@ function registerIpcHandlers(): void {
 		selectAccountInputSchema,
 		accountListResultSchema,
 		async (input) => accountService.select(input)
+	)
+
+	registerIpcHandler(
+		ipcChannels.accounts.delete,
+		deleteAccountInputSchema,
+		accountListResultSchema,
+		async (input) => accountService.delete(input)
 	)
 
 	registerIpcHandler(

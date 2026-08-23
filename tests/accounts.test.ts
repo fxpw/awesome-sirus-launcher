@@ -18,6 +18,55 @@ describe('account service', () => {
 		expect(result.selectedAccountId).toBe(result.accounts[0].id)
 	})
 
+	it('deletes only the requested account, its password and selected state', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-accounts-delete-'))
+		const secretStore = createSecretStore()
+		const service = createAccountService(() => root, secretStore)
+
+		const firstResult = await service.add({ login: 'wrong', password: 'wrong-secret' })
+		const firstAccount = firstResult.accounts[0]
+		const secondResult = await service.add({ login: 'correct', password: 'correct-secret' })
+		const secondAccount = secondResult.accounts[1]
+
+		expect(firstAccount).toBeDefined()
+		expect(secondAccount).toBeDefined()
+		if (!firstAccount || !secondAccount) throw new Error('Тестовые аккаунты не созданы')
+
+		const afterFirstDelete = await service.delete({ accountId: firstAccount.id })
+
+		expect(afterFirstDelete).toEqual({
+			accounts: [secondAccount],
+			selectedAccountId: secondAccount.id
+		})
+		expect(await secretStore.has(`account-password:${firstAccount.id}`)).toBe(false)
+		expect(await secretStore.has(`account-password:${secondAccount.id}`)).toBe(true)
+
+		const afterSelectedDelete = await service.delete({ accountId: secondAccount.id })
+
+		expect(afterSelectedDelete).toEqual({ accounts: [] })
+		expect(await secretStore.has(`account-password:${secondAccount.id}`)).toBe(false)
+		expect(JSON.parse(await readFile(join(root, 'accounts.json'), 'utf8'))).toEqual({
+			accounts: []
+		})
+	})
+
+	it('does not change accounts when the deleted id is unknown', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-accounts-delete-missing-'))
+		const secretStore = createSecretStore()
+		const service = createAccountService(() => root, secretStore)
+		const result = await service.add({ login: 'fxpw', password: 'secret' })
+		const account = result.accounts[0]
+
+		expect(account).toBeDefined()
+		if (!account) throw new Error('Тестовый аккаунт не создан')
+
+		await expect(service.delete({ accountId: 'missing-account' })).rejects.toThrow(
+			'Аккаунт не найден'
+		)
+		expect(await service.list()).toEqual(result)
+		expect(await secretStore.has(`account-password:${account.id}`)).toBe(true)
+	})
+
 	it('writes selected account credentials to Config.wtf before launch', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-accounts-config-'))
 		const wowPath = join(root, 'wow')

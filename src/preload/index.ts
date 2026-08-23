@@ -6,6 +6,7 @@ import type {
 	AddonActionInput,
 	ClientPatchFileInput,
 	ClientPatchSourceInput,
+	DeleteAccountInput,
 	GitHubTokenInput,
 	LauncherApi,
 	LauncherSettingsPatch,
@@ -47,7 +48,9 @@ const api: LauncherApi = {
 		list: () => ipcRenderer.invoke(ipcChannels.accounts.list),
 		add: (input: AddAccountInput) => ipcRenderer.invoke(ipcChannels.accounts.add, input),
 		select: (input: SelectAccountInput) =>
-			ipcRenderer.invoke(ipcChannels.accounts.select, input)
+			ipcRenderer.invoke(ipcChannels.accounts.select, input),
+		delete: (input: DeleteAccountInput) =>
+			ipcRenderer.invoke(ipcChannels.accounts.delete, input)
 	},
 	fpsPatch: {
 		getStatus: () => ipcRenderer.invoke(ipcChannels.fpsPatch.getStatus),

@@ -7,6 +7,7 @@ import type {
 	ClientCheckProgress,
 	ClientPatchFileInput,
 	ClientPatchSourceInput,
+	DeleteAccountInput,
 	GitHubTokenInput,
 	LauncherApi,
 	LauncherSettingsPatch,
@@ -52,7 +53,8 @@ export const launcherApi = {
 	accounts: {
 		list: () => getLauncher().accounts.list(),
 		add: (input: AddAccountInput) => getLauncher().accounts.add(input),
-		select: (input: SelectAccountInput) => getLauncher().accounts.select(input)
+		select: (input: SelectAccountInput) => getLauncher().accounts.select(input),
+		delete: (input: DeleteAccountInput) => getLauncher().accounts.delete(input)
 	},
 	fpsPatch: {
 		getStatus: () => getLauncher().fpsPatch.getStatus(),

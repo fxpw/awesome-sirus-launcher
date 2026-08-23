@@ -11,5 +11,6 @@ describe('renderer i18n', () => {
 		expect(translate('en', 'app.versionToken', { name: 'Launcher', version: '1.2.3' })).toBe(
 			'Launcher 1.2.3'
 		)
+		expect(translate('ru', 'account.deleteConfirm', { login: 'mistake' })).toContain('mistake')
 	})
 })

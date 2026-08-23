@@ -479,6 +479,40 @@ nav {
 	text-align: left;
 }
 
+.account-select__row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 36px;
+	border-top: 1px solid rgba(247, 244, 238, 0.08);
+}
+
+.account-select__row:first-child {
+	border-top: 0;
+}
+
+.account-select__row .account-select__option {
+	border-top: 0;
+}
+
+.account-select__delete {
+	display: inline-grid;
+	place-items: center;
+	width: 36px;
+	min-height: 36px;
+	padding: 0;
+	border: 0;
+	border-left: 1px solid rgba(247, 244, 238, 0.08);
+	background: rgba(24, 26, 36, 0.18);
+	color: rgba(247, 244, 238, 0.58);
+	cursor: pointer;
+}
+
+.account-select__delete:hover,
+.account-select__delete:focus-visible {
+	background: rgba(166, 58, 70, 0.34);
+	color: #ffe1e4;
+	outline: none;
+}
+
 .account-select__option:first-child {
 	border-top: 0;
 }

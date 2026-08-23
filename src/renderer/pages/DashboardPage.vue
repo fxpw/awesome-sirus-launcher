@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type {
 	AccountListResult,
+	AccountSummary,
 	AddonsListResult,
 	AppInfo,
 	AppUpdateCheck,
@@ -394,6 +395,19 @@ async function selectAccount(accountId: string): Promise<void> {
 	}
 }
 
+async function deleteAccount(account: AccountSummary): Promise<void> {
+	if (!confirm(t('account.deleteConfirm', { login: account.login }))) return
+
+	error.value = ''
+	notice.value = ''
+	try {
+		accounts.value = await launcherApi.accounts.delete({ accountId: account.id })
+		notice.value = t('account.deleted')
+	} catch (err) {
+		error.value = err instanceof Error ? err.message : t('account.deleteError')
+	}
+}
+
 async function createWtfBackup(): Promise<void> {
 	error.value = ''
 	notice.value = ''
@@ -764,6 +778,7 @@ async function refreshMiningState(): Promise<void> {
 			@open-token="tokenModalOpen = true"
 			@open-account="accountModalOpen = true"
 			@select-account="selectAccount"
+			@delete-account="deleteAccount"
 		/>
 
 		<AppSidebar :app-info="appInfo" :active-section="activeSection" @navigate="navigate" />

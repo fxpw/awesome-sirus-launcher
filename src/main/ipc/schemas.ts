@@ -113,6 +113,12 @@ export const selectAccountInputSchema = z
 	})
 	.strict()
 
+export const deleteAccountInputSchema = z
+	.object({
+		accountId: z.string().min(1)
+	})
+	.strict()
+
 export const wtfBackupSummarySchema = z.object({
 	id: z.string(),
 	fileName: z.string(),

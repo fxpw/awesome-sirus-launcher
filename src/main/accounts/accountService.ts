@@ -6,6 +6,7 @@ import type {
 	AccountListResult,
 	AccountSummary,
 	AddAccountInput,
+	DeleteAccountInput,
 	SelectAccountInput
 } from '@shared/contracts'
 import type { SecretStore } from '@main/secrets/memorySecretStore'
@@ -26,6 +27,7 @@ export interface AccountService {
 	list(): Promise<AccountListResult>
 	add(input: AddAccountInput): Promise<AccountListResult>
 	select(input: SelectAccountInput): Promise<AccountListResult>
+	delete(input: DeleteAccountInput): Promise<AccountListResult>
 	applySelectedToWowConfig(wowPath: string): Promise<void>
 }
 
@@ -62,6 +64,18 @@ export function createAccountService(
 			}
 
 			data.selectedAccountId = input.accountId
+			await writeAccounts(getFilePath(), data)
+
+			return toListResult(data)
+		},
+		async delete(input) {
+			const data = await readAccounts(getFilePath())
+			const account = data.accounts.find((item) => item.id === input.accountId)
+			if (!account) throw new Error('Аккаунт не найден')
+
+			await secretStore.delete(createAccountPasswordKey(account.id))
+			data.accounts = data.accounts.filter((item) => item.id !== account.id)
+			if (data.selectedAccountId === account.id) delete data.selectedAccountId
 			await writeAccounts(getFilePath(), data)
 
 			return toListResult(data)

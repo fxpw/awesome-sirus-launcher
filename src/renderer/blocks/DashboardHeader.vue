@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Check, ChevronDown, Plus } from '@lucide/vue'
-import type { AccountListResult, GitHubTokenStatus } from '@shared/contracts'
+import { Check, ChevronDown, Plus, Trash2 } from '@lucide/vue'
+import type { AccountListResult, AccountSummary, GitHubTokenStatus } from '@shared/contracts'
 import { localeLabels, type Locale } from '@renderer/shared/i18n'
 import { useLocale } from '@renderer/composables/useLocale'
 
@@ -16,6 +16,7 @@ const emit = defineEmits<{
 	openToken: []
 	openAccount: []
 	selectAccount: [accountId: string]
+	deleteAccount: [account: AccountSummary]
 }>()
 
 const { currentLocale, localeOptions, setLocale, t } = useLocale()
@@ -54,6 +55,11 @@ function selectLocale(locale: Locale): void {
 
 function selectAccount(accountId: string): void {
 	emit('selectAccount', accountId)
+	accountMenuOpen.value = false
+}
+
+function deleteAccount(account: AccountSummary): void {
+	emit('deleteAccount', account)
 	accountMenuOpen.value = false
 }
 
@@ -122,20 +128,33 @@ function openAccountModal(): void {
 					<ChevronDown :size="16" />
 				</button>
 				<div v-if="accountMenuOpen" class="account-select__menu">
-					<button
+					<div
 						v-for="account in accounts.accounts"
 						:key="account.id"
-						class="account-select__option"
-						:class="{
-							'account-select__option--active':
-								account.id === accounts.selectedAccountId
-						}"
-						type="button"
-						@click="selectAccount(account.id)"
+						class="account-select__row"
 					>
-						<span>{{ account.login }}</span>
-						<Check v-if="account.id === accounts.selectedAccountId" :size="16" />
-					</button>
+						<button
+							class="account-select__option"
+							:class="{
+								'account-select__option--active':
+									account.id === accounts.selectedAccountId
+							}"
+							type="button"
+							@click="selectAccount(account.id)"
+						>
+							<span>{{ account.login }}</span>
+							<Check v-if="account.id === accounts.selectedAccountId" :size="16" />
+						</button>
+						<button
+							class="account-select__delete"
+							type="button"
+							:title="t('account.delete')"
+							:aria-label="t('account.deleteLabel', { login: account.login })"
+							@click="deleteAccount(account)"
+						>
+							<Trash2 :size="15" />
+						</button>
+					</div>
 					<button
 						class="account-select__option account-select__option--add"
 						type="button"

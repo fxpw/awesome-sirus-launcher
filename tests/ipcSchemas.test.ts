@@ -5,6 +5,7 @@ import {
 	addAccountInputSchema,
 	clientCheckResultSchema,
 	createWtfBackupResultSchema,
+	deleteAccountInputSchema,
 	deleteWtfBackupResultSchema,
 	fpsPatchDeleteResultSchema,
 	fpsPatchInstallResultSchema,
@@ -41,6 +42,10 @@ describe('ipc schemas', () => {
 		expect(selectAccountInputSchema.parse({ accountId: account.id })).toEqual({
 			accountId: account.id
 		})
+		expect(deleteAccountInputSchema.parse({ accountId: account.id })).toEqual({
+			accountId: account.id
+		})
+		expect(() => deleteAccountInputSchema.parse({ accountId: '' })).toThrow(ZodError)
 		expect(
 			accountListResultSchema.parse({
 				accounts: [account],

@@ -27,7 +27,8 @@ export const ipcChannels = {
 	accounts: {
 		list: 'accounts:list',
 		add: 'accounts:add',
-		select: 'accounts:select'
+		select: 'accounts:select',
+		delete: 'accounts:delete'
 	},
 	fpsPatch: {
 		getStatus: 'fps-patch:get-status',
@@ -148,6 +149,10 @@ export interface AddAccountInput {
 }
 
 export interface SelectAccountInput {
+	accountId: string
+}
+
+export interface DeleteAccountInput {
 	accountId: string
 }
 
@@ -470,6 +475,7 @@ export interface LauncherApi {
 		list(): Promise<AccountListResult>
 		add(input: AddAccountInput): Promise<AccountListResult>
 		select(input: SelectAccountInput): Promise<AccountListResult>
+		delete(input: DeleteAccountInput): Promise<AccountListResult>
 	}
 	fpsPatch: {
 		getStatus(): Promise<FpsPatchStatus>
