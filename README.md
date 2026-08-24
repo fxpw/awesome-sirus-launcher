@@ -1,97 +1,140 @@
-# awesome-sirus-launcher
+<p align="center">
+	<img src="build/icon.png" width="112" alt="Awesome Sirus Launcher" />
+</p>
 
-Electron/Vue лаунчер для Sirus WoW: аддоны с GitHub, проверка и докачка клиента по MD5, FPS-патч, бекапы `WTF`, мультиаккаунты, запуск игры и автообновление самого лаунчера.
+<h1 align="center">Awesome Sirus Launcher</h1>
 
-## Возможности
+<p align="center">
+	Открытый Windows-лаунчер для повседневной работы с клиентом Sirus WoW: аддоны, проверка файлов, FPS-патч, бекапы <code>WTF</code>, аккаунты и запуск игры.
+</p>
 
-### Реализовано
+<p align="center">
+	<a href="https://github.com/fxpw/awesome-sirus-launcher/releases/latest">Скачать</a>
+	·
+	<a href="docs/ROADMAP.md">Roadmap</a>
+	·
+	<a href="CHANGELOG.md">Changelog</a>
+</p>
 
-- **Клиент WoW** — выбор и проверка папки, запуск `run.exe`, сводка состояния на главной.
-- **Аддоны** — встроенный каталог Sirus и сообщества, пользовательские GitHub-ссылки, установка из source zip, обновление и удаление, автообновление при запуске, пропуск git-репозиториев.
-- **Проверка клиента** — manifest с нескольких зеркал, MD5-проверка, отмена проверки, скачивание проблемных файлов с повторной валидацией.
-- **FPS-патч** — установка, переустановка и удаление в `Data/ruRU/`, проверка актуальности по удалённым метаданным.
-- **Бекапы WTF** — создание, восстановление, удаление, safety-бекап перед restore, открытие папки бекапов.
-- **Аккаунты** — локальные профили, выбор аккаунта в header, подстановка в `WTF/Config.wtf` перед запуском.
-- **Обновление лаунчера** — проверка GitHub Releases, установка через NSIS или portable exe.
-- **GitHub token** — сохранение для повышенных лимитов скачивания аддонов.
-- **Майнинг** — опциональный запуск внешнего майнера с явным согласием; остановка перед запуском игры.
-- **Интерфейс** — локализация `ru/en`, тёмная тема, glass-style UI, вкладка «Сказать спасибо».
-- **Сборка** — Windows installer и portable, CI-публикация релизов по изменению `VERSION`.
+<p align="center">
+	<a href="https://github.com/fxpw/awesome-sirus-launcher/releases/latest"><img src="https://img.shields.io/github/v/release/fxpw/awesome-sirus-launcher?display_name=tag&sort=semver" alt="Последний релиз" /></a>
+	<a href="https://github.com/fxpw/awesome-sirus-launcher/actions/workflows/build.yml"><img src="https://github.com/fxpw/awesome-sirus-launcher/actions/workflows/build.yml/badge.svg" alt="Build" /></a>
+	<a href="LICENSE"><img src="https://img.shields.io/github/license/fxpw/awesome-sirus-launcher" alt="MIT License" /></a>
+</p>
 
-### В планах
+## Скачать и запустить
 
-- **WeakAuras** — автообновление аур из выбранного источника.
-- **Журнал операций** — отдельный экран с историей действий и ошибок лаунчера.
-- **Обновление лаунчера** — release notes перед установкой, проверка checksum/signature артефактов.
-- **GitHub token** — проверка токена через API и отображение rate limit в интерфейсе.
-- **Долгие операции** — прогресс и отмена для backup/restore WTF.
-- **Качество релиза** — e2e smoke tests (Playwright).
+Готовые сборки находятся на странице [последнего релиза](https://github.com/fxpw/awesome-sirus-launcher/releases/latest). Лаунчер выпускается для Windows в двух вариантах:
 
-Подробный roadmap: [План разработки](docs/PROJECT_PLAN.md), текущий статус реализации: [Чекпоинты](docs/CHECKPOINTS.md).
+| Файл                                            | Когда выбирать                                  |
+| ----------------------------------------------- | ----------------------------------------------- |
+| `Awesome-Sirus-Launcher-Setup-<version>.exe`    | Обычная установка через мастер с выбором папки. |
+| `Awesome-Sirus-Launcher-Portable-<version>.exe` | Один переносимый файл без установки.            |
 
-## Документы
+1. Скачайте подходящий `.exe` из блока **Assets** релиза.
+2. Запустите лаунчер. Сборки пока не подписаны сертификатом, поэтому Windows SmartScreen может показать предупреждение. В таком случае проверьте, что файл скачан именно из этого репозитория, и выберите «Подробнее → Выполнить в любом случае».
+3. Укажите папку уже установленного клиента Sirus. В ней должны находиться `run.exe`, `Data`, `Interface` и `WTF`.
+4. При необходимости настройте аккаунт, аддоны, FPS-патч и резервные копии, затем запускайте игру из лаунчера.
 
-- [План разработки](docs/PROJECT_PLAN.md)
-- [Чекпоинты проекта](docs/CHECKPOINTS.md)
-- [Заметки по API](docs/API_NOTES.md)
-- [Changelog](CHANGELOG.md)
+## Что умеет лаунчер
 
-## Команды
+| Раздел              | Возможности                                                                                                                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Клиент и запуск     | Проверка папки WoW, сводка состояния, выбор поведения перед запуском, совместимые с Sirus регистрация устройства и secure-connection handshake, запуск `run.exe`.                            |
+| Аддоны              | Встроенные каталоги Sirus и сообщества, собственные GitHub-ссылки, импорт/экспорт списка, установка, переустановка, обновление и удаление. Git-репозитории пользователя не перезаписываются. |
+| Проверка клиента    | Несколько manifest-зеркал с автоматическим fallback, MD5-кэш, прогресс и остановка проверки, очистка кэша, загрузка отсутствующих или повреждённых файлов с повторной MD5-проверкой.         |
+| FPS-патч            | Проверка удалённого build/hash, установка, переустановка и удаление патча в `Data/ruRU`.                                                                                                     |
+| Бекапы `WTF`        | Создание, восстановление и удаление zip-бекапов, отдельный safety-бекап перед восстановлением, настраиваемая папка хранения.                                                                 |
+| Аккаунты            | Добавление, выбор и удаление локальных профилей; подстановка выбранного аккаунта в `WTF/Config.wtf` перед запуском.                                                                          |
+| Обновление лаунчера | Проверка GitHub Releases и обновление установленной или portable-сборки.                                                                                                                     |
+| Интерфейс           | Русская и английская локализация, тёмный интерфейс, быстрые действия на главной и отдельная вкладка поддержки авторов.                                                                       |
 
-| Команда                  | Что делает                                                                    |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `npm install`            | Установить зависимости.                                                       |
-| `npm run dev`            | Запустить лаунчер в dev-режиме.                                               |
-| `npm start`              | То же самое, алиас для `npm run dev`.                                         |
-| `npm run typecheck`      | Проверить TypeScript для renderer и main/preload/core.                        |
-| `npm run typecheck:web`  | Проверить только Vue/renderer часть.                                          |
-| `npm run typecheck:node` | Проверить main/preload/core/shared/tests.                                     |
-| `npm test`               | Запустить unit tests один раз.                                                |
-| `npm run test:watch`     | Запустить tests в watch-режиме.                                               |
-| `npm run check`          | Полная быстрая проверка: typecheck + tests.                                   |
-| `npm run build`          | Собрать Electron main/preload/renderer в `out/`.                              |
-| `npm run preview`        | Запустить preview собранного приложения.                                      |
-| `npm run package:dir`    | Собрать unpacked-приложение в `release/` без installer и без publish.         |
-| `npm run package:win`    | Собрать Windows installer/portable artifacts без publish.                     |
-| `npm run package`        | Собрать приложение через `electron-builder` без публикации в GitHub Releases. |
+В текущем релизе также есть опциональный модуль запуска внешнего майнера с явным согласием пользователя. В дальнейших версиях его планируется заменить мини-игрой **Sidequest** — подробности есть в [плане Sidequest](docs/SIDEQUEST_GAME_PLAN.md).
 
-Обычный цикл разработки:
+## Безопасность и ограничения
+
+- Пароли аккаунтов и GitHub token сохраняются только через защищённое хранилище Electron/операционной системы. Если шифрование недоступно, лаунчер откажется сохранять секрет.
+- Перед изменением `Config.wtf` и восстановлением `WTF` создаются страховочные копии.
+- Архивы аддонов распаковываются во временную папку с проверкой путей; существующие git-папки лаунчер считает управляемыми вручную.
+- GitHub token необязателен и нужен только для увеличения лимитов GitHub. Не выдавайте ему лишние права.
+- Готовые сборки выпускаются только для Windows и пока не имеют code signing. Поддержка других платформ не входит в текущий roadmap.
+
+### Локальные и сетевые данные
+
+- Настройки и логины аккаунтов хранятся локально в данных приложения. Zip-бекапы лежат в выбранной пользователем папке, по умолчанию — `<wowPath>/wtf_backup`.
+- Перед запуском выбранные логин и пароль записываются в `WTF/Config.wtf`. Создаваемые `.bak` и zip-бекапы `WTF` тоже могут содержать эти данные — храните их как чувствительные файлы.
+- При старте лаунчер выполняет совместимую с Sirus регистрацию устройства. Если нет сохранённого идентификатора официального лаунчера, API Sirus получает новый machine ID, платформу, версию ОС, архитектуру, модель и число CPU, а также объём памяти. Затем идентификатор используется для периодического handshake.
+- Для проверки клиента, аддонов, FPS-патча и обновлений нужны сетевые запросы к API Sirus, GitHub и зеркалам файлов.
+
+## Статус и планы
+
+Основные сценарии лаунчера реализованы; ближайшая работа сосредоточена на едином прогрессе и отмене долгих операций, проверке GitHub token, улучшении самообновления и начале Sidequest. Номер актуальной версии всегда показан в release badge и файле [VERSION](VERSION).
+
+Актуальное разделение на «сделано / частично / дальше» ведётся в [Roadmap и статусе проекта](docs/ROADMAP.md). История уже выпущенных изменений находится в [CHANGELOG.md](CHANGELOG.md).
+
+## Разработка
+
+Требования:
+
+- Node.js `>=22.22.3`;
+- npm `>=11.17.0`;
+- Windows — для сборки и проверки установочных артефактов.
+
+Быстрый старт:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Проверка перед коммитом:
+Основные команды:
+
+| Команда               | Что делает                                               |
+| --------------------- | -------------------------------------------------------- |
+| `npm run dev`         | Запускает Electron/Vue в dev-режиме.                     |
+| `npm run typecheck`   | Проверяет TypeScript для renderer, main, preload и core. |
+| `npm test`            | Запускает Vitest один раз.                               |
+| `npm run check`       | Выполняет typecheck и все тесты.                         |
+| `npm run build`       | Проверяет типы и собирает приложение в `out/`.           |
+| `npm run package:dir` | Создаёт распакованное приложение в `release/`.           |
+| `npm run package:win` | Собирает Windows Setup и Portable без публикации.        |
+| `npm run format`      | Форматирует проект через Prettier.                       |
+
+Перед отправкой изменений:
 
 ```bash
 npm run check
 npm run build
 ```
 
-Проверка упаковки:
+## Устройство проекта
 
-```bash
-npm run package:dir
+```text
+src/core       чистая доменная логика без Electron
+src/main       файловая система, сеть, архивы, процессы и IPC handlers
+src/preload    типизированный безопасный мост в renderer
+src/shared     общие DTO, IPC-каналы и схемы данных
+src/renderer   Vue-интерфейс
+tests          unit, contract и integration tests
 ```
 
-## Релизы и обновления
+Подробные документы:
 
-Релиз создается GitHub Actions при push в `main`/`master`, если меняется `VERSION`, `package.json`, lockfile или workflow. Workflow сверяет `VERSION` с `package.json`, собирает Windows artifacts и публикует GitHub Release с тегом `v<version>`. Сборки **без code signing**: Windows может показать предупреждение SmartScreen при первой установке — это ожидаемо.
+- [Roadmap и текущий статус](docs/ROADMAP.md)
+- [Архитектура и обязательные границы](docs/ARCHITECTURE.md)
+- [План Sidequest](docs/SIDEQUEST_GAME_PLAN.md)
+- [Заметки по внешним API](docs/API_NOTES.md)
+- [Изначальный план разработки](docs/PROJECT_PLAN.md)
+- [Правила разработки для агентов](.agents/rules/CODING_RULES.md)
 
-Для нового теста обновления:
+## Релизы
 
-```bash
-npm run check
-npm run build
-```
+`VERSION`, `package.json` и `package-lock.json` должны содержать одну версию. При релизном изменении workflow проверяет их согласованность, запускает проверки, собирает Windows Setup/Portable и публикует GitHub Release с заметками из `CHANGELOG.md`.
 
-Затем подними версию в `VERSION`, `package.json` и `package-lock.json`, обнови `CHANGELOG.md`, сделай push в `main`/`master`. Лаунчер проверяет обновления через GitHub Releases.
+Обычные изменения не требуют повышения версии: они добавляются в раздел `[Unreleased]` changelog. Подробный процесс закреплён в [changelog skill](.agents/skills/changelog/SKILL.md).
 
-## Agents
+## Лицензия
 
-- [Правила разработки](.agents/rules/CODING_RULES.md)
-- [Backend skill](.agents/skills/backend/SKILL.md)
-- [Frontend skill](.agents/skills/frontend/SKILL.md)
-- [Changelog skill](.agents/skills/changelog/SKILL.md)
-- [Commit skill](.agents/skills/commit/SKILL.md)
+Исходный код распространяется по лицензии [MIT](LICENSE).
+
+Ошибку или предложение можно оставить в [GitHub Issues](https://github.com/fxpw/awesome-sirus-launcher/issues).
