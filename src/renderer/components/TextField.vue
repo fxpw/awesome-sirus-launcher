@@ -3,6 +3,7 @@ defineProps<{
 	modelValue: string
 	placeholder?: string
 	type?: string
+	disabled?: boolean
 }>()
 
 defineEmits<{
@@ -16,6 +17,7 @@ defineEmits<{
 		:type="type ?? 'text'"
 		:value="modelValue"
 		:placeholder="placeholder"
+		:disabled="disabled"
 		autocomplete="off"
 		@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
 	/>

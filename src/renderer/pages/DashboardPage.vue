@@ -13,6 +13,7 @@ import type {
 	FpsPatchStatus,
 	GitHubTokenStatus,
 	LauncherSettings,
+	LauncherSettingsPatch,
 	MiningConfigInput,
 	MiningState,
 	WowPathValidation,
@@ -28,6 +29,7 @@ import ClientPathModal from '@renderer/elements/ClientPathModal.vue'
 import DashboardHeader from '@renderer/blocks/DashboardHeader.vue'
 import DashboardOverviewPanel from '@renderer/elements/DashboardOverviewPanel.vue'
 import FpsPatchPanel from '@renderer/elements/FpsPatchPanel.vue'
+import GitHubConnectionForm from '@renderer/elements/GitHubConnectionForm.vue'
 import GitHubTokenForm from '@renderer/elements/GitHubTokenForm.vue'
 import GitHubTokenModal from '@renderer/elements/GitHubTokenModal.vue'
 import LaunchBehaviorForm from '@renderer/elements/LaunchBehaviorForm.vue'
@@ -39,6 +41,7 @@ import WtfBackupPanel from '@renderer/elements/WtfBackupPanel.vue'
 import { launcherApi } from '@renderer/api/launcherApi'
 import { useLocale } from '@renderer/composables/useLocale'
 import { useTheme } from '@renderer/composables/useTheme'
+import { getUserErrorMessage } from '@renderer/shared/errors'
 import type { MessageKey } from '@renderer/shared/i18n'
 
 type LauncherSection =
@@ -102,6 +105,11 @@ const addonCheckResult = ref<AddonsListResult | null>(null)
 const miningState = ref<MiningState | null>(null)
 const miningWorking = ref(false)
 const githubToken = ref('')
+const githubConnectionSaving = ref(false)
+const githubConnectionTesting = ref(false)
+const githubConnectionError = ref('')
+const githubConnectionNotice = ref('')
+const githubConnectionLastCheckUsedProxy = ref<boolean | undefined>()
 const error = ref('')
 const notice = ref('')
 const tokenModalError = ref('')
@@ -133,9 +141,13 @@ const clientProblemCount = computed(
 const addonUpdateCount = computed(
 	() => addonCheckResult.value?.addons.filter((addon) => addon.status === 'outdated').length ?? 0
 )
+const addonRemoteErrorCount = computed(
+	() => addonCheckResult.value?.addons.filter((addon) => Boolean(addon.error)).length ?? 0
+)
 const footerStatusTone = computed(() => {
 	if (error.value) return 'error'
 	if (clientProblemCount.value > 0) return 'warning'
+	if (addonRemoteErrorCount.value > 0) return 'warning'
 	if (addonUpdateCount.value > 0) return 'warning'
 	if (notice.value || clientCheckResult.value) return 'ok'
 	return 'neutral'
@@ -156,6 +168,12 @@ const footerStatusText = computed(() => {
 	if (wtfBackupCreating.value) return t('footer.status.wtfBackup')
 	if (notice.value) return notice.value
 	if (addonCheckResult.value) {
+		if (addonRemoteErrorCount.value > 0) {
+			return t('footer.status.addonsPartial', {
+				count: addonRemoteErrorCount.value,
+				total: addonCheckResult.value.total
+			})
+		}
 		return addonUpdateCount.value > 0
 			? t('footer.status.addonsOutdated', { count: addonUpdateCount.value })
 			: t('footer.status.addonsOk', { total: addonCheckResult.value.total })
@@ -315,7 +333,7 @@ async function checkAppUpdate(): Promise<void> {
 	try {
 		appUpdateCheck.value = await launcherApi.app.checkUpdate()
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('appUpdate.checkError')
+		error.value = getUserErrorMessage(err, t('appUpdate.checkError'))
 	} finally {
 		appUpdateChecking.value = false
 	}
@@ -329,7 +347,7 @@ async function installAppUpdate(): Promise<void> {
 		const result = await launcherApi.app.installUpdate()
 		notice.value = t('appUpdate.installStarted', { version: result.version })
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('appUpdate.installError')
+		error.value = getUserErrorMessage(err, t('appUpdate.installError'))
 		appUpdateInstalling.value = false
 	}
 }
@@ -363,6 +381,38 @@ async function clearGitHubToken(): Promise<void> {
 		const message = err instanceof Error ? err.message : t('token.clearError')
 		if (tokenModalOpen.value) tokenModalError.value = message
 		else error.value = message
+	}
+}
+
+async function saveGitHubConnectionSettings(patch: LauncherSettingsPatch): Promise<void> {
+	githubConnectionError.value = ''
+	githubConnectionNotice.value = ''
+	githubConnectionLastCheckUsedProxy.value = undefined
+	githubConnectionSaving.value = true
+	try {
+		settings.value = await launcherApi.settings.save(patch)
+		githubConnectionNotice.value = t('githubConnection.saved')
+	} catch (err) {
+		githubConnectionError.value = getUserErrorMessage(err, t('githubConnection.saveError'))
+	} finally {
+		githubConnectionSaving.value = false
+	}
+}
+
+async function testGitHubConnection(patch: LauncherSettingsPatch): Promise<void> {
+	githubConnectionError.value = ''
+	githubConnectionNotice.value = ''
+	githubConnectionLastCheckUsedProxy.value = undefined
+	githubConnectionTesting.value = true
+	try {
+		settings.value = await launcherApi.settings.save(patch)
+		const result = await launcherApi.github.testConnection()
+		githubConnectionLastCheckUsedProxy.value = result.usingProxy
+		githubConnectionNotice.value = t('githubConnection.testSuccess')
+	} catch (err) {
+		githubConnectionError.value = getUserErrorMessage(err, t('githubConnection.testError'))
+	} finally {
+		githubConnectionTesting.value = false
 	}
 }
 
@@ -653,10 +703,21 @@ async function scanAddonsOnStartup(): Promise<void> {
 	addonChecking.value = true
 	try {
 		const result = await launcherApi.addons.updateAll()
-		notice.value = t('addons.updatedAll', { total: result.total })
-		addonCheckResult.value = await launcherApi.addons.check()
+		const checked = await launcherApi.addons.check()
+		addonCheckResult.value = checked
+		const failedUpdates = result.skipped.filter((addon) => Boolean(addon.error)).length
+		const failedChecks = checked.addons.filter((addon) => Boolean(addon.error)).length
+		if (failedUpdates > 0) {
+			error.value = t('addons.updatePartialWarning', {
+				updated: result.total,
+				failed: failedUpdates
+			})
+			notice.value = ''
+		} else {
+			notice.value = failedChecks > 0 ? '' : t('addons.updatedAll', { total: result.total })
+		}
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('addons.error')
+		error.value = getUserErrorMessage(err, t('addons.error'))
 	} finally {
 		addonChecking.value = false
 	}
@@ -667,9 +728,10 @@ async function runAddonCheck(): Promise<void> {
 	try {
 		const result = await launcherApi.addons.check()
 		addonCheckResult.value = result
-		notice.value = t('footer.status.addonsChecked', { total: result.total })
+		const failed = result.addons.filter((addon) => Boolean(addon.error)).length
+		notice.value = failed ? '' : t('footer.status.addonsChecked', { total: result.total })
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('addons.error')
+		error.value = getUserErrorMessage(err, t('addons.error'))
 	} finally {
 		addonChecking.value = false
 	}
@@ -685,7 +747,7 @@ function selectClientPatchSource(sourceUrl: string): void {
 
 function updateAddonCheckResult(result: AddonsListResult): void {
 	addonCheckResult.value = result
-	notice.value = t('footer.status.addonsChecked', { total: result.total })
+	notice.value = ''
 }
 
 async function saveMiningConfig(patch: MiningConfigInput): Promise<void> {
@@ -821,6 +883,7 @@ async function refreshMiningState(): Promise<void> {
 						:addon-result="addonCheckResult"
 						:checking-external="addonChecking"
 						@checked="updateAddonCheckResult"
+						@open-settings="navigate('settings')"
 					/>
 
 					<ClientCheckPanel
@@ -902,6 +965,19 @@ async function refreshMiningState(): Promise<void> {
 							v-if="settings"
 							:settings="settings"
 							@toggle="toggleSetting"
+						/>
+
+						<GitHubConnectionForm
+							v-if="settings"
+							:enabled="settings.githubProxyEnabled"
+							:proxy-url="settings.githubProxyUrl"
+							:saving="githubConnectionSaving"
+							:testing="githubConnectionTesting"
+							:error="githubConnectionError"
+							:notice="githubConnectionNotice"
+							:last-check-used-proxy="githubConnectionLastCheckUsedProxy"
+							@save="saveGitHubConnectionSettings"
+							@test="testGitHubConnection"
 						/>
 
 						<GitHubTokenForm

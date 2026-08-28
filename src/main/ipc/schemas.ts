@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { parseGitHubProxyUrl } from '@core/github/githubProxy'
 
 export const voidInputSchema = z.undefined()
 export const voidOutputSchema = z.undefined()
@@ -43,13 +44,23 @@ export const githubTokenInputSchema = z.object({
 	token: z.string().trim().min(1, 'GitHub token пустой')
 })
 
+export const githubConnectionCheckSchema = z.object({
+	connected: z.literal(true),
+	usingProxy: z.boolean(),
+	checkedAt: z.string()
+})
+
+const githubProxyUrlSchema = z.string().trim().max(2048, 'Адрес прокси слишком длинный')
+
 export const launcherSettingsSchema = z.object({
 	wowPath: z.string(),
 	wtfBackupPath: z.string(),
 	closeOnLaunch: z.boolean(),
 	checkClientBeforeLaunch: z.boolean(),
 	autoUpdateAddons: z.boolean(),
-	allowPrereleaseUpdates: z.boolean()
+	allowPrereleaseUpdates: z.boolean(),
+	githubProxyEnabled: z.boolean(),
+	githubProxyUrl: z.string()
 })
 
 export const launcherSettingsPatchSchema = z
@@ -59,9 +70,31 @@ export const launcherSettingsPatchSchema = z
 		closeOnLaunch: z.boolean().optional(),
 		checkClientBeforeLaunch: z.boolean().optional(),
 		autoUpdateAddons: z.boolean().optional(),
-		allowPrereleaseUpdates: z.boolean().optional()
+		allowPrereleaseUpdates: z.boolean().optional(),
+		githubProxyEnabled: z.boolean().optional(),
+		githubProxyUrl: githubProxyUrlSchema.optional()
 	})
 	.strict()
+	.superRefine((value, context) => {
+		if (value.githubProxyEnabled === true && !value.githubProxyUrl) {
+			context.addIssue({
+				code: 'custom',
+				path: ['githubProxyUrl'],
+				message: 'Укажи адрес прокси, например http://127.0.0.1:7890'
+			})
+			return
+		}
+		if (value.githubProxyEnabled === false || !value.githubProxyUrl) return
+		try {
+			parseGitHubProxyUrl(value.githubProxyUrl)
+		} catch (error) {
+			context.addIssue({
+				code: 'custom',
+				path: ['githubProxyUrl'],
+				message: error instanceof Error ? error.message : 'Некорректный адрес прокси'
+			})
+		}
+	})
 
 export const wowPathInputSchema = z.string()
 

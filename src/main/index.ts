@@ -6,6 +6,7 @@ import {
 	app,
 	BrowserWindow,
 	dialog,
+	session,
 	shell,
 	type OpenDialogOptions,
 	type WebContents
@@ -23,6 +24,7 @@ import { downloadFile } from '@main/downloads/downloadFile'
 import { fetchJson } from '@main/downloads/fetchJson'
 import { md5File } from '@main/files/md5File'
 import { createFpsPatchService } from '@main/fpsPatch/fpsPatchService'
+import { createGitHubNetworkService } from '@main/github/githubNetworkService'
 import { registerIpcHandler } from '@main/ipc/ipcHandler'
 import { createGameLaunchService } from '@main/launcher/gameLaunchService'
 import { createClientRegistrationService } from '@main/device/clientRegistrationService'
@@ -61,6 +63,7 @@ import {
 	fpsPatchInstallResultSchema,
 	fpsPatchStatusSchema,
 	gameLaunchResultSchema,
+	githubConnectionCheckSchema,
 	githubTokenInputSchema,
 	githubTokenStatusSchema,
 	launcherSettingsPatchSchema,
@@ -79,10 +82,14 @@ import {
 } from '@main/ipc/schemas'
 import { createElectronSecretStore } from '@main/secrets/electronSecretStore'
 import { createFileSettingsStore } from '@main/settings/fileSettingsStore'
+import type { SirusOfficialLauncherRelease } from '@core/sirus/sirusLauncherVersion'
 import { validateWowPath } from '@core/wow/wowPaths'
 
 const secretStore = createElectronSecretStore(() => app.getPath('userData'))
 const settingsStore = createFileSettingsStore(() => app.getPath('userData'))
+const githubNetworkService = createGitHubNetworkService(settingsStore, () =>
+	session.fromPartition('github-network', { cache: false })
+)
 const accountService = createAccountService(() => app.getPath('userData'), secretStore)
 const wtfBackupService = createWtfBackupService(settingsStore)
 const fpsPatchService = createFpsPatchService(
@@ -105,8 +112,9 @@ const addonService = createAddonService(
 	() => app.getPath('userData'),
 	settingsStore,
 	secretStore,
-	downloadFile,
-	unzipToDirectory
+	(url, targetPath, options) => githubNetworkService.downloadFile(url, targetPath, options),
+	unzipToDirectory,
+	(url, options) => githubNetworkService.fetchText(url, options)
 )
 const miningService = createMiningService(
 	() => app.getPath('userData'),
@@ -122,7 +130,11 @@ const miningService = createMiningService(
 const clientRegistrationStore = createClientRegistrationStore(() => app.getPath('userData'))
 const sirusLauncherVersionService = createSirusLauncherVersionService(
 	() => app.getPath('userData'),
-	app.getVersion()
+	app.getVersion(),
+	async (url) =>
+		(await githubNetworkService.fetchJson(url, {
+			headers: { accept: 'application/vnd.github+json' }
+		})) as SirusOfficialLauncherRelease
 )
 const clientRegistrationService = createClientRegistrationService(
 	clientRegistrationStore,
@@ -164,18 +176,9 @@ const appUpdateService = createAppUpdateService(
 	app.getVersion(),
 	settingsStore,
 	secretStore,
-	fetchJson,
-	async (url, token) => {
-		const response = await fetch(url, {
-			headers: token ? { Authorization: `Bearer ${token}` } : undefined
-		})
-		if (!response.ok) {
-			throw new Error(`Request failed ${response.status} ${response.statusText}`.trim())
-		}
-
-		return response.json()
-	},
-	downloadFile,
+	(url) => githubNetworkService.fetchJson(url),
+	(url, token) => githubNetworkService.fetchJson(url, { token }),
+	(url, targetPath, options) => githubNetworkService.downloadFile(url, targetPath, options),
 	async (installerPath) => {
 		const child = spawn(installerPath, ['/S'], {
 			detached: true,
@@ -310,6 +313,13 @@ function registerIpcHandlers(): void {
 			await secretStore.delete('github-token')
 			return { configured: false }
 		}
+	)
+
+	registerIpcHandler(
+		ipcChannels.github.testConnection,
+		voidInputSchema,
+		githubConnectionCheckSchema,
+		async () => githubNetworkService.testConnection()
 	)
 
 	registerIpcHandler(

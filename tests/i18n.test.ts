@@ -5,6 +5,8 @@ describe('renderer i18n', () => {
 	it('translates messages by locale', () => {
 		expect(translate('ru', 'wow.save')).toBe('Сохранить')
 		expect(translate('en', 'wow.save')).toBe('Save')
+		expect(translate('ru', 'githubConnection.test')).toBe('Сохранить и проверить')
+		expect(translate('en', 'addons.retry')).toBe('Retry')
 	})
 
 	it('interpolates params', () => {

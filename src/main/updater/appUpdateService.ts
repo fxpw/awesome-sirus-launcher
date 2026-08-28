@@ -4,9 +4,10 @@ import {
 	type GitHubReleaseResponse
 } from '../../core/updater/appUpdate'
 import { getPortableUpdateDownloadPath } from '../../core/updater/portableUpdateScript'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, open, rm, stat } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { AppUpdateCheck, AppUpdateInstallResult, ReleaseAsset } from '../../shared/contracts'
+import { LauncherError } from '../../shared/errors'
 import type { SettingsStore } from '../settings/fileSettingsStore'
 import type { SecretStore } from '../secrets/memorySecretStore'
 
@@ -43,22 +44,8 @@ export function createAppUpdateService(
 		try {
 			payload = await fetchJson(appReleasesUrl)
 		} catch (err) {
-			if (!isGitHubReleasesUnavailable(err)) throw err
-
-			if (token) {
-				try {
-					payload = await fetchJsonWithToken(appReleasesUrl, token)
-				} catch (tokenErr) {
-					if (!isGitHubReleasesUnavailable(tokenErr)) throw tokenErr
-				}
-			}
-
-			if (!payload) {
-				return {
-					currentVersion,
-					updateAvailable: false
-				}
-			}
+			if (!token || !shouldRetryGitHubRequestWithToken(err)) throw err
+			payload = await fetchJsonWithToken(appReleasesUrl, token)
 		}
 
 		if (!Array.isArray(payload))
@@ -85,7 +72,7 @@ export function createAppUpdateService(
 				: join(getUserDataPath(), 'updates', sanitizeFileName(asset.name))
 			await mkdir(dirname(targetPath), { recursive: true })
 
-			await downloadUpdateAsset(asset.downloadUrl, targetPath)
+			await downloadUpdateAsset(asset, targetPath)
 			if (isPortableLaunch) {
 				if (!runtime.runPortableUpdate) {
 					throw new Error('Portable updater не настроен')
@@ -107,14 +94,58 @@ export function createAppUpdateService(
 		}
 	}
 
-	async function downloadUpdateAsset(url: string, targetPath: string): Promise<void> {
+	async function downloadUpdateAsset(asset: ReleaseAsset, targetPath: string): Promise<void> {
 		const token = await secretStore.get('github-token')
 		try {
-			await downloadFile(url, targetPath)
+			await downloadFile(asset.downloadUrl, targetPath)
 		} catch (err) {
 			if (!token || !isGitHubAssetUnavailable(err)) throw err
-			await downloadFile(url, targetPath, { token })
+			await downloadFile(asset.downloadUrl, targetPath, { token })
 		}
+		await validateDownloadedExecutable(asset, targetPath)
+	}
+}
+
+async function validateDownloadedExecutable(
+	asset: ReleaseAsset,
+	targetPath: string
+): Promise<void> {
+	try {
+		const fileInfo = await stat(targetPath)
+		if (!fileInfo.isFile() || fileInfo.size < 2) {
+			throw new LauncherError(
+				'GitHub вернул пустой или повреждённый установщик. Повтори попытку позже',
+				'UPDATE_ASSET_INVALID'
+			)
+		}
+		if (asset.size !== undefined && asset.size !== fileInfo.size) {
+			throw new LauncherError(
+				`Размер скачанного обновления не совпал с данными GitHub: ожидалось ${asset.size}, получено ${fileInfo.size} байт`,
+				'UPDATE_ASSET_SIZE_MISMATCH'
+			)
+		}
+
+		const handle = await open(targetPath, 'r')
+		try {
+			const signature = Buffer.alloc(2)
+			const { bytesRead } = await handle.read(signature, 0, signature.length, 0)
+			if (bytesRead !== 2 || signature[0] !== 0x4d || signature[1] !== 0x5a) {
+				throw new LauncherError(
+					'GitHub вернул страницу блокировки или повреждённый файл вместо Windows-установщика. Попробуй VPN/прокси',
+					'UPDATE_ASSET_INVALID'
+				)
+			}
+		} finally {
+			await handle.close()
+		}
+	} catch (error) {
+		await rm(targetPath, { force: true }).catch(() => undefined)
+		if (error instanceof LauncherError) throw error
+		throw new LauncherError(
+			'Не удалось проверить скачанное обновление. Повтори попытку позже',
+			'UPDATE_ASSET_VALIDATION_FAILED',
+			error
+		)
 	}
 }
 
@@ -152,12 +183,23 @@ function getPortableExecutablePath(runtime: AppUpdateRuntime): string {
 	return executablePath
 }
 
-function isGitHubReleasesUnavailable(err: unknown): boolean {
+function shouldRetryGitHubRequestWithToken(err: unknown): boolean {
+	if (err instanceof LauncherError) {
+		return [
+			'GITHUB_AUTH_INVALID',
+			'GITHUB_FORBIDDEN',
+			'GITHUB_NOT_FOUND',
+			'GITHUB_RATE_LIMITED'
+		].includes(err.code)
+	}
 	if (!(err instanceof Error)) return false
-	return /Request failed 404\b/.test(err.message)
+	return /Request failed (?:401|403|404|429)\b/.test(err.message)
 }
 
 function isGitHubAssetUnavailable(err: unknown): boolean {
+	if (err instanceof LauncherError) {
+		return ['GITHUB_FORBIDDEN', 'GITHUB_NOT_FOUND', 'GITHUB_RATE_LIMITED'].includes(err.code)
+	}
 	if (!(err instanceof Error)) return false
 	return /Download failed (?:403|404)\b/.test(err.message)
 }

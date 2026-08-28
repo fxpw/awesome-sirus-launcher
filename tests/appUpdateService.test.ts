@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -8,6 +8,8 @@ import {
 	selectInstallAsset
 } from '../src/main/updater/appUpdateService'
 import type { LauncherSettings } from '../src/shared/contracts'
+
+const fakeExecutable = Buffer.from('MZfake-windows-executable')
 
 describe('app update service', () => {
 	it('checks GitHub releases from the configured repository', async () => {
@@ -75,7 +77,7 @@ describe('app update service', () => {
 		expect(result.latest?.version).toBe('2.0.0')
 	})
 
-	it('treats unavailable GitHub releases endpoint as no update', async () => {
+	it('does not report a failed GitHub check as no update', async () => {
 		const service = createAppUpdateService(
 			'1.0.1',
 			createSettingsStore(false),
@@ -89,12 +91,7 @@ describe('app update service', () => {
 			() => ''
 		)
 
-		const result = await service.check()
-
-		expect(result).toEqual({
-			currentVersion: '1.0.1',
-			updateAvailable: false
-		})
+		await expect(service.check()).rejects.toThrow('Request failed 404')
 	})
 
 	it('uses saved GitHub token as a fallback for private releases', async () => {
@@ -185,7 +182,7 @@ describe('app update service', () => {
 						{
 							name: 'Awesome-Sirus-Launcher-Setup-1.2.0.exe',
 							browser_download_url: 'https://example.test/setup.exe',
-							size: 123
+							size: fakeExecutable.length
 						}
 					]
 				}
@@ -193,7 +190,7 @@ describe('app update service', () => {
 			async () => undefined,
 			async (url, targetPath) => {
 				downloadedUrls.push(url)
-				await writeFile(targetPath, 'installer')
+				await writeFile(targetPath, fakeExecutable)
 			},
 			async (installerPath) => {
 				launchedPaths.push(installerPath)
@@ -206,7 +203,7 @@ describe('app update service', () => {
 		expect(downloadedUrls).toEqual(['https://example.test/setup.exe'])
 		expect(launchedPaths).toEqual([result.downloadedPath])
 		expect(result.version).toBe('1.2.0')
-		await expect(readFile(result.downloadedPath, 'utf8')).resolves.toBe('installer')
+		await expect(readFile(result.downloadedPath)).resolves.toEqual(fakeExecutable)
 	})
 
 	it('stores non-portable updates in userData/updates and launches the setup asset', async () => {
@@ -226,19 +223,19 @@ describe('app update service', () => {
 						{
 							name: 'Awesome-Sirus-Launcher-Portable-1.2.0.exe',
 							browser_download_url: 'https://example.test/portable.exe',
-							size: 124
+							size: fakeExecutable.length
 						},
 						{
 							name: 'Awesome-Sirus-Launcher-Setup-1.2.0.exe',
 							browser_download_url: 'https://example.test/setup.exe',
-							size: 123
+							size: fakeExecutable.length
 						}
 					]
 				}
 			],
 			async () => undefined,
-			async (url, targetPath) => {
-				await writeFile(targetPath, `downloaded from ${url}`)
+			async (_url, targetPath) => {
+				await writeFile(targetPath, fakeExecutable)
 			},
 			async (installerPath) => {
 				launchedPaths.push(installerPath)
@@ -253,9 +250,7 @@ describe('app update service', () => {
 			join(root, 'updates', 'Awesome-Sirus-Launcher-Setup-1.2.0.exe')
 		)
 		expect(launchedPaths).toEqual([result.downloadedPath])
-		await expect(readFile(result.downloadedPath, 'utf8')).resolves.toBe(
-			'downloaded from https://example.test/setup.exe'
-		)
+		await expect(readFile(result.downloadedPath)).resolves.toEqual(fakeExecutable)
 	})
 
 	it('does not invoke portable updater flow for standard installs', async () => {
@@ -276,14 +271,14 @@ describe('app update service', () => {
 						{
 							name: 'Awesome-Sirus-Launcher-Setup-1.2.0.exe',
 							browser_download_url: 'https://example.test/setup.exe',
-							size: 123
+							size: fakeExecutable.length
 						}
 					]
 				}
 			],
 			async () => undefined,
-			async (url, targetPath) => {
-				await writeFile(targetPath, `downloaded from ${url}`)
+			async (_url, targetPath) => {
+				await writeFile(targetPath, fakeExecutable)
 			},
 			async (installerPath) => {
 				launchedPaths.push(installerPath)
@@ -322,19 +317,19 @@ describe('app update service', () => {
 						{
 							name: 'Awesome-Sirus-Launcher-Setup-1.2.0.exe',
 							browser_download_url: 'https://example.test/setup.exe',
-							size: 123
+							size: fakeExecutable.length
 						},
 						{
 							name: 'Awesome-Sirus-Launcher-Portable-1.2.0.exe',
 							browser_download_url: 'https://example.test/portable.exe',
-							size: 124
+							size: fakeExecutable.length
 						}
 					]
 				}
 			],
 			async () => undefined,
-			async (url, targetPath) => {
-				await writeFile(targetPath, `downloaded from ${url}`)
+			async (_url, targetPath) => {
+				await writeFile(targetPath, fakeExecutable)
 			},
 			async () => undefined,
 			() => join(root, 'user-data'),
@@ -359,9 +354,46 @@ describe('app update service', () => {
 				executablePath
 			}
 		])
-		await expect(readFile(result.downloadedPath, 'utf8')).resolves.toBe(
-			'downloaded from https://example.test/portable.exe'
+		await expect(readFile(result.downloadedPath)).resolves.toEqual(fakeExecutable)
+	})
+
+	it('rejects and removes a block page disguised as an installer', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-app-update-block-page-'))
+		const runInstaller = vi.fn(async () => undefined)
+		const blockPage = Buffer.from('<html>access blocked</html>')
+		const service = createAppUpdateService(
+			'1.0.0',
+			createSettingsStore(false),
+			createSecretStore(),
+			async () => [
+				{
+					tag_name: 'v1.2.0',
+					html_url: 'https://github.com/fxpw/awesome-sirus-launcher/releases/tag/v1.2.0',
+					body: null,
+					prerelease: false,
+					assets: [
+						{
+							name: 'Awesome-Sirus-Launcher-Setup-1.2.0.exe',
+							browser_download_url: 'https://example.test/setup.exe',
+							size: blockPage.length
+						}
+					]
+				}
+			],
+			async () => undefined,
+			async (_url, targetPath) => writeFile(targetPath, blockPage),
+			runInstaller,
+			() => root
 		)
+
+		await expect(service.install()).rejects.toMatchObject({
+			code: 'UPDATE_ASSET_INVALID',
+			message: expect.stringContaining('страницу блокировки')
+		})
+		expect(runInstaller).not.toHaveBeenCalled()
+		await expect(
+			readFile(join(root, 'updates', 'Awesome-Sirus-Launcher-Setup-1.2.0.exe'))
+		).rejects.toThrow()
 	})
 })
 
@@ -372,7 +404,9 @@ function createSettingsStore(allowPrereleaseUpdates: boolean) {
 		closeOnLaunch: false,
 		checkClientBeforeLaunch: false,
 		autoUpdateAddons: false,
-		allowPrereleaseUpdates
+		allowPrereleaseUpdates,
+		githubProxyEnabled: false,
+		githubProxyUrl: ''
 	}
 
 	return {

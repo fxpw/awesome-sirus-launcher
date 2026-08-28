@@ -32,6 +32,33 @@ describe('ipc schemas', () => {
 		expect(() => launcherSettingsPatchSchema.parse({ unknown: true })).toThrow(ZodError)
 	})
 
+	it('validates manual GitHub proxy settings', () => {
+		expect(
+			launcherSettingsPatchSchema.parse({
+				githubProxyEnabled: true,
+				githubProxyUrl: 'http://127.0.0.1:7890'
+			})
+		).toEqual({
+			githubProxyEnabled: true,
+			githubProxyUrl: 'http://127.0.0.1:7890'
+		})
+		expect(() =>
+			launcherSettingsPatchSchema.parse({ githubProxyEnabled: true, githubProxyUrl: '' })
+		).toThrow('Укажи адрес прокси')
+		expect(() =>
+			launcherSettingsPatchSchema.parse({
+				githubProxyEnabled: true,
+				githubProxyUrl: 'http://user:password@localhost:8080'
+			})
+		).toThrow('логином и паролем')
+		expect(
+			launcherSettingsPatchSchema.parse({
+				githubProxyEnabled: false,
+				githubProxyUrl: 'not-a-proxy'
+			})
+		).toEqual({ githubProxyEnabled: false, githubProxyUrl: 'not-a-proxy' })
+	})
+
 	it('validates account input and output shapes', () => {
 		const account = { id: 'account-1', login: 'fxpw' }
 

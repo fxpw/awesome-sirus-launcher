@@ -9,7 +9,8 @@ export const ipcChannels = {
 	github: {
 		getTokenStatus: 'github:get-token-status',
 		saveToken: 'github:save-token',
-		clearToken: 'github:clear-token'
+		clearToken: 'github:clear-token',
+		testConnection: 'github:test-connection'
 	},
 	settings: {
 		get: 'settings:get',
@@ -97,6 +98,12 @@ export interface GitHubTokenInput {
 	token: string
 }
 
+export interface GitHubConnectionCheck {
+	connected: true
+	usingProxy: boolean
+	checkedAt: string
+}
+
 export interface LauncherSettings {
 	wowPath: string
 	wtfBackupPath: string
@@ -104,6 +111,8 @@ export interface LauncherSettings {
 	checkClientBeforeLaunch: boolean
 	autoUpdateAddons: boolean
 	allowPrereleaseUpdates: boolean
+	githubProxyEnabled: boolean
+	githubProxyUrl: string
 }
 
 export type LauncherSettingsPatch = Partial<LauncherSettings>
@@ -457,6 +466,7 @@ export interface LauncherApi {
 		getTokenStatus(): Promise<GitHubTokenStatus>
 		saveToken(input: GitHubTokenInput): Promise<GitHubTokenStatus>
 		clearToken(): Promise<GitHubTokenStatus>
+		testConnection(): Promise<GitHubConnectionCheck>
 	}
 	settings: {
 		get(): Promise<LauncherSettings>

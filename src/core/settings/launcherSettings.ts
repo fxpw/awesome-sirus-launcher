@@ -1,5 +1,6 @@
 import { normalize, resolve } from 'node:path'
 import type { LauncherSettings, LauncherSettingsPatch } from '@shared/contracts'
+import { normalizeGitHubProxyUrl, validateGitHubProxySettings } from '@core/github/githubProxy'
 
 export const defaultLauncherSettings: LauncherSettings = {
 	wowPath: '',
@@ -7,19 +8,24 @@ export const defaultLauncherSettings: LauncherSettings = {
 	closeOnLaunch: false,
 	checkClientBeforeLaunch: false,
 	autoUpdateAddons: false,
-	allowPrereleaseUpdates: false
+	allowPrereleaseUpdates: false,
+	githubProxyEnabled: false,
+	githubProxyUrl: ''
 }
 
 export function normalizeLauncherSettings(value: unknown): LauncherSettings {
 	if (!isRecord(value)) return { ...defaultLauncherSettings }
 
+	const githubProxyUrl = normalizeGitHubProxyUrl(value.githubProxyUrl)
 	return {
 		wowPath: normalizeWowPath(value.wowPath),
 		wtfBackupPath: normalizeOptionalPath(value.wtfBackupPath),
 		closeOnLaunch: value.closeOnLaunch === true,
 		checkClientBeforeLaunch: value.checkClientBeforeLaunch === true,
 		autoUpdateAddons: value.autoUpdateAddons === true,
-		allowPrereleaseUpdates: value.allowPrereleaseUpdates === true
+		allowPrereleaseUpdates: value.allowPrereleaseUpdates === true,
+		githubProxyEnabled: value.githubProxyEnabled === true && Boolean(githubProxyUrl),
+		githubProxyUrl
 	}
 }
 
@@ -27,9 +33,16 @@ export function applyLauncherSettingsPatch(
 	current: LauncherSettings,
 	patch: LauncherSettingsPatch
 ): LauncherSettings {
+	const proxySettings = validateGitHubProxySettings({
+		enabled: patch.githubProxyEnabled ?? current.githubProxyEnabled,
+		url: patch.githubProxyUrl ?? current.githubProxyUrl
+	})
+
 	return normalizeLauncherSettings({
 		...current,
-		...patch
+		...patch,
+		githubProxyEnabled: proxySettings.enabled,
+		githubProxyUrl: proxySettings.url
 	})
 }
 

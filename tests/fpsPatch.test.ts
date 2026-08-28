@@ -273,6 +273,8 @@ function createMemorySettingsStore(patch: Partial<LauncherSettings>): SettingsSt
 		checkClientBeforeLaunch: true,
 		autoUpdateAddons: false,
 		allowPrereleaseUpdates: false,
+		githubProxyEnabled: false,
+		githubProxyUrl: '',
 		...patch
 	}
 

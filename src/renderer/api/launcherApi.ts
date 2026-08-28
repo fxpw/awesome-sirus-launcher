@@ -35,7 +35,8 @@ export const launcherApi = {
 	github: {
 		getTokenStatus: () => getLauncher().github.getTokenStatus(),
 		saveToken: (input: GitHubTokenInput) => getLauncher().github.saveToken(input),
-		clearToken: () => getLauncher().github.clearToken()
+		clearToken: () => getLauncher().github.clearToken(),
+		testConnection: () => getLauncher().github.testConnection()
 	},
 	settings: {
 		get: () => getLauncher().settings.get(),

@@ -8,6 +8,7 @@ import BasePanel from '@renderer/components/BasePanel.vue'
 import StatusBadge from '@renderer/components/StatusBadge.vue'
 import TextField from '@renderer/components/TextField.vue'
 import { useLocale } from '@renderer/composables/useLocale'
+import { cleanIpcErrorMessage, getUserErrorMessage } from '@renderer/shared/errors'
 
 const props = defineProps<{
 	addonResult?: AddonsListResult | null
@@ -15,6 +16,7 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
 	checked: [result: AddonsListResult]
+	'open-settings': []
 }>()
 
 const { t } = useLocale()
@@ -30,6 +32,8 @@ const customName = ref('')
 const customUrl = ref('')
 const notice = ref('')
 const error = ref('')
+const updateFailures = ref<AddonSummary[]>([])
+const lastUpdateCount = ref<number | undefined>()
 const sortKey = ref<'name' | 'status'>('name')
 const sortDirection = ref<'asc' | 'desc'>('asc')
 const activeTooltip = ref<{
@@ -51,6 +55,7 @@ const tableSearch = ref<Record<string, string>>({
 })
 const addonProgress = ref<AddonProgress | null>(null)
 let removeAddonProgressListener: (() => void) | undefined
+let failedAction: (() => Promise<void>) | undefined
 
 const addons = computed(() => mergeAddonLists(catalogAddons.value, checkedAddons.value))
 const communityCount = computed(
@@ -60,6 +65,36 @@ const sirusCount = computed(() => addons.value.filter((addon) => addon.source ==
 const customCount = computed(() => addons.value.filter((addon) => addon.source === 'custom').length)
 const problemCount = computed(
 	() => addons.value.filter((addon) => addon.status === 'outdated').length
+)
+const remoteCheckFailures = computed(() =>
+	checkedAddons.value.filter((addon) => Boolean(addon.error))
+)
+const remoteWarningAddons = computed(() => {
+	const failures = new Map<string, AddonSummary>()
+	for (const addon of [...remoteCheckFailures.value, ...updateFailures.value]) {
+		if (addon.error) failures.set(addon.id, addon)
+	}
+	return [...failures.values()]
+})
+const hasRemoteWarning = computed(() => remoteWarningAddons.value.length > 0)
+const hasRemoteOperationError = computed(() => isRemoteConnectionMessage(error.value))
+const showRemoteWarning = computed(() => hasRemoteWarning.value || hasRemoteOperationError.value)
+const remoteWarningDescription = computed(() => {
+	if (hasRemoteOperationError.value) return error.value
+	if (updateFailures.value.length > 0) {
+		return t('addons.updatePartialWarning', {
+			updated: lastUpdateCount.value ?? 0,
+			failed: updateFailures.value.length
+		})
+	}
+
+	return t('addons.remotePartialWarning', { count: remoteWarningAddons.value.length })
+})
+const remoteWarningDetails = computed(() =>
+	remoteWarningAddons.value.map((addon) => ({
+		id: addon.id,
+		message: `${addon.name}: ${cleanIpcErrorMessage(addon.error ?? t('addons.error'))}`
+	}))
 )
 const addonTables = computed(() => [
 	{
@@ -125,7 +160,9 @@ async function checkAddons(): Promise<void> {
 		const result = await launcherApi.addons.check()
 		replaceCheckedAddons(result.addons)
 		emit('checked', result)
-		notice.value = t('addons.checked')
+		notice.value = result.addons.some((addon) => Boolean(addon.error))
+			? ''
+			: t('addons.checked')
 	})
 	checking.value = false
 }
@@ -172,6 +209,8 @@ async function updateAll(): Promise<void> {
 		checking.value = true
 		await ensureCatalogLoaded()
 		const result = await launcherApi.addons.updateAll()
+		updateFailures.value = result.skipped.filter((addon) => Boolean(addon.error))
+		lastUpdateCount.value = result.total
 		for (const installed of result.installed) {
 			upsertCheckedAddon(installed.addon)
 		}
@@ -179,7 +218,8 @@ async function updateAll(): Promise<void> {
 		const checked = await launcherApi.addons.check()
 		replaceCheckedAddons(checked.addons)
 		emit('checked', checked)
-		notice.value = t('addons.updatedAll', { total: result.total })
+		notice.value =
+			updateFailures.value.length > 0 ? '' : t('addons.updatedAll', { total: result.total })
 	})
 	checking.value = false
 }
@@ -218,17 +258,52 @@ async function importCustomAddons(): Promise<void> {
 async function run(action: () => Promise<void>): Promise<void> {
 	error.value = ''
 	notice.value = ''
+	updateFailures.value = []
+	lastUpdateCount.value = undefined
 	addonProgress.value = null
 	try {
 		await action()
+		failedAction = undefined
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('addons.error')
+		failedAction = action
+		error.value = getUserErrorMessage(err, t('addons.error'))
 	} finally {
 		loading.value = false
 		checking.value = false
 		updatingAddonId.value = ''
 		deletingAddonId.value = ''
 	}
+}
+
+async function retryRemoteOperation(): Promise<void> {
+	if (failedAction) {
+		await run(failedAction)
+		return
+	}
+	if (updateFailures.value.length > 0) {
+		await updateAll()
+		return
+	}
+	await checkAddons()
+}
+
+function isRemoteConnectionMessage(message: string): boolean {
+	const normalized = message.toLocaleLowerCase()
+	return [
+		'github',
+		'прокси',
+		'proxy',
+		'vpn',
+		'dns',
+		'интернет',
+		'internet',
+		'сеть',
+		'network',
+		'регион',
+		'region',
+		'сертифик',
+		'certificate'
+	].some((token) => normalized.includes(token))
 }
 
 const addonProgressLabel = computed(() => {
@@ -322,6 +397,7 @@ async function ensureCatalogLoaded(): Promise<void> {
 }
 
 function getStatusLabel(addon: AddonSummary): string {
+	if (addon.error) return t('addons.status.checkFailed')
 	if (addon.status === 'installed') return t('addons.status.installed')
 	if (addon.status === 'outdated') return t('addons.status.outdated')
 	if (addon.status === 'not-installed') return t('addons.status.notInstalled')
@@ -330,7 +406,7 @@ function getStatusLabel(addon: AddonSummary): string {
 }
 
 function getStatusReason(addon: AddonSummary): string {
-	if (addon.error) return addon.error
+	if (addon.error) return cleanIpcErrorMessage(addon.error)
 	if (addon.status === 'manual-git') return t('addons.reason.manualGit')
 	if (addon.status === 'not-installed') return t('addons.reason.notInstalled')
 	if (addon.missingFolders.length > 0) {
@@ -347,6 +423,7 @@ function getStatusReason(addon: AddonSummary): string {
 }
 
 function getStatusTone(addon: AddonSummary): 'neutral' | 'ok' | 'warning' {
+	if (addon.error) return 'warning'
 	if (addon.status === 'installed') return 'ok'
 	if (addon.status === 'manual-git' || addon.status === 'outdated') return 'warning'
 	return 'neutral'
@@ -553,6 +630,9 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 			<StatusBadge :tone="problemCount > 0 ? 'warning' : 'ok'">
 				{{ t('addons.problemCount', { total: problemCount }) }}
 			</StatusBadge>
+			<StatusBadge v-if="hasRemoteWarning" tone="warning">
+				{{ t('addons.remoteProblemCount', { total: remoteWarningAddons.length }) }}
+			</StatusBadge>
 		</div>
 
 		<div v-if="addonProgress" class="operation-progress">
@@ -572,6 +652,37 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 			</div>
 		</div>
 
+		<section
+			v-if="showRemoteWarning"
+			class="addon-remote-warning"
+			:role="hasRemoteOperationError ? 'alert' : 'status'"
+		>
+			<div class="addon-remote-warning__content">
+				<strong>{{ t('addons.remoteWarningTitle') }}</strong>
+				<p>{{ remoteWarningDescription }}</p>
+				<details v-if="remoteWarningDetails.length > 0">
+					<summary>{{ t('addons.remoteWarningDetails') }}</summary>
+					<ul>
+						<li v-for="detail in remoteWarningDetails" :key="detail.id">
+							{{ detail.message }}
+						</li>
+					</ul>
+				</details>
+			</div>
+			<div class="addon-remote-warning__actions">
+				<BaseButton
+					variant="secondary"
+					:disabled="isChecking"
+					@click="retryRemoteOperation"
+				>
+					{{ isChecking ? t('addons.checking') : t('addons.retry') }}
+				</BaseButton>
+				<BaseButton variant="secondary" @click="emit('open-settings')">
+					{{ t('addons.openConnectionSettings') }}
+				</BaseButton>
+			</div>
+		</section>
+
 		<div class="addon-custom-form">
 			<TextField v-model="customName" :placeholder="t('addons.customName')" />
 			<TextField v-model="customUrl" :placeholder="t('addons.customUrl')" />
@@ -587,7 +698,7 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 		</div>
 
 		<p v-if="notice" class="notice">{{ notice }}</p>
-		<p v-if="error" class="error">{{ error }}</p>
+		<p v-if="error && !hasRemoteOperationError" class="error" role="alert">{{ error }}</p>
 
 		<section v-for="table in addonTables" :key="table.key" class="addon-table-section">
 			<div class="addon-table-section__heading">

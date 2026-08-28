@@ -272,6 +272,71 @@ describe('addon service', () => {
 		}
 	})
 
+	it('keeps the reason when update-all cannot download an addon', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-addons-update-failure-'))
+		const wowPath = join(root, 'wow')
+		const addonPath = join(wowPath, 'Interface', 'AddOns', 'AckisRecipeList')
+		await mkdir(join(wowPath, 'Data'), { recursive: true })
+		await mkdir(join(wowPath, 'WTF'), { recursive: true })
+		await mkdir(addonPath, { recursive: true })
+		await writeFile(join(wowPath, 'run.exe'), '')
+		await writeFile(join(addonPath, 'AckisRecipeList.toc'), '## Version: 1.0.0\n')
+
+		const service = createAddonService(
+			() => root,
+			createMemorySettingsStore({ wowPath }),
+			createMemorySecretStore(),
+			async () => {
+				throw new Error('GitHub недоступен: проверь VPN или прокси')
+			},
+			async () => undefined,
+			async () => '## Version: 2.0.0\n'
+		)
+
+		const result = await service.updateAll()
+
+		expect(result.total).toBe(0)
+		expect(result.skipped).toEqual([
+			expect.objectContaining({
+				name: 'AckisRecipeList',
+				error: 'GitHub недоступен: проверь VPN или прокси'
+			})
+		])
+	})
+
+	it('does not retry or duplicate an addon whose remote check already failed', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-addons-check-failure-'))
+		const wowPath = join(root, 'wow')
+		const addonPath = join(wowPath, 'Interface', 'AddOns', 'Atlas')
+		await mkdir(join(wowPath, 'Data'), { recursive: true })
+		await mkdir(join(wowPath, 'WTF'), { recursive: true })
+		await mkdir(addonPath, { recursive: true })
+		await writeFile(join(wowPath, 'run.exe'), '')
+		await writeFile(join(addonPath, 'Atlas.toc'), '## Version: 1.0.0\n')
+		const downloadFile = vi.fn(async () => undefined)
+
+		const service = createAddonService(
+			() => root,
+			createMemorySettingsStore({ wowPath }),
+			createMemorySecretStore(),
+			downloadFile,
+			async () => undefined,
+			async () => {
+				throw new Error('GitHub заблокирован сетью')
+			}
+		)
+
+		const result = await service.updateAll()
+
+		expect(result.total).toBe(0)
+		expect(result.skipped).toHaveLength(1)
+		expect(result.skipped[0]).toMatchObject({
+			id: 'community:atlas',
+			error: 'GitHub заблокирован сетью'
+		})
+		expect(downloadFile).not.toHaveBeenCalled()
+	})
+
 	it('deletes installed addon folders and returns not-installed status', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-addons-delete-'))
 		const wowPath = join(root, 'wow')
@@ -421,6 +486,8 @@ function createMemorySettingsStore(patch: Partial<LauncherSettings>): SettingsSt
 		checkClientBeforeLaunch: true,
 		autoUpdateAddons: false,
 		allowPrereleaseUpdates: false,
+		githubProxyEnabled: false,
+		githubProxyUrl: '',
 		...patch
 	}
 

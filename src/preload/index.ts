@@ -26,7 +26,8 @@ const api: LauncherApi = {
 		getTokenStatus: () => ipcRenderer.invoke(ipcChannels.github.getTokenStatus),
 		saveToken: (input: GitHubTokenInput) =>
 			ipcRenderer.invoke(ipcChannels.github.saveToken, input),
-		clearToken: () => ipcRenderer.invoke(ipcChannels.github.clearToken)
+		clearToken: () => ipcRenderer.invoke(ipcChannels.github.clearToken),
+		testConnection: () => ipcRenderer.invoke(ipcChannels.github.testConnection)
 	},
 	settings: {
 		get: () => ipcRenderer.invoke(ipcChannels.settings.get),

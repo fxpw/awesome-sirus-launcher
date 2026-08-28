@@ -27,8 +27,11 @@ import {
 } from '../../core/addons/addons'
 import type { SettingsStore } from '../settings/fileSettingsStore'
 import type { SecretStore } from '../secrets/memorySecretStore'
+import { createGitHubAuthHeaders, isTrustedGitHubUrl } from '@core/github/githubAuth'
+import { createGitHubHttpError, createGitHubNetworkError } from '@core/github/githubErrors'
 
 type DownloadFile = (url: string, targetPath: string, options?: { token?: string }) => Promise<void>
+type FetchText = (url: string, options?: { token?: string }) => Promise<string>
 type UnzipToDirectory = (archivePath: string, targetDir: string) => Promise<void>
 
 interface AddonCatalogFile {
@@ -42,7 +45,8 @@ export function createAddonService(
 	settingsStore: SettingsStore,
 	secretStore: SecretStore,
 	downloadFile: DownloadFile,
-	unzipToDirectory: UnzipToDirectory
+	unzipToDirectory: UnzipToDirectory,
+	fetchText: FetchText = defaultFetchText
 ) {
 	const getCustomAddonsPath = () => join(getUserDataPath(), 'custom-addons.json')
 
@@ -160,10 +164,13 @@ export function createAddonService(
 	async function updateAll(onProgress?: AddonProgressHandler): Promise<AddonsUpdateAllResult> {
 		const checked = await list(true, true)
 		const candidates = checked.addons.filter(
-			(addon) => addon.status === 'outdated' || addon.status === 'not-installed'
+			(addon) =>
+				!addon.error && (addon.status === 'outdated' || addon.status === 'not-installed')
 		)
 		const installed: AddonInstallResult[] = []
-		const skipped = checked.addons.filter((addon) => addon.status === 'manual-git')
+		const skipped = checked.addons.filter(
+			(addon) => addon.status === 'manual-git' || Boolean(addon.error)
+		)
 		const total = candidates.length
 
 		if (total === 0) {
@@ -200,8 +207,11 @@ export function createAddonService(
 						})
 					})
 				)
-			} catch {
-				skipped.push(addon)
+			} catch (error) {
+				skipped.push({
+					...addon,
+					error: error instanceof Error ? error.message : 'Не удалось обновить аддон'
+				})
 				reportAddonProgress(onProgress, progressState, addon, 'completed', 1)
 			}
 		}
@@ -317,7 +327,9 @@ export function createAddonService(
 			}
 			if (checkRemote && entry.versionUrl) {
 				remoteVersion = parseTocVersion(
-					await fetchText(entry.versionUrl, await secretStore.get('github-token'))
+					await fetchText(entry.versionUrl, {
+						token: await secretStore.get('github-token')
+					})
 				)
 			}
 		} catch (err) {
@@ -389,14 +401,19 @@ function getStatus(input: {
 	return 'installed'
 }
 
-async function fetchText(url: string, token?: string): Promise<string> {
-	const response = await fetch(url, {
-		headers: token ? { Authorization: `Bearer ${token}` } : undefined
-	})
-	if (!response.ok)
-		throw new Error(`Request failed ${response.status} ${response.statusText}`.trim())
-
-	return response.text()
+async function defaultFetchText(url: string, options: { token?: string } = {}): Promise<string> {
+	try {
+		const response = await fetch(url, {
+			headers:
+				options.token && isTrustedGitHubUrl(url)
+					? createGitHubAuthHeaders(options.token)
+					: undefined
+		})
+		if (!response.ok) throw createGitHubHttpError(response)
+		return response.text()
+	} catch (error) {
+		throw createGitHubNetworkError(error, { usingProxy: false })
+	}
 }
 
 async function findAddonDirs(rootPath: string): Promise<string[]> {

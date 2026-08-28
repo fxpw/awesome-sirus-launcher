@@ -9,6 +9,22 @@ export function createGitHubAuthHeaders(token?: string): Record<string, string> 
 	}
 }
 
+export function isTrustedGitHubUrl(value: string): boolean {
+	try {
+		const url = new URL(value)
+		if (url.protocol !== 'https:') return false
+		const hostname = url.hostname.toLowerCase()
+		return (
+			hostname === 'github.com' ||
+			hostname.endsWith('.github.com') ||
+			hostname === 'githubusercontent.com' ||
+			hostname.endsWith('.githubusercontent.com')
+		)
+	} catch {
+		return false
+	}
+}
+
 export function redactGitHubToken(value: string, token?: string): string {
 	const normalized = token?.trim()
 	if (!normalized) return value

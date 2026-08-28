@@ -855,6 +855,12 @@ nav {
 	color: rgba(247, 244, 238, 0.76);
 }
 
+.field:disabled {
+	cursor: not-allowed;
+	filter: saturate(65%);
+	opacity: 0.58;
+}
+
 textarea.field {
 	cursor: text;
 	user-select: text;
@@ -868,6 +874,20 @@ textarea.field {
 		0 0 0 1000px rgba(24, 26, 36, 0.96) inset,
 		0 0 0 3px rgba(143, 201, 203, 0.14);
 	transition: background-color 9999s ease-in-out 0s;
+}
+
+.github-connection-field .field {
+	width: 100%;
+}
+
+.github-connection-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.github-connection-panel .path-hint + .path-hint {
+	margin-top: -8px;
 }
 
 .button {
@@ -1688,6 +1708,65 @@ textarea.field {
 	gap: 8px;
 }
 
+.addon-remote-warning {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px;
+	border: 1px solid var(--warning-border);
+	border-radius: 8px;
+	background:
+		linear-gradient(145deg, rgba(112, 77, 29, 0.5), rgba(24, 26, 36, 0.56)),
+		rgba(81, 56, 28, 0.5);
+	box-shadow: var(--glass-inset);
+}
+
+.addon-remote-warning__content {
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+}
+
+.addon-remote-warning__content strong,
+.addon-remote-warning__content summary {
+	color: var(--warning);
+}
+
+.addon-remote-warning__content p {
+	margin: 0;
+	color: var(--text);
+}
+
+.addon-remote-warning__content details {
+	min-width: 0;
+	color: var(--text-muted);
+}
+
+.addon-remote-warning__content summary {
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.addon-remote-warning__content ul {
+	display: grid;
+	gap: 4px;
+	margin: 8px 0 0;
+	padding-left: 20px;
+}
+
+.addon-remote-warning__content li {
+	overflow-wrap: anywhere;
+}
+
+.addon-remote-warning__actions {
+	display: flex;
+	flex: 0 0 auto;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
 .addon-custom-form {
 	display: grid;
 	grid-template-columns: minmax(160px, 220px) minmax(240px, 1fr) auto auto auto;
@@ -2007,6 +2086,8 @@ textarea.field {
 	.panel-heading,
 	.panel-heading__actions,
 	.addon-custom-form,
+	.addon-remote-warning__actions,
+	.github-connection-actions,
 	.mining-path-row,
 	.path-row,
 	.token-row {
@@ -2024,6 +2105,7 @@ textarea.field {
 
 	.panel-heading,
 	.backup-row,
+	.addon-remote-warning,
 	.backup-row__meta {
 		flex-direction: column;
 	}
@@ -2047,8 +2129,15 @@ textarea.field {
 
 	.path-row,
 	.token-row,
+	.github-connection-actions,
+	.addon-remote-warning__actions,
 	.mining-path-row {
 		grid-template-columns: 1fr;
+	}
+
+	.github-connection-actions,
+	.addon-remote-warning__actions {
+		display: grid;
 	}
 
 	.modal-path-row {
