@@ -1,4 +1,4 @@
-export const SECURED_CONNECTION_API_BASE = 'https://api.sirus.su'
+export const SECURED_CONNECTION_API_BASE = 'https://api.sirus.org'
 export const SECURED_CONNECTION_PATH = '/api/secured-connection.json'
 export const DEFAULT_VERIFY_TIMEOUT_MS = 5000
 export const DEFAULT_FETCH_TIMEOUT_MS = 5000

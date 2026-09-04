@@ -1,4 +1,4 @@
-export const SIRUS_API_BASE_URL = 'https://api.sirus.su'
+export const SIRUS_API_BASE_URL = 'https://api.sirus.org'
 export const CLIENT_REGISTER_PATH = '/api/client/register'
 export const CLIENT_HANDSHAKE_PATH = '/api/client/handshake/'
 export const CLIENT_HANDSHAKE_INTERVAL_MS = 3 * 60 * 60 * 1000

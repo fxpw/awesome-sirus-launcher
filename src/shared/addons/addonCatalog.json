@@ -11,7 +11,7 @@
 			"description": "Ackis Recipe List – этот аддон поможет вам быстрее найти и изучить нужный для вас рецепт любой профессии игры.",
 			"githubUrl": "https://github.com/fxpw/AckisRecipeList-for-sirus/",
 			"repo": "fxpw/AckisRecipeList-for-sirus",
-			"forumUrl": "https://forum.sirus.su/threads/ackis-recipe-list.196617/",
+			"forumUrl": "https://forum.sirus.org/threads/ackis-recipe-list.196617/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "База рецептов"
@@ -55,8 +55,8 @@
 			"description": "ArmorySirus - Аддон позволяющий в кратчайшие сроки получить ссылку на оружейную любого игрока!",
 			"githubUrl": "https://github.com/AlexandrBelikOff/ArmorySirus",
 			"repo": "AlexandrBelikOff/ArmorySirus",
-			"forumUrl": "https://forum.sirus.su/threads/sirus-armory-novyj-addon-specialno-dlja-sirus-su.129240/",
-			"bugReportUrl": "https://forum.sirus.su/threads/sirus-armory-novyj-addon-specialno-dlja-sirus-su.129240/",
+			"forumUrl": "https://forum.sirus.org/threads/sirus-armory-novyj-addon-specialno-dlja-sirus-su.129240/",
+			"bugReportUrl": "https://forum.sirus.org/threads/sirus-armory-novyj-addon-specialno-dlja-sirus-su.129240/",
 			"author": "Belikoff",
 			"category": "Интерфейс"
 		},
@@ -78,7 +78,7 @@
 			"description": "Atlas-Sirus",
 			"githubUrl": "https://github.com/fxpw/Atlas-Sirus/",
 			"repo": "fxpw/Atlas-Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/addon-atlas-for-sirus.194675/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-atlas-for-sirus.194675/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw, Днюша, Fallafell",
 			"category": "Карты"
@@ -103,7 +103,7 @@
 			"description": "AtlasLoot-Sirus Аддон для просмотра всех игровых предметов, которые выпадают с противников. В AtlasLoot так же входят PVP предметы любого сезона, а так же маунты, рецепты, предметы за репутацию у фракций",
 			"githubUrl": "https://github.com/Mr-Dan/AtlasLoot-Sirus/",
 			"repo": "Mr-Dan/AtlasLoot-Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/atlasloot-sirus.86804/",
+			"forumUrl": "https://forum.sirus.org/threads/atlasloot-sirus.86804/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Днюша",
 			"category": "База предметов"
@@ -118,7 +118,7 @@
 			"description": "Аддон запоминает все цены, которые вы видели на аукционе, сохраняет данные в кэш, а затем показывает в тултипе (в описании) предметов.",
 			"githubUrl": "https://github.com/Fallafell/AuctionSirusTooltip/",
 			"repo": "Fallafell/AuctionSirusTooltip",
-			"forumUrl": "https://forum.sirus.su/threads/addon-auctionsirustooltip-ceny-na-aukcione-v-tultipe.180134/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-auctionsirustooltip-ceny-na-aukcione-v-tultipe.180134/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw, Fallafell",
 			"category": "Аукцион и торговля"
@@ -133,7 +133,7 @@
 			"description": "Что такое BattlegroundTargets: BattlegroundTargets, пожалуй, один из самых важнейших и популярных аддонов для БГ. Аддон показывает список всех игроков из противоположной команды (аналог Gladius), с определением их роли: хил / дд. Подсвечивает врагов в зоне вашей видимости, а так же подсказывает сколько напарников по команде взяли в цель тот или иной вражеский таргет.",
 			"githubUrl": "https://github.com/fxpw/BattlegroundTargets",
 			"repo": "fxpw/BattlegroundTargets",
-			"forumUrl": "https://forum.sirus.su/threads/addon-battlegroundtargets.114024/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-battlegroundtargets.114024/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Nobrain",
 			"category": "PVP"
@@ -162,8 +162,8 @@
 			"description": "BigAuras - Аддон, показывающий контроли, атакующие и защитные бафы/дебафы и прочее в зависимости от их приоритета. Полезный для PvP-аддон, основанный на LoseControl. Настройка \"Настройки\" -> \"Интерфейс\" -> \"Модификации\" -> \"BigAuras\" - окно настройки аддона.",
 			"githubUrl": "https://github.com/Qblolz/BigAuras",
 			"repo": "Qblolz/BigAuras",
-			"forumUrl": "https://forum.sirus.su/threads/addon-bigauras-zamena-dlja-losecontrol.91035/",
-			"bugReportUrl": "https://forum.sirus.su/threads/addon-bigauras-zamena-dlja-losecontrol.91035/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-bigauras-zamena-dlja-losecontrol.91035/",
+			"bugReportUrl": "https://forum.sirus.org/threads/addon-bigauras-zamena-dlja-losecontrol.91035/",
 			"author": "Qblolz",
 			"category": "PVP"
 		},
@@ -177,7 +177,7 @@
 			"description": "BigBrother - Проверяет рейдовые баффы, настои (новые с острова в том числе), фласки, расходные материалы и отображает их в компактном формате. Предоставляет настраиваемые оповещения в рейдах, таких как оповещение о различных способностях, перенаправлении угрозы, установки дживса и рыбы, воскрешения в бою, накладывании СС, прерываниях каста, о всех прожимках танка и многое другое.",
 			"githubUrl": "https://github.com/Fallafell/BigBrother-Sirus/",
 			"repo": "Fallafell/BigBrother-Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/addon-bigbrother-dlja-sirus.93020/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-bigbrother-dlja-sirus.93020/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fallafell",
 			"category": "Бой"
@@ -192,7 +192,7 @@
 			"description": "Аддон BlizzMove дает возможность управлять интерфейсом. Вы можете спокойно перемещать иконки персонажей, баффов, дебаффов, карт, сумок и прочих предметов.",
 			"githubUrl": "https://github.com/fxpw/BlizzMove",
 			"repo": "fxpw/BlizzMove",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Рамки портретов"
 		},
@@ -220,8 +220,8 @@
 			"description": "BuffTracker - аддон который показывает всплывающие и двигающиеся иконки бафов или дебафов, которые были развеяны с игрока или игроком.",
 			"githubUrl": "https://github.com/fxpw/BuffTracker",
 			"repo": "fxpw/BuffTracker",
-			"forumUrl": "https://forum.sirus.su/threads/bufftracker.317847/",
-			"bugReportUrl": "https://forum.sirus.su/threads/bufftracker.317847/",
+			"forumUrl": "https://forum.sirus.org/threads/bufftracker.317847/",
+			"bugReportUrl": "https://forum.sirus.org/threads/bufftracker.317847/",
 			"author": "Nobrain",
 			"category": "Ауры, бафы и дебафы"
 		},
@@ -314,7 +314,7 @@
 			"description": "Deadly Boss Mods - аддон, который оповещает об особых атаках боссов. Данный аддон вам очень пригодится, если вы собираетесь покорять PvE-контент, и особенно, если вы новичок в игре. Аддон также используется и в PvP, например, он может показывать время до захвата пунктов на бг.",
 			"githubUrl": "https://github.com/Waini4/DBM_For_Sirus",
 			"repo": "Waini4/DBM_For_Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/dbm.239341/",
+			"forumUrl": "https://forum.sirus.org/threads/dbm.239341/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Waini, Fxpw, Stekolnyu",
 			"category": "Бой",
@@ -340,7 +340,7 @@
 			"description": "Details - Незаменимый инструмент, чтобы произвести впечатление на ту самую девчонку в вашем рейде.",
 			"githubUrl": "https://github.com/fxpw/Details_Sirus",
 			"repo": "fxpw/Details_Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/addon-details-for-sirus.201755/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-details-for-sirus.201755/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Бой",
@@ -392,7 +392,7 @@
 			"description": "EavesDrop - Кому нужен простой и понятный журнал боя, рекомендуем обратить внимание на аддон EavesDrop. Одной из отличительных особенностей EavesDrop является то, что он делит все записи боя на три колонки (входящие, исходящие и разные).",
 			"githubUrl": "https://github.com/fxpw/EavesDrop_ru/",
 			"repo": "fxpw/EavesDrop_ru",
-			"forumUrl": "https://forum.sirus.su/threads/addon-eavesdrop-ru.196896/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-eavesdrop-ru.196896/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Бой"
@@ -407,7 +407,7 @@
 			"description": "Полная замена пользовательского интерфейса. Он заменяет стандартный интерфейс Blizzard практически в каждом аспекте. У него есть несколько автоматически встроенных дополнений и плагинов, таких как панели способностей Dominos и неймплейты TidyPlates, но значительно доработанные.",
 			"githubUrl": "https://github.com/fxpw/ElvUI/",
 			"repo": "fxpw/ElvUI",
-			"forumUrl": "https://forum.sirus.su/threads/addon-elvui-for-sirus.185110/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-elvui-for-sirus.185110/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Интерфейс"
@@ -422,7 +422,7 @@
 			"description": "ElvUI_AddOnSkins - Плагин для ElvUI, который изменяет скины других аддонов, чтобы они выглядели как ElvUI.",
 			"githubUrl": "https://github.com/fxpw/ElvUI_AddOnSkins/",
 			"repo": "fxpw/ElvUI_AddOnSkins",
-			"forumUrl": "https://forum.sirus.su/threads/addon-elvui-for-sirus.185110/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-elvui-for-sirus.185110/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Интерфейс"
@@ -549,7 +549,7 @@
 			"description": "ElvUI_OptionsUI - Опции для ElvUI.",
 			"githubUrl": "https://github.com/fxpw/ElvUI_OptionsUI",
 			"repo": "fxpw/ElvUI_OptionsUI",
-			"forumUrl": "https://forum.sirus.su/threads/addon-elvui-for-sirus.185110/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-elvui-for-sirus.185110/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Интерфейс"
@@ -592,7 +592,7 @@
 			"description": "EnemyCooldowns - Минималистический аддон для отслеживания кулдаунов вражеских игроков",
 			"githubUrl": "https://github.com/Addons-for-sirus/EnemyCooldowns_Sirus",
 			"repo": "Addons-for-sirus/EnemyCooldowns_Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/addon-enemycooldowns.232613/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-enemycooldowns.232613/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Apolexis",
 			"category": "PVP"
@@ -607,7 +607,7 @@
 			"description": "EPGP один из самых полезных аддонов для гильдий и рлов (рейд лидеров). Аддон распределяет очки EP (effort points) и GP (gear points) и в зависимости от их количества рл видит, кто больше заслуживает тот или иной предмет.",
 			"githubUrl": "https://github.com/fxpw/EPGP",
 			"repo": "fxpw/EPGP",
-			"forumUrl": "https://forum.sirus.su/threads/addon-epgp-bazovaja-versija.261341/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-epgp-bazovaja-versija.261341/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Интерфейс"
@@ -622,7 +622,7 @@
 			"description": "EPGP_Auction один из самых полезных аддонов для гильдий и рлов (рейд лидеров). Аддон распределяет очки EP (effort points) зависимости от количества рл видит, кто больше заслуживает тот или иной предмет.",
 			"githubUrl": "https://github.com/fxpw/EPGP_Auction",
 			"repo": "fxpw/EPGP_Auction",
-			"forumUrl": "https://forum.sirus.su/threads/addon-ep-auction.261344/#post-2272492",
+			"forumUrl": "https://forum.sirus.org/threads/addon-ep-auction.261344/#post-2272492",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Интерфейс"
@@ -665,7 +665,7 @@
 			"description": "HealBot универсальный аддон для мониторинга бафов/дебафов. Отображения и диспела. Интерфейс аддона полностью настраиваем под ваше разрешение экрана, с изменением внешнего вида (скины). И самое главное, этот аддон автоматически синхронизирует входящие исцеление с другими хилерами, находящимися с вами в рейде.",
 			"githubUrl": "https://github.com/Waini4/HealBot_Sirus",
 			"repo": "Waini4/HealBot_Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/healbot.302348/",
+			"forumUrl": "https://forum.sirus.org/threads/healbot.302348/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Waini, Galchaqi",
 			"category": "Рамки портретов"
@@ -680,7 +680,7 @@
 			"description": "Immersion - аддон меняющий интерфейс общения с NPC на более красивый и удобный. Так же добавляет функционал быстрого получения квеста и награды.",
 			"githubUrl": "https://github.com/fxpw/Immersion",
 			"repo": "fxpw/Immersion",
-			"forumUrl": "https://forum.sirus.su/threads/immersion.313170/",
+			"forumUrl": "https://forum.sirus.org/threads/immersion.313170/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "s0high",
 			"category": "Задания и прокачка"
@@ -692,10 +692,10 @@
 			"versionUrl": "https://raw.githubusercontent.com/fxpw/InspectEquip-Sirus/main/InspectEquip/InspectEquip.toc",
 			"branch": "main",
 			"folders": ["InspectEquip"],
-			"description": "InspectEquip - Sirus Осматривает персонажа и показывает его чарки сокеты и откуда шмотки Специально для проекта sirus.su Тема на форуме  forum.sirus.su/threads/addon-inspectequip-dlja-sirus.175505",
+			"description": "InspectEquip - Sirus Осматривает персонажа и показывает его чарки сокеты и откуда шмотки Специально для проекта sirus.su Тема на форуме  forum.sirus.org/threads/addon-inspectequip-dlja-sirus.175505",
 			"githubUrl": "https://github.com/fxpw/InspectEquip-Sirus/",
 			"repo": "fxpw/InspectEquip-Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/addon-inspectequip-dlja-sirus.175505/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-inspectequip-dlja-sirus.175505/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw, Fallafell",
 			"category": "Сумки и инвентарь"
@@ -709,7 +709,7 @@
 			"folders": ["ItemRack", "ItemRackOptions", "TitanItemRack"],
 			"githubUrl": "https://github.com/Mr-Dan/ItemRack_Sirus/",
 			"repo": "Mr-Dan/ItemRack_Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/itemrack-addon-dlja-upravlenija-ehkipirovkoj.156517/",
+			"forumUrl": "https://forum.sirus.org/threads/itemrack-addon-dlja-upravlenija-ehkipirovkoj.156517/",
 			"author": "Днюша",
 			"category": "Экипировка"
 		},
@@ -737,7 +737,7 @@
 			"description": "Упрощенная смена языка.",
 			"githubUrl": "https://github.com/L0uten/LangChangerSirus",
 			"repo": "L0uten/LangChangerSirus",
-			"forumUrl": "https://forum.sirus.su/threads/langchanger.331990/",
+			"forumUrl": "https://forum.sirus.org/threads/langchanger.331990/",
 			"bugReportUrl": "https://discord.com/invite/TubeZVD",
 			"author": "Exboyfriend",
 			"category": "Чат и общение"
@@ -781,7 +781,7 @@
 			"description": "MBB - Очищает миникарту от кнопок аддонов и держит их в одном меню!",
 			"githubUrl": "https://github.com/Addons-for-sirus/MBB",
 			"repo": "Addons-for-sirus/MBB",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Tunhadil",
 			"category": "Интерфейс"
 		},
@@ -809,7 +809,7 @@
 			"description": "Легендарный аддон с актуальных версий WoW для планирования маршрутов теперь доступен на Sirus! Это незаменимый инструмент для танков и групп, которые хотят проходить подземелья максимально эффективно, планировать каждый запул и оптимизировать время прохождения.",
 			"githubUrl": "https://github.com/Rodgare/MethodDungeonTools",
 			"repo": "Rodgare/MethodDungeonTools",
-			"forumUrl": "https://forum.sirus.su/resources/mythic-method-dungeon-tools-mdt.469/",
+			"forumUrl": "https://forum.sirus.org/resources/mythic-method-dungeon-tools-mdt.469/",
 			"bugReportUrl": "https://discord.com/users/123456789012345678",
 			"author": "Coda",
 			"category": "PVE"
@@ -824,7 +824,7 @@
 			"description": "Игра \"Сапёр\".",
 			"githubUrl": "https://github.com/L0uten/MinesweeperWoW335",
 			"repo": "L0uten/MinesweeperWoW335",
-			"forumUrl": "https://forum.sirus.su/threads/minesweeper.325812/",
+			"forumUrl": "https://forum.sirus.org/threads/minesweeper.325812/",
 			"bugReportUrl": "https://discord.com/invite/TubeZVD",
 			"author": "Exboyfriend",
 			"category": "Игры"
@@ -853,7 +853,7 @@
 			"description": "Удобно отображает созвездия/ауры в рейде.",
 			"githubUrl": "https://github.com/L0uten/NezvezdiSirus/",
 			"repo": "L0uten/NezvezdiSirus",
-			"forumUrl": "https://forum.sirus.su/threads/nezvezdi-raspredeli-svoi-sozvezdija.344831/",
+			"forumUrl": "https://forum.sirus.org/threads/nezvezdi-raspredeli-svoi-sozvezdija.344831/",
 			"bugReportUrl": "https://discord.com/invite/TubeZVD",
 			"author": "Exboyfriend",
 			"category": "Ауры, бафы и дебафы"
@@ -925,7 +925,7 @@
 			"description": "RaidBrowser - Аддон сканирует лфг убирая скупщиков наборщиков и выводит рейды в отдельное окно.",
 			"githubUrl": "https://github.com/fxpw/RaidBrowser",
 			"repo": "fxpw/RaidBrowser",
-			"forumUrl": "https://forum.sirus.su/threads/addon-raidbrowserru-dlja-sirus.170742",
+			"forumUrl": "https://forum.sirus.org/threads/addon-raidbrowserru-dlja-sirus.170742",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Поиск рейдов"
@@ -954,7 +954,7 @@
 			"description": "REPorter - Весьма удобный аддон-минкарта для БГ, который показывает инфу о ключевых событиях, а так же помогает улучшить макро аспекты игры на поле боя.",
 			"githubUrl": "https://github.com/fxpw/REPorter",
 			"repo": "fxpw/REPorter",
-			"forumUrl": "https://forum.sirus.su/threads/addon-reporter.107407/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-reporter.107407/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Nobrain",
 			"category": "PVP"
@@ -969,8 +969,8 @@
 			"description": "sArena дополняет стандартные арена фреймы, делает их подвижными и позволяет изменять размер. Отображает настраиваемые каст бары, и кулдауны противников. Функции: Перемещение арена фреймов Изменение размеров юнит фрейма Изменение размеров каст-бара Отображение кд тринкетов Цветовое обозначение классов",
 			"githubUrl": "https://github.com/Qblolz/sArena",
 			"repo": "Qblolz/sArena",
-			"forumUrl": "https://forum.sirus.su/threads/addon-sarena-s-dop-vozmozhnostjami-nastroek.81500/",
-			"bugReportUrl": "https://forum.sirus.su/threads/addon-sarena-s-dop-vozmozhnostjami-nastroek.81500/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-sarena-s-dop-vozmozhnostjami-nastroek.81500/",
+			"bugReportUrl": "https://forum.sirus.org/threads/addon-sarena-s-dop-vozmozhnostjami-nastroek.81500/",
 			"author": "Qblolz",
 			"category": "PVP"
 		},
@@ -984,7 +984,7 @@
 			"description": "SexyCooldown - аддон показывает на полоске подходящие к завершению кулдауны, проки, тринки и т.д. Очень наглядно, так как значки движутся по полоске справа налево до исчезновения. Полностью настраиваем внешний вид, размеры, шкала и другое.",
 			"githubUrl": "https://github.com/fxpw/SexyCooldown_sirus/",
 			"repo": "fxpw/SexyCooldown_sirus",
-			"forumUrl": "https://forum.sirus.su/threads/addon-sexycooldown-dlja-sirus.176263/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-sexycooldown-dlja-sirus.176263/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw, Fallafell",
 			"category": "Панели команд"
@@ -1027,7 +1027,7 @@
 			"description": "Sirus Roulette History - Показывает статистику наград с Рулетки Тысячелетия.",
 			"githubUrl": "https://github.com/Mimirone/SirusRouletteHistory",
 			"repo": "Mimirone/SirusRouletteHistory",
-			"forumUrl": "https://forum.sirus.su/threads/add-on-sirus-roulette-history.238733/",
+			"forumUrl": "https://forum.sirus.org/threads/add-on-sirus-roulette-history.238733/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Mimirone",
 			"category": "Статистика"
@@ -1042,7 +1042,7 @@
 			"description": "Аддон SoundAlerter один из самых нужных аддонов для ПВП. Он будет голосом предупреждать вас о том, что на вас кастуют враги. Теперь вы будете во всеоружии, зная кто и что на вас кастует и вовремя сможете отреагировать.",
 			"githubUrl": "https://github.com/Master-f1/SoundAlerter",
 			"repo": "Master-f1/SoundAlerter",
-			"forumUrl": "https://forum.sirus.su/threads/addon-soundalerter.211534/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-soundalerter.211534/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Master",
 			"category": "PVP"
@@ -1092,7 +1092,7 @@
 			"description": "TwitchEmotes Emoticons - Смайлики для чата.",
 			"githubUrl": "https://github.com/fxpw/TwitchEmotes/",
 			"repo": "fxpw/TwitchEmotes",
-			"forumUrl": "https://forum.sirus.su/threads/addon-twitchemotes-dlja-sirus.169223/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-twitchemotes-dlja-sirus.169223/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw, Fallafell",
 			"category": "Чат и общение"
@@ -1130,7 +1130,7 @@
 			"description": "WeakAuras мощный и при этом гибкий модификатор интерфейса, который позволит вам видеть на экране самые разные версии отображения положительных/отрицательных эффектов и любой другой информации по состоянию вашего персонажа.",
 			"githubUrl": "https://github.com/fxpw/WeakAuras-Sirus.su/",
 			"repo": "fxpw/WeakAuras-Sirus.su",
-			"forumUrl": "https://forum.sirus.su/threads/weakauras2.218582/",
+			"forumUrl": "https://forum.sirus.org/threads/weakauras2.218582/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Ауры, бафы и дебафы"
@@ -1145,7 +1145,7 @@
 			"description": "WIM (WoW Instant Messenger) — аддон для чата, сделает его удобнее. Одна из главных фишек аддона, открытие личных сообщений или же любого другого канала в отдельном окне, когда появляются новые сообщения.",
 			"githubUrl": "https://github.com/fxpw/WIM/",
 			"repo": "fxpw/WIM",
-			"forumUrl": "https://forum.sirus.su/threads/addon-wim-fixed.194686/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-wim-fixed.194686/",
 			"bugReportUrl": "https://discord.gg/addony-dlia-sirus-su-914079030125420565",
 			"author": "Fxpw",
 			"category": "Чат и общение"
@@ -1160,8 +1160,8 @@
 			"description": "Arena Team Tracker. Модификация, позволяющая отслеживать наличие и откат способностей напарников в группе. Базовая версия включает большую часть активных заклинаний, а также расовых способностей. К тому же, позволяет отдельным меню выводить свои способности. Настройка и меню - на английском языке. Контекстное меню настройки - /att",
 			"githubUrl": "https://github.com/Qblolz/ATT",
 			"repo": "Qblolz/ATT",
-			"forumUrl": "https://forum.sirus.su/threads/arenateamtracker-alternative-pab-partyabilitybars.118761/",
-			"bugReportUrl": "https://forum.sirus.su/threads/arenateamtracker-alternative-pab-partyabilitybars.118761/",
+			"forumUrl": "https://forum.sirus.org/threads/arenateamtracker-alternative-pab-partyabilitybars.118761/",
+			"bugReportUrl": "https://forum.sirus.org/threads/arenateamtracker-alternative-pab-partyabilitybars.118761/",
 			"author": "Qblolz",
 			"category": "Бафы и дебафы"
 		},
@@ -1175,7 +1175,7 @@
 			"description": "Этот аддон позволяет упростить торговлю, делая ее более простой. Аддон сканирует аукцион и добавляет цену к выбранному предмету в меню подсказки. Как это работает? При выборе предмета, который мы собираемся добавить на аукцион, Auctionator отображает общие данные по всем аукционам на выбранный нами предмет, сортируя по ценам за одну штуку. Аддон предлагает цену выкупа, основанную на самой дешевой цене за штуку вашего предмета.",
 			"githubUrl": "https://github.com/sirus-addons/Auctionator/",
 			"repo": "sirus-addons/Auctionator",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Аукцион и торговля"
 		},
@@ -1189,7 +1189,7 @@
 			"description": "BadBoy блокирует сообщения со спамом в чате о продаже золота,персонажа, взлома аккаунта, а также повторяющиеся сообщения. Аддон не блокирует друзей, гильдию, группу, рейд Команды: /badboy — открытие меню настроек аддона",
 			"githubUrl": "https://github.com/sirus-addons/BadBoy/",
 			"repo": "sirus-addons/BadBoy",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Чат и общение"
 		},
@@ -1203,7 +1203,7 @@
 			"description": "Этот плагин не сообщает игрокам, когда чат удален, он просто скрывает его. Особенности: Удаляет строки чата при обнаружении определенного слова.",
 			"githubUrl": "https://github.com/sirus-addons/BadBoy_CCleaner/",
 			"repo": "sirus-addons/BadBoy_CCleaner",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Чат и общение"
 		},
@@ -1223,7 +1223,7 @@
 			"description": "Всеми известный аддон Bagnon предназначен для объединения всех сумок в одну большую. Но это не единственная его функция, аддон так же может показать ваш банк и банк гильдии, быстрый поиск вещей. Там же можно посмотреть банки ваших персонажей, которые присутствуют на вашем акаунте, подсветить предметы (эпик, зелень, легендарка). Bagnon 3.3.5 наведет в вашем инвентаре порядок, поэтому его можно считать №1 в своей категории аддонов.",
 			"githubUrl": "https://github.com/sirus-addons/Bagnon",
 			"repo": "sirus-addons/Bagnon",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Сумки и инвентарь"
 		},
@@ -1237,7 +1237,7 @@
 			"description": "BankStack - Сортирует ваши сумки, банк, и гильдейский банк. Заполняет недостающие стаки вещей",
 			"githubUrl": "https://github.com/sirus-addons/BankStack/",
 			"repo": "sirus-addons/BankStack",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Сумки и инвентарь"
 		},
@@ -1251,7 +1251,7 @@
 			"description": "Bartender4 - это полная модификация замены стандартных панелей команд. Она предоставляет вам все функции, необходимые для полной настройки большинства аспектов ваших действий и связанных с ними панелей. Характеристики Поддержка всех панелей команд и всех связанных панелей - 10 панелей команд - Стойки - Панель питомца - Сумки - Микро-меню - Панель опыта/Панель репутации - Все панели полностью настраиваемы (настройки Масштаб, Альфа, Затемнение, ...) - Очень гибкий и настраиваемый - Дополнительные параметры раскладки и подкачки для панелей команд - Переключение всех панелей на основе позиционирования или модификаторов Вызов настроек из чата: /bar , /bt",
 			"githubUrl": "https://github.com/sirus-addons/Bartender4/",
 			"repo": "sirus-addons/Bartender4",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Интерфейс"
 		},
@@ -1265,7 +1265,7 @@
 			"description": "Capping отображает сколько времени осталось до захвата точки/флага на Полях боя и Аренах. Работает абсолютно на всех бг, имеет функцию показа информации всем игрокам вашей команды.",
 			"githubUrl": "https://github.com/sirus-addons/Capping",
 			"repo": "sirus-addons/Capping",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "PVP"
 		},
@@ -1279,7 +1279,7 @@
 			"description": "ChatBar - Этот аддон разработан специально для любителей пообщаться в чате. Он позволяет выбрать удобный режим общения, нажав всего одну кнопку на очень удобной панельке.",
 			"githubUrl": "https://github.com/sirus-addons/ChatBar",
 			"repo": "sirus-addons/ChatBar",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Чат и общение"
 		},
@@ -1307,7 +1307,7 @@
 			"description": "Enhanced Raid Frames — это дополнение к рейдовым фреймам для World of Warcraft",
 			"githubUrl": "https://github.com/sirus-addons/CustomEnhancedRaidFrames",
 			"repo": "sirus-addons/CustomEnhancedRaidFrames",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Интерфейс"
 		},
@@ -1321,8 +1321,8 @@
 			"description": "Аддон Diminishing returns будет отслеживать диминишинг ваших противников (фир, циклон, овца, корни и т.д.). Для того чтобы вы смогли во время сориентироваться и дать максимальный контроль своему врагу. Данный мод работает с большинством популярных аддонов (Shadowed Unit Frames, Gladius, X-Perl, PitBull Unit Frames и ElvUI).",
 			"githubUrl": "https://github.com/Qblolz/DiminishingReturns-Sirus",
 			"repo": "Qblolz/DiminishingReturns-Sirus",
-			"forumUrl": "https://forum.sirus.su/threads/addon-diminishingreturns.81503/",
-			"bugReportUrl": "https://forum.sirus.su/threads/addon-diminishingreturns.81503/",
+			"forumUrl": "https://forum.sirus.org/threads/addon-diminishingreturns.81503/",
+			"bugReportUrl": "https://forum.sirus.org/threads/addon-diminishingreturns.81503/",
 			"author": "Qblolz",
 			"category": "PVP"
 		},
@@ -1336,7 +1336,7 @@
 			"description": "Аддон для рыбалки. Аддон запускается значком у мини-карты или командами /fb и /fishingbuddy. Основное окно содержит информацию о выловленной рыбе, которую можно упорядочить по типу рыбы или по локациям, где она была поймана. Особенности: 1) ведет статистику всей выловленной рыбы по типам и локациям, показывая улов в процентном и количественном соотношении; 2) отображает текущий навык рыбной ловли, место лова, время, потраченное на рыбалку в данной сессии и за весь период работы аддона; 3) показывает необходимый навык рыбалки для ловли в данной локации и текущий навык персонажа в процентах от необходимого.",
 			"githubUrl": "https://github.com/sirus-addons/FishingBuddy",
 			"repo": "sirus-addons/FishingBuddy",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Профессии"
 		},
@@ -1350,7 +1350,7 @@
 			"description": "Аддон GnomishVendorShrinker заменяет стандартное окно взаимодействия с НИП-торговцами на более удобное и компактное. Интерфейс отчасти напоминает модуль CompactUI аддона Auctioneer. Преимущества: Отсутствие страниц, вместо них - список предметов с возможностью скроллинга; Понятный, не загроможденный интерфейс; Покупка товаров по клику мыши; Alt-клик позволяет купить целый стак (или максимально близкое к полному стаку количество предметов); Сохранены стандартные функции \"примерочной\" и ссылки в чат комбинациями ctrl-клик и  shift-клик соответственно; Еще не известные вам рецепты подсвечиваются синим; Предметы, которые вы не можете использовать, подсвечены красным; Возможность поиска упростит общение с торговцами, которые предлагают сотни различных предметов; Единственный недостаток аддона - невозможность покупать заданное количество предметов.",
 			"githubUrl": "https://github.com/sirus-addons/GnomishVendorShrinker/",
 			"repo": "sirus-addons/GnomishVendorShrinker",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Разное"
 		},
@@ -1378,7 +1378,7 @@
 			"description": "MoveAnything позволяет перемещать, масштабировать, скрывать и настраивать прозрачность практически любого элемента экрана в WoW, предлагая инструменты, которые помогут вам настроить пользовательский интерфейс. Некоторые другие модификации кадров также возможны с использованием редакторов кадров MA (представленных в 11.b2), включая framestrata, группирование кадров и многое другое. Введите /move, чтобы отобразить главное окно, или нажмите кнопку под меню игры. Это главное окно содержит список фреймов Blizzard (любой элемент, отсутствующий в списке, может быть добавлен в категорию пользовательских фреймов с помощью /move frameName, /mafe frameName, /hide frameName или одного из сочетаний клавиш move / mafe / hide).",
 			"githubUrl": "https://github.com/sirus-addons/MoveAnything",
 			"repo": "sirus-addons/MoveAnything",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Разное"
 		},
@@ -1392,7 +1392,7 @@
 			"description": "Omen - это очень удобный аддон , который будет полезен в рейдах . Основное назначение - слежение за своим Аггро. Отображает аггро  игрока и участников группы, что позволяет вовремя подсказать другим о том, что босс может сорваться на них.",
 			"githubUrl": "https://github.com/sirus-addons/Omen",
 			"repo": "sirus-addons/Omen",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Сражения с боссами"
 		},
@@ -1406,7 +1406,7 @@
 			"description": "Аддон Postal – сделает интерфейс вашей почты просто классным. Весь функционал усовершенствован вплоть до одного клика! Все письма можно будет открыть  и отфильтровать одним кликом мышки, а так же автоматически заполнить поля для адресата.",
 			"githubUrl": "https://github.com/sirus-addons/Postal",
 			"repo": "sirus-addons/Postal",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Почта"
 		},
@@ -1420,7 +1420,7 @@
 			"description": "Этот аддон сделает вашу полосу заклинаний или кастбар более симпатичной. Фокус цели на наиболее приемлемый. А так же, вы с легкостью сможете его настроить так, как вам понравится. Также, он отображает задержку или пинг между вашими кастами, что вам позволит сократить время между использованием кастов, а это непосредственно будет влиять на ваш ДПС.",
 			"githubUrl": "https://github.com/sirus-addons/Quartz",
 			"repo": "sirus-addons/Quartz",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Бой"
 		},
@@ -1448,7 +1448,7 @@
 			"description": "Recount - это графический счетчик урона, лечения, поглощения, смертей и т.д.",
 			"githubUrl": "https://github.com/sirus-addons/Recount/",
 			"repo": "sirus-addons/Recount",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Бой"
 		},
@@ -1462,7 +1462,7 @@
 			"description": "Дополнение для Recount 3.3.5a. RecountGuessedAbsorbs - это дополнение создано для владельцев валанира и жрецов в специализации \"Послушание\", показывая их поглощение урона (только поглощение, без исцеления).",
 			"githubUrl": "https://github.com/sirus-addons/RecountGuessedAbsorbs",
 			"repo": "sirus-addons/RecountGuessedAbsorbs",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Бой"
 		},
@@ -1476,7 +1476,7 @@
 			"description": "Дополнение для Recount 3.3.5a. RecountHealAndGuessedAbsorbs - это дополнение создано для владельцев валанира и жрецов в специализации \"Послушание\", показывая их поглощение урона+исцеление.",
 			"githubUrl": "https://github.com/sirus-addons/RecountHealAndGuessedAbsorbs/",
 			"repo": "sirus-addons/RecountHealAndGuessedAbsorbs",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Бой"
 		},
@@ -1490,7 +1490,7 @@
 			"description": "Аддон Selljunk одна из самых необходимых вещей, которой нет в стандартных настройках. Аддон поможет удалить вам ненужные вещи (серый и белый хлам), который вам абсолютно ни на что не сгодятся. Особенности аддона: Все серые вещи продадутся при открытии любого вендора; У вендора появится кнопка для продажи ненужных вещей в один клик, если вы отключили автоматическую продажу; Аддон будет удалять ненужные предметы, если у вас переполнен инвентарь. Данный мод может работать со старта, никакие танцы с бубном не нужны. Поэтому просто распаковывайте скачанный архив и копируйте в папку с аддонами. Если же вы решили что-то поменять в аддоне, то используйте данные команды: /sj — откроет конфигурации аддона; /sj add (вещь) — исключение предмета из продажи; /sj destroy — данная команда удалит все предметы; /sj destroy (число) — удаляет несколько предметов сразу. Теперь вы можете не мучиться с лишним мусором в инвентаре, аддон зачистит и продаст ненужные вам предметы.",
 			"githubUrl": "https://github.com/sirus-addons/SellJunk/",
 			"repo": "sirus-addons/SellJunk",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Сумки и инвентарь"
 		},
@@ -1504,7 +1504,7 @@
 			"description": "TipTac - это дополнение к всплывающей подсказке, которое позволяет настраивать различные аспекты подсказок, такие как перемещение туда, где показано, шрифт, масштаб подсказок и многое другое. Характеристики - Показывает баффы и дебаффы цели с временем действия. Можно настроить так, чтобы показывало только ваши бафы/дебафы. - В рейде или в группе есть возможность показать, кто из группы выбрал целью определенный юнит. - Широкие параметры привязки позволяют вам переключаться между привязкой «Обычная», «Мышью» и «Исходный», это можно настроить для подсказок как на один юнит, так и на юнит в поле зрения или вне поля зрения. - Рамка привязки позволяет вам точно определить, где вы хотите получить подсказки, с помощью обычной опции привязки. - Возможность изменить тип и размер шрифта для всех подсказок в пользовательском интерфейсе. Использует \"LibSharedMedia\", если установлен. - Внутри подсказки может отображаться индикатор здоровья, маны, энергии, ярости, силы рун или фокуса, который можно включить или отключить по своему усмотрению. - Подсказки обновляются с настраиваемым интервалом для отображения изменений. - Настраиваются параметры затухания, как предварительное, так и через некоторое время. Они также могут быть установлены на ноль, если вы предпочитаете, чтобы подсказки просто скрывались мгновенно. - Позволяет вам изменить фон и цвет рамки TipTacTip и любой из измененных подсказок. Вызов настроек из чата: / tip",
 			"githubUrl": "https://github.com/sirus-addons/TipTac",
 			"repo": "sirus-addons/TipTac",
-			"bugReportUrl": "https://forum.sirus.su/forums/interfejs.47/",
+			"bugReportUrl": "https://forum.sirus.org/forums/interfejs.47/",
 			"author": "Sirus",
 			"category": "Всплывающие подсказки"
 		},
