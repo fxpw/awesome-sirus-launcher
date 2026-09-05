@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Исправлены некорректные пути проверки версий ElvUI_DTBars2, EthnoProf и ATT на GitHub.
+
 ## [1.0.27] - 2026-09-04
 
 ### Changed

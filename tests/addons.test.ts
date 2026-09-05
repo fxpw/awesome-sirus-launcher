@@ -89,6 +89,23 @@ describe('addons core', () => {
 		expect(details?.folders).not.toContain('Details_CustomTankInfo')
 	})
 
+	it('defines correct remote toc paths for affected addons', () => {
+		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
+		const elvUiDtBars = addons.find((addon) => addon.id === 'community:elvui_dtbars2')
+		const ethnoProf = addons.find((addon) => addon.id === 'community:ethnoprof')
+		const att = addons.find((addon) => addon.id === 'sirus:att')
+
+		expect(elvUiDtBars?.versionUrl).toBe(
+			'https://raw.githubusercontent.com/fxpw/ElvUI_DTBars2/master/ElvUI_DTBars2.toc'
+		)
+		expect(ethnoProf?.versionUrl).toBe(
+			'https://raw.githubusercontent.com/Minpromtorg/EthnoProf/master/EthnoProf.toc'
+		)
+		expect(att?.versionUrl).toBe(
+			'https://raw.githubusercontent.com/Qblolz/ATT/master/ATT/ATT.toc'
+		)
+	})
+
 	it('includes the full Mr-Dan community catalog snapshot', () => {
 		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
 		const community = addons.filter((addon) => addon.source === 'community')

@@ -473,7 +473,7 @@
 			"id": "community:elvui_dtbars2",
 			"source": "community",
 			"name": "ElvUI_DTBars2",
-			"versionUrl": "https://raw.githubusercontent.com/fxpw/ElvUI_DTBars2/master/ElvUI_DTBars2/ElvUI_DTBars2.toc",
+			"versionUrl": "https://raw.githubusercontent.com/fxpw/ElvUI_DTBars2/master/ElvUI_DTBars2.toc",
 			"branch": "master",
 			"folders": ["ElvUI_DTBars2"],
 			"description": "ElvUI_DTBars2 - Плагин для создания и управления дополнительными панелями инфо-текстов.",
@@ -631,7 +631,7 @@
 			"id": "community:ethnoprof",
 			"source": "community",
 			"name": "EthnoProf",
-			"versionUrl": "https://raw.githubusercontent.com/fxpw/Minpromtorg/EthnoProf/master/EthnoProf/EthnoProf.toc",
+			"versionUrl": "https://raw.githubusercontent.com/Minpromtorg/EthnoProf/master/EthnoProf.toc",
 			"branch": "master",
 			"folders": ["EthnoProf"],
 			"description": "EthnoProf - аддон позволяющий просматривать окно новой профессиии \"Этнография\" через книгу заклинаний в режиме оффлайн просмотра (Крафт недоступен)",
@@ -1154,7 +1154,7 @@
 			"id": "sirus:att",
 			"source": "sirus",
 			"name": "ATT",
-			"versionUrl": "https://raw.githubusercontent.com/Qblolz/ATT/master/ATT.toc",
+			"versionUrl": "https://raw.githubusercontent.com/Qblolz/ATT/master/ATT/ATT.toc",
 			"branch": "master",
 			"folders": ["ATT"],
 			"description": "Arena Team Tracker. Модификация, позволяющая отслеживать наличие и откат способностей напарников в группе. Базовая версия включает большую часть активных заклинаний, а также расовых способностей. К тому же, позволяет отдельным меню выводить свои способности. Настройка и меню - на английском языке. Контекстное меню настройки - /att",
@@ -1514,14 +1514,14 @@
 			"name": "Kui Nameplates",
 			"versionUrl": "https://raw.githubusercontent.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/main/Kui_Nameplates/Kui_Nameplates.toc",
 			"branch": "main",
-			"folders": ["Kui_Nameplates","Kui_Nameplates_Auras"],
+			"folders": ["Kui_Nameplates", "Kui_Nameplates_Auras"],
 			"description": "Kui Nameplates - аддон для полной кастомизации неймплейтов над персонажами и существами. Предоставляет широкие возможности настройки отображения здоровья, имени, баффов, дебаффов, полосы каста, угрозы и других элементов. Версия адаптирована специально для Sirus 3.3.5a.",
 			"githubUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5",
 			"repo": "Dozawow/Kui_Nameplates-Sirus-3.3.5",
 			"bugReportUrl": "https://github.com/Dozawow/Kui_Nameplates-Sirus-3.3.5/issues",
 			"author": "Dozawow",
 			"category": "Интерфейс"
-        },
+		},
 		{
 			"id": "community:sirusmythicplus",
 			"source": "community",
@@ -1535,6 +1535,6 @@
 			"bugReportUrl": "https://github.com/KataLoved/SirusMythicPlus/issues",
 			"author": "NastyaLuve",
 			"category": "Всплывающие подсказки"
-        }
-    ]
+		}
+	]
 }
