@@ -6,6 +6,17 @@
 
 ## [Unreleased]
 
+## [1.0.30] - 2026-11-22
+
+### Added
+
+- В каталог добавлен ElvUI_WindTools для ElvUI с DF-интерфейсом Sirus.
+
+### Changed
+
+- Details, WIM, ElvUI_DmgAtNameplates и WeakAuras скачиваются из Accidev-Addons.
+- Дополнения ElvUI из других репозиториев временно скрыты из встроенного каталога. Файлы установленных дополнений сохраняются.
+
 ## [1.0.29] - 2026-11-22
 
 ### Changed

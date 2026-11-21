@@ -80,7 +80,7 @@ describe('addons core', () => {
 		expect(dbm?.folders).not.toContain('DBM-BronzeSanctuary')
 		expect(details).toMatchObject({
 			versionUrl:
-				'https://raw.githubusercontent.com/fxpw/Details-WotLK/master/Details/Details.toc',
+				'https://raw.githubusercontent.com/Accidev-Addons/Details_Sirus/master/Details/Details.toc',
 			versionFolder: 'Details',
 			versionFile: 'Details.toc'
 		})
@@ -91,13 +91,9 @@ describe('addons core', () => {
 
 	it('defines correct remote toc paths for affected addons', () => {
 		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
-		const elvUiDtBars = addons.find((addon) => addon.id === 'community:elvui_dtbars2')
 		const ethnoProf = addons.find((addon) => addon.id === 'community:ethnoprof')
 		const att = addons.find((addon) => addon.id === 'sirus:att')
 
-		expect(elvUiDtBars?.versionUrl).toBe(
-			'https://raw.githubusercontent.com/fxpw/ElvUI_DTBars2/master/ElvUI_DTBars2.toc'
-		)
 		expect(ethnoProf?.versionUrl).toBe(
 			'https://raw.githubusercontent.com/Minpromtorg/EthnoProf/master/EthnoProf.toc'
 		)
@@ -106,14 +102,28 @@ describe('addons core', () => {
 		)
 	})
 
-	it('includes the full Mr-Dan community catalog snapshot', () => {
+	it('lists the Accidev ElvUI package and its available modules', () => {
+		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
+		const elvui = addons.find((addon) => addon.id === 'community:elvui')
+		const modules = addons.filter((addon) => addon.id.startsWith('community:elvui_'))
+
+		expect(elvui).toMatchObject({
+			repo: 'Accidev-Addons/ElvUI-for-Sirus',
+			folders: ['ElvUI', 'ElvUI_Libraries', 'ElvUI_Options']
+		})
+		expect(modules.map((addon) => addon.repo).sort()).toEqual([
+			'Accidev-Addons/ElvUI_DmgAtNameplates',
+			'Accidev-Addons/ElvUI_WindTools'
+		])
+	})
+
+	it('keeps supported entries from the Mr-Dan community catalog', () => {
 		const addons = (addonCatalog as { addons: AddonCatalogEntry[] }).addons
 		const community = addons.filter((addon) => addon.source === 'community')
 		const aeonoPlates = community.find((addon) => addon.id === 'community:aeonoplates')
 		const nezvezdi = community.find((addon) => addon.id === 'community:nezvezdi')
 		const weakAuras = community.find((addon) => addon.id === 'community:weakauras')
 
-		expect(community).toHaveLength(74)
 		expect(aeonoPlates).toMatchObject({
 			name: 'AeonoPlates',
 			repo: 'Aeonoscul/AeonoPlates',
