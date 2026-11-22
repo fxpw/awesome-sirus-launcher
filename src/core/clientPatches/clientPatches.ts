@@ -15,20 +15,6 @@ export interface ClientPatchManifestFile {
 	updatedAt?: string
 }
 
-export type ClientPatchFileStatus = 'ok' | 'missing' | 'outdated'
-
-export interface ClientPatchFileCheck {
-	fileName: string
-	relativePath: string
-	targetPath: string
-	expectedMd5: string
-	actualMd5?: string
-	expectedSize: number
-	actualSize?: number
-	downloadUrl: string
-	status: ClientPatchFileStatus
-}
-
 export function normalizeClientPatchManifest(raw: unknown): ClientPatchManifestFile[] {
 	const items = Array.isArray(raw) ? raw : getRecordArray(raw, 'patches')
 

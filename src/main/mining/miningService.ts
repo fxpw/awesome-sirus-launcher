@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import type { MiningConfig, MiningConfigInput, MiningState, MiningStatus } from '@shared/contracts'
 import {
@@ -11,6 +10,7 @@ import {
 	splitMiningArguments,
 	validateMiningStart
 } from '@core/mining/mining'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 
 interface MiningStorage {
 	config: MiningConfig
@@ -79,7 +79,7 @@ export function createMiningService(
 	}
 
 	async function saveStorage(storage: MiningStorage): Promise<void> {
-		await writeStorage(getFilePath(), storage)
+		await writeJsonFile(getFilePath(), storage)
 	}
 
 	async function createState(): Promise<MiningState> {
@@ -195,7 +195,8 @@ export function createMiningService(
 }
 
 async function readStorage(filePath: string): Promise<MiningStorage> {
-	if (!existsSync(filePath)) {
+	const parsed = (await readJsonFile(filePath)) as Partial<MiningStorage> | undefined
+	if (parsed === undefined) {
 		return {
 			config: { ...defaultMiningConfig },
 			acceptedSharesTotal: 0,
@@ -203,21 +204,11 @@ async function readStorage(filePath: string): Promise<MiningStorage> {
 		}
 	}
 
-	const raw = await readFile(filePath, 'utf8')
-	const parsed = JSON.parse(raw) as Partial<MiningStorage>
-
 	return {
 		config: normalizeMiningConfig(parsed.config),
 		acceptedSharesTotal: normalizeNumber(parsed.acceptedSharesTotal),
 		receivedTotal: normalizeNumber(parsed.receivedTotal)
 	}
-}
-
-async function writeStorage(filePath: string, storage: MiningStorage): Promise<void> {
-	const tempPath = `${filePath}.tmp`
-	await mkdir(dirname(filePath), { recursive: true })
-	await writeFile(tempPath, JSON.stringify(storage, null, 2), 'utf8')
-	await rename(tempPath, filePath)
 }
 
 function normalizeNumber(value: unknown): number {

@@ -19,7 +19,6 @@ const { machineId } = require('node-machine-id') as {
 
 export interface ClientRegistrationService {
 	ensureRegistered(): Promise<string>
-	startHandshakePolling(): void
 	stopHandshakePolling(): void
 }
 
@@ -34,7 +33,7 @@ export function createClientRegistrationService(
 		async ensureRegistered() {
 			const existing = await store.get()
 			if (existing?.registered) {
-				startHandshakePollingInternal()
+				startHandshakePolling()
 				return existing.registered
 			}
 
@@ -48,11 +47,8 @@ export function createClientRegistrationService(
 			}
 
 			await store.save({ registered: uuid })
-			startHandshakePollingInternal()
+			startHandshakePolling()
 			return uuid
-		},
-		startHandshakePolling() {
-			startHandshakePollingInternal()
 		},
 		stopHandshakePolling() {
 			if (!handshakeTimer) return
@@ -62,7 +58,7 @@ export function createClientRegistrationService(
 		}
 	}
 
-	function startHandshakePollingInternal() {
+	function startHandshakePolling() {
 		if (handshakeStarted) return
 		handshakeStarted = true
 		void runHandshake()

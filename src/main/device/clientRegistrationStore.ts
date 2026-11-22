@@ -1,67 +1,49 @@
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ClientRegistrationRecord } from '@core/device/clientRegistration'
+import { isRecord } from '@core/isRecord'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 
 export interface ClientRegistrationStore {
 	get(): Promise<ClientRegistrationRecord | null>
 	save(record: ClientRegistrationRecord): Promise<void>
 }
 
-export function createClientRegistrationStore(getUserDataPath: () => string): ClientRegistrationStore {
+export function createClientRegistrationStore(
+	getUserDataPath: () => string
+): ClientRegistrationStore {
 	const getFilePath = () => join(getUserDataPath(), 'client-registration.json')
 
 	return {
 		async get() {
 			const filePath = getFilePath()
-			if (existsSync(filePath)) {
-				return readRecord(filePath)
-			}
+			const raw = await readJsonFile(filePath).catch(() => null)
+			if (raw !== undefined) return toRecord(raw)
 
 			const migrated = await readOfficialLauncherRegistration()
 			if (migrated) {
-				await writeRecord(filePath, migrated)
+				await writeJsonFile(filePath, migrated)
 				return migrated
 			}
 
 			return null
 		},
 		async save(record) {
-			await writeRecord(getFilePath(), record)
+			await writeJsonFile(getFilePath(), record)
 		}
 	}
 }
 
-async function readRecord(filePath: string): Promise<ClientRegistrationRecord | null> {
-	try {
-		const raw = JSON.parse(await readFile(filePath, 'utf8')) as Partial<ClientRegistrationRecord>
-		if (typeof raw.registered !== 'string' || raw.registered.length === 0) return null
-		return { registered: raw.registered }
-	} catch {
+function toRecord(raw: unknown): ClientRegistrationRecord | null {
+	if (!isRecord(raw) || typeof raw.registered !== 'string' || raw.registered.length === 0) {
 		return null
 	}
-}
-
-async function writeRecord(filePath: string, record: ClientRegistrationRecord): Promise<void> {
-	await mkdir(dirname(filePath), { recursive: true })
-	const tempPath = `${filePath}.tmp`
-	await writeFile(tempPath, JSON.stringify(record, null, 2), 'utf8')
-	await rename(tempPath, filePath)
+	return { registered: raw.registered }
 }
 
 async function readOfficialLauncherRegistration(): Promise<ClientRegistrationRecord | null> {
 	const storePath = join(homedir(), 'AppData', 'Roaming', 'sirus-launcher-v2', 'store.json')
-	if (!existsSync(storePath)) return null
+	const raw = await readJsonFile(storePath).catch(() => undefined)
 
-	try {
-		const raw = JSON.parse(await readFile(storePath, 'utf8')) as {
-			app?: { registered?: string }
-		}
-		const registered = raw.app?.registered
-		if (typeof registered !== 'string' || registered.length === 0) return null
-		return { registered }
-	} catch {
-		return null
-	}
+	return toRecord(isRecord(raw) ? raw.app : undefined)
 }

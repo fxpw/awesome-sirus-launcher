@@ -1,5 +1,4 @@
 const cloudsUrl = new URL('../assets/akatsuki-clouds-left.svg', import.meta.url).href
-let backgroundCanvas: HTMLCanvasElement | null = null
 
 interface BackgroundIcon {
 	x: number
@@ -10,16 +9,7 @@ interface BackgroundIcon {
 	alpha: number
 }
 
-export function initializeAkatsukiBackground(): void {
-	if (backgroundCanvas) {
-		ensureBackgroundCanvas(backgroundCanvas)
-		return
-	}
-
-	void generateBackground()
-}
-
-async function generateBackground(): Promise<void> {
+export async function initializeAkatsukiBackground(): Promise<void> {
 	const image = await loadImage(cloudsUrl)
 	const aspectRatio = image.naturalHeight / image.naturalWidth
 	const width = Math.max(window.innerWidth, 1500)
@@ -34,13 +24,11 @@ async function generateBackground(): Promise<void> {
 
 	context.imageSmoothingEnabled = true
 	context.imageSmoothingQuality = 'high'
-	context.clearRect(0, 0, width, height)
 	for (const icon of createIcons(width, height, aspectRatio)) {
 		drawIcon(context, image, icon)
 	}
 
-	backgroundCanvas = canvas
-	ensureBackgroundCanvas(canvas)
+	document.body.prepend(canvas)
 }
 
 function createIcons(width: number, height: number, aspectRatio: number): BackgroundIcon[] {
@@ -109,10 +97,4 @@ function isFarEnough(icon: BackgroundIcon, icons: BackgroundIcon[]): boolean {
 
 		return distance >= minimumDistance
 	})
-}
-
-function ensureBackgroundCanvas(canvas: HTMLCanvasElement): void {
-	if (!document.body.contains(canvas)) {
-		document.body.prepend(canvas)
-	}
 }

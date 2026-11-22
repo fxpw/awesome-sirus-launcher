@@ -19,16 +19,12 @@ export interface FpsPatchInstallPlan {
 	sourceUrls: string[]
 }
 
-export function createFpsPatchInstallPlan(
-	wowPath: string,
-	tempDir: string,
-	sourceUrls: readonly string[] = fpsPatchSourceUrls
-): FpsPatchInstallPlan {
+export function createFpsPatchInstallPlan(wowPath: string, tempDir: string): FpsPatchInstallPlan {
 	const paths = getWowPaths(wowPath)
 
 	return {
 		targetPath: join(paths.localeDataPath, fpsPatchFileName),
 		tempPath: normalize(resolve(tempDir, `${fpsPatchFileName}.tmp`)),
-		sourceUrls: [...sourceUrls]
+		sourceUrls: [...fpsPatchSourceUrls]
 	}
 }

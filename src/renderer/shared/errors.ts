@@ -1,5 +1,5 @@
 const electronIpcPrefix = /^Error invoking remote method ['"][^'"]+['"]:\s*/i
-const genericErrorPrefix = /^Error:\s*/i
+const genericErrorPrefix = /^[a-z]*Error:\s*/i
 
 export function cleanIpcErrorMessage(message: string): string {
 	let cleaned = message.trim().replace(electronIpcPrefix, '')

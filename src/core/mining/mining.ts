@@ -1,5 +1,6 @@
 import { basename, normalize, resolve } from 'node:path'
 import type { MiningConfig, MiningConfigInput, MiningState, MiningStatus } from '@shared/contracts'
+import { isRecord } from '@core/isRecord'
 
 export const defaultMiningConfig: MiningConfig = {
 	consentAccepted: false,
@@ -122,7 +123,7 @@ export function splitMiningArguments(value: string): string[] {
 	return args
 }
 
-export function createCommandPreview(config: MiningConfig): string {
+function createCommandPreview(config: MiningConfig): string {
 	const executable = config.minerPath ? basename(config.minerPath) : 'miner.exe'
 	return [executable, config.arguments].filter(Boolean).join(' ')
 }
@@ -135,8 +136,4 @@ function normalizePath(value: unknown): string {
 
 function normalizeText(value: unknown): string {
 	return typeof value === 'string' ? value.trim() : ''
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null
 }

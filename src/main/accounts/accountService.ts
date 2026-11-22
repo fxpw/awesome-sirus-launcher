@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { existsSync } from 'node:fs'
 import type {
@@ -9,9 +9,10 @@ import type {
 	DeleteAccountInput,
 	SelectAccountInput
 } from '@shared/contracts'
+import { updateAccountConfigText } from '@core/accounts/configWtf'
+import { validateWowPath } from '@core/wow/wowPaths'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 import type { SecretStore } from '@main/secrets/memorySecretStore'
-import { updateAccountConfigText } from '../../core/accounts/configWtf'
-import { validateWowPath } from '../../core/wow/wowPaths'
 
 interface AccountRecord {
 	id: string
@@ -53,7 +54,7 @@ export function createAccountService(
 			data.accounts.push(account)
 			data.selectedAccountId = account.id
 			await secretStore.set(createAccountPasswordKey(account.id), input.password)
-			await writeAccounts(getFilePath(), data)
+			await writeJsonFile(getFilePath(), data)
 
 			return toListResult(data)
 		},
@@ -64,7 +65,7 @@ export function createAccountService(
 			}
 
 			data.selectedAccountId = input.accountId
-			await writeAccounts(getFilePath(), data)
+			await writeJsonFile(getFilePath(), data)
 
 			return toListResult(data)
 		},
@@ -76,7 +77,7 @@ export function createAccountService(
 			await secretStore.delete(createAccountPasswordKey(account.id))
 			data.accounts = data.accounts.filter((item) => item.id !== account.id)
 			if (data.selectedAccountId === account.id) delete data.selectedAccountId
-			await writeAccounts(getFilePath(), data)
+			await writeJsonFile(getFilePath(), data)
 
 			return toListResult(data)
 		},
@@ -117,22 +118,13 @@ export function createAccountService(
 }
 
 async function readAccounts(filePath: string): Promise<AccountFile> {
-	if (!existsSync(filePath)) return { accounts: [] }
-
-	const raw = await readFile(filePath, 'utf8')
-	const data = JSON.parse(raw) as AccountFile
+	const data = (await readJsonFile(filePath)) as AccountFile | undefined
+	if (data === undefined) return { accounts: [] }
 
 	return {
 		selectedAccountId: data.selectedAccountId,
 		accounts: Array.isArray(data.accounts) ? data.accounts : []
 	}
-}
-
-async function writeAccounts(filePath: string, data: AccountFile): Promise<void> {
-	const tempPath = `${filePath}.tmp`
-	await mkdir(dirname(filePath), { recursive: true })
-	await writeFile(tempPath, JSON.stringify(data, null, 2), 'utf8')
-	await rename(tempPath, filePath)
 }
 
 function toListResult(data: AccountFile): AccountListResult {

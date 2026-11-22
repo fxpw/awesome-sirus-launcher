@@ -162,10 +162,7 @@ function save(): void {
 	})
 }
 
-function buildMinerArguments(
-	example: (typeof walletExamples)[number],
-	worker: string
-): string {
+function buildMinerArguments(example: (typeof walletExamples)[number], worker: string): string {
 	const user = `${example.address}.${worker}`
 	if (example.minerKind === 'lolminer') {
 		return `--algo EQU144_5 --pool ${example.poolUrl} --user ${user} --pass x`
@@ -184,7 +181,6 @@ function applyWalletExample(example: (typeof walletExamples)[number]): void {
 	poolUrl.value = example.poolUrl
 	minerArguments.value = buildMinerArguments(example, worker)
 }
-
 </script>
 
 <template>

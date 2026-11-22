@@ -3,5 +3,5 @@ import App from './App.vue'
 import { initializeAkatsukiBackground } from './shared/akatsukiBackground'
 import './styles.css'
 
-initializeAkatsukiBackground()
+void initializeAkatsukiBackground()
 createApp(App).mount('#app')

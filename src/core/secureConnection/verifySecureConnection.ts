@@ -1,6 +1,6 @@
 export const SECURED_CONNECTION_API_BASE = 'https://api.sirus.org'
 export const SECURED_CONNECTION_PATH = '/api/secured-connection.json'
-export const DEFAULT_VERIFY_TIMEOUT_MS = 5000
+const VERIFY_TIMEOUT_MS = 5000
 export const DEFAULT_FETCH_TIMEOUT_MS = 5000
 
 export interface SecuredConnectionHostConfig {
@@ -33,15 +33,12 @@ export interface VerifySecureConnectionResult {
 }
 
 export interface VerifySecureConnectionDeps {
-	fetchConfig: (appVersion: string) => Promise<SecuredConnectionConfig | null>
+	fetchConfig: () => Promise<SecuredConnectionConfig | null>
 	establishConnection: (host: SecureConnectionHost) => Promise<void>
 	logger?: SecureConnectionLogger
-	verifyTimeoutMs?: number
 }
 
-export function mapSecuredConnectionHosts(
-	config: SecuredConnectionConfig
-): SecureConnectionHost[] {
+export function mapSecuredConnectionHosts(config: SecuredConnectionConfig): SecureConnectionHost[] {
 	return config.hosts.map((host) => ({
 		host: host.address,
 		port: host.port,
@@ -51,19 +48,17 @@ export function mapSecuredConnectionHosts(
 }
 
 export async function verifySecureConnection(
-	appVersion: string,
 	deps: VerifySecureConnectionDeps
 ): Promise<VerifySecureConnectionResult> {
 	const log = deps.logger ?? { info() {}, warn() {} }
-	const verifyTimeoutMs = deps.verifyTimeoutMs ?? DEFAULT_VERIFY_TIMEOUT_MS
 
 	try {
 		const result = await Promise.race([
-			runVerification(appVersion, deps),
+			runVerification(deps),
 			new Promise<VerifySecureConnectionResult>((resolve) => {
 				setTimeout(
 					() => resolve({ verified: false, error: 'Connection timeout' }),
-					verifyTimeoutMs
+					VERIFY_TIMEOUT_MS
 				)
 			})
 		])
@@ -80,14 +75,15 @@ export async function verifySecureConnection(
 }
 
 async function runVerification(
-	appVersion: string,
 	deps: VerifySecureConnectionDeps
 ): Promise<VerifySecureConnectionResult> {
-	const config = await deps.fetchConfig(appVersion)
+	const config = await deps.fetchConfig()
 	if (!config || !config.enabled || !Array.isArray(config.hosts) || config.hosts.length === 0) {
 		return { verified: true }
 	}
 
-	await Promise.all(mapSecuredConnectionHosts(config).map((host) => deps.establishConnection(host)))
+	await Promise.all(
+		mapSecuredConnectionHosts(config).map((host) => deps.establishConnection(host))
+	)
 	return { verified: true }
 }

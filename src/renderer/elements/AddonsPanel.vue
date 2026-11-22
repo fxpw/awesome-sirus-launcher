@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Trash2 } from '@lucide/vue'
-import type { AddonProgress, AddonsListResult, AddonSummary } from '@shared/contracts'
+import type {
+	AddonCatalogSource,
+	AddonProgress,
+	AddonsListResult,
+	AddonSummary
+} from '@shared/contracts'
 import { launcherApi } from '@renderer/api/launcherApi'
 import BaseButton from '@renderer/components/BaseButton.vue'
 import BasePanel from '@renderer/components/BasePanel.vue'
@@ -19,6 +24,7 @@ const emit = defineEmits<{
 	'open-settings': []
 }>()
 
+const nameCollator = new Intl.Collator('ru')
 const { t } = useLocale()
 
 const catalogAddons = ref<AddonSummary[]>([])
@@ -44,11 +50,9 @@ const activeTooltip = ref<{
 	top: number
 	maxWidth: number
 	placement: 'above' | 'below'
-	anchorX: number
-	anchorY: number
 } | null>(null)
 const tooltipElement = ref<HTMLElement | null>(null)
-const tableSearch = ref<Record<string, string>>({
+const tableSearch = ref<Record<AddonCatalogSource, string>>({
 	sirus: '',
 	community: '',
 	custom: ''
@@ -56,13 +60,20 @@ const tableSearch = ref<Record<string, string>>({
 const addonProgress = ref<AddonProgress | null>(null)
 let removeAddonProgressListener: (() => void) | undefined
 let failedAction: (() => Promise<void>) | undefined
+let tooltipAnchorX = 0
+let tooltipAnchorY = 0
+let tooltipFrame = 0
 
 const addons = computed(() => mergeAddonLists(catalogAddons.value, checkedAddons.value))
-const communityCount = computed(
-	() => addons.value.filter((addon) => addon.source === 'community').length
-)
-const sirusCount = computed(() => addons.value.filter((addon) => addon.source === 'sirus').length)
-const customCount = computed(() => addons.value.filter((addon) => addon.source === 'custom').length)
+const addonsBySource = computed(() => {
+	const groups: Record<AddonCatalogSource, AddonSummary[]> = {
+		sirus: [],
+		community: [],
+		custom: []
+	}
+	for (const addon of addons.value) groups[addon.source].push(addon)
+	return groups
+})
 const problemCount = computed(
 	() => addons.value.filter((addon) => addon.status === 'outdated').length
 )
@@ -97,24 +108,9 @@ const remoteWarningDetails = computed(() =>
 	}))
 )
 const addonTables = computed(() => [
-	{
-		key: 'sirus',
-		title: t('addons.table.sirus'),
-		total: sirusCount.value,
-		addons: sortAddons(filterAddonsBySearch(addons.value, 'sirus'))
-	},
-	{
-		key: 'community',
-		title: t('addons.table.community'),
-		total: communityCount.value,
-		addons: sortAddons(filterAddonsBySearch(addons.value, 'community'))
-	},
-	{
-		key: 'custom',
-		title: t('addons.table.custom'),
-		total: customCount.value,
-		addons: sortAddons(filterAddonsBySearch(addons.value, 'custom'))
-	}
+	createAddonTable('sirus', t('addons.table.sirus')),
+	createAddonTable('community', t('addons.table.community')),
+	createAddonTable('custom', t('addons.table.custom'))
 ])
 const isChecking = computed(() => checking.value || props.checkingExternal === true)
 
@@ -131,15 +127,16 @@ onMounted(() => {
 	removeAddonProgressListener = launcherApi.addons.onProgress((progress: AddonProgress) => {
 		addonProgress.value = progress
 	})
-	window.addEventListener('resize', handleViewportResize)
-	document.addEventListener('scroll', handleViewportScroll, true)
+	window.addEventListener('resize', handleViewportChange)
+	document.addEventListener('scroll', handleViewportChange, true)
 	void loadAddons()
 })
 
 onUnmounted(() => {
 	removeAddonProgressListener?.()
-	window.removeEventListener('resize', handleViewportResize)
-	document.removeEventListener('scroll', handleViewportScroll, true)
+	window.removeEventListener('resize', handleViewportChange)
+	document.removeEventListener('scroll', handleViewportChange, true)
+	cancelAnimationFrame(tooltipFrame)
 })
 
 async function loadAddons(): Promise<void> {
@@ -150,7 +147,6 @@ async function loadAddons(): Promise<void> {
 		if (props.addonResult) mergeCheckedAddons(props.addonResult.addons)
 		notice.value = t('addons.loaded')
 	})
-	loading.value = false
 }
 
 async function checkAddons(): Promise<void> {
@@ -158,13 +154,12 @@ async function checkAddons(): Promise<void> {
 		checking.value = true
 		await ensureCatalogLoaded()
 		const result = await launcherApi.addons.check()
-		replaceCheckedAddons(result.addons)
+		checkedAddons.value = result.addons
 		emit('checked', result)
 		notice.value = result.addons.some((addon) => Boolean(addon.error))
 			? ''
 			: t('addons.checked')
 	})
-	checking.value = false
 }
 
 async function installAddon(addon: AddonSummary): Promise<void> {
@@ -173,11 +168,10 @@ async function installAddon(addon: AddonSummary): Promise<void> {
 		const result = await launcherApi.addons.install({ addonId: addon.id })
 		upsertCheckedAddon(result.addon)
 		const checked = await launcherApi.addons.check()
-		replaceCheckedAddons(checked.addons)
+		checkedAddons.value = checked.addons
 		emit('checked', checked)
 		notice.value = t('addons.installed')
 	})
-	updatingAddonId.value = ''
 }
 
 function requestDeleteAddon(addon: AddonSummary): void {
@@ -196,12 +190,11 @@ async function confirmDeleteAddon(): Promise<void> {
 		deletingAddonId.value = addon.id
 		const result = await launcherApi.addons.delete({ addonId: addon.id })
 		const checked = await launcherApi.addons.check()
-		replaceCheckedAddons([...checked.addons, result.addon])
+		checkedAddons.value = [...checked.addons, result.addon]
 		emit('checked', checked)
 		notice.value = t('addons.deleted')
 		addonPendingDelete.value = null
 	})
-	deletingAddonId.value = ''
 }
 
 async function updateAll(): Promise<void> {
@@ -216,12 +209,11 @@ async function updateAll(): Promise<void> {
 		}
 		mergeCheckedAddons(result.skipped)
 		const checked = await launcherApi.addons.check()
-		replaceCheckedAddons(checked.addons)
+		checkedAddons.value = checked.addons
 		emit('checked', checked)
 		notice.value =
 			updateFailures.value.length > 0 ? '' : t('addons.updatedAll', { total: result.total })
 	})
-	checking.value = false
 }
 
 async function addCustomAddon(): Promise<void> {
@@ -346,10 +338,6 @@ function mergeCheckedAddons(nextAddons: AddonSummary[]): void {
 	}
 }
 
-function replaceCheckedAddons(nextAddons: AddonSummary[]): void {
-	checkedAddons.value = nextAddons
-}
-
 function mergeAddonLists(
 	baseAddons: AddonSummary[],
 	overrideAddons: AddonSummary[]
@@ -362,16 +350,14 @@ function mergeAddonLists(
 	return [...merged.values()]
 }
 
-function filterAddonsBySearch(
-	allAddons: AddonSummary[],
-	source: 'sirus' | 'community' | 'custom'
-): AddonSummary[] {
-	const query = tableSearch.value[source]?.trim().toLocaleLowerCase('ru') ?? ''
-	const sourceAddons = allAddons.filter((addon) => addon.source === source)
+function createAddonTable(key: AddonCatalogSource, title: string) {
+	const sourceAddons = addonsBySource.value[key]
+	const query = tableSearch.value[key].trim().toLocaleLowerCase('ru')
+	const matches = query
+		? sourceAddons.filter((addon) => addon.name.toLocaleLowerCase('ru').includes(query))
+		: sourceAddons
 
-	if (!query) return sourceAddons
-
-	return sourceAddons.filter((addon) => addon.name.toLocaleLowerCase('ru').includes(query))
+	return { key, title, total: sourceAddons.length, addons: sortAddons(matches) }
 }
 
 function sortAddons(addons: AddonSummary[]): AddonSummary[] {
@@ -381,11 +367,11 @@ function sortAddons(addons: AddonSummary[]): AddonSummary[] {
 		if (sortKey.value === 'status') {
 			const statusCompare =
 				compareStatusBuckets(left, right) * direction ||
-				left.name.localeCompare(right.name, 'ru') * direction
+				nameCollator.compare(left.name, right.name) * direction
 			return statusCompare
 		}
 
-		return left.name.localeCompare(right.name, 'ru') * direction
+		return nameCollator.compare(left.name, right.name) * direction
 	})
 }
 
@@ -487,22 +473,13 @@ function getSortAria(key: 'name' | 'status'): 'ascending' | 'descending' | 'none
 	return sortDirection.value === 'asc' ? 'ascending' : 'descending'
 }
 
-function getTableSearchValue(key: string): string {
-	return tableSearch.value[key] ?? ''
-}
-
-function setTableSearchValue(key: string, value: string): void {
-	tableSearch.value = {
-		...tableSearch.value,
-		[key]: value
-	}
-}
-
 function getTableSearchPlaceholder(title: string): string {
 	return `${title} (${t('addons.search.short')})`
 }
 
 async function showTooltip(addon: AddonSummary, event: MouseEvent): Promise<void> {
+	tooltipAnchorX = event.clientX
+	tooltipAnchorY = event.clientY
 	activeTooltip.value = {
 		addonId: addon.id,
 		name: addon.name,
@@ -510,27 +487,23 @@ async function showTooltip(addon: AddonSummary, event: MouseEvent): Promise<void
 		left: 0,
 		top: 0,
 		maxWidth: Math.max(280, window.innerWidth - 32),
-		placement: 'below',
-		anchorX: event.clientX,
-		anchorY: event.clientY
+		placement: 'below'
 	}
 	await positionTooltip()
 }
 
 async function positionTooltip(): Promise<void> {
-	const tooltip = activeTooltip.value
-	if (!tooltip) return
-
 	await nextTick()
 
+	const tooltip = activeTooltip.value
 	const tooltipNode = tooltipElement.value
-	if (!tooltipNode) return
+	if (!tooltip || !tooltipNode) return
 
 	const tooltipRect = tooltipNode.getBoundingClientRect()
 	const gap = 10
 	const viewportPadding = 12
-	const anchorX = tooltip.anchorX
-	const anchorY = tooltip.anchorY
+	const anchorX = tooltipAnchorX
+	const anchorY = tooltipAnchorY
 	const spaceBelow = window.innerHeight - anchorY - viewportPadding
 	const spaceAbove = anchorY - viewportPadding
 	const placeAbove = spaceBelow < tooltipRect.height + gap && spaceAbove > spaceBelow
@@ -559,27 +532,24 @@ function handleTooltipMouseMove(addon: AddonSummary, event: MouseEvent): void {
 		return
 	}
 
-	activeTooltip.value = {
-		...activeTooltip.value,
-		anchorX: event.clientX,
-		anchorY: event.clientY
-	}
-	void positionTooltip()
+	tooltipAnchorX = event.clientX
+	tooltipAnchorY = event.clientY
+	if (tooltipFrame) return
+	tooltipFrame = requestAnimationFrame(() => {
+		tooltipFrame = 0
+		void positionTooltip()
+	})
 }
 
 function hideTooltip(addonId?: string): void {
 	if (addonId && activeTooltip.value?.addonId !== addonId) return
+	cancelAnimationFrame(tooltipFrame)
+	tooltipFrame = 0
 	activeTooltip.value = null
 }
 
-function handleViewportResize(): void {
-	if (!activeTooltip.value) return
-	hideTooltip(activeTooltip.value.addonId)
-}
-
-function handleViewportScroll(): void {
-	if (!activeTooltip.value) return
-	hideTooltip(activeTooltip.value.addonId)
+function handleViewportChange(): void {
+	hideTooltip()
 }
 
 function handleRowContextMenu(addonId: string, event: MouseEvent): void {
@@ -619,13 +589,13 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 
 		<div class="addon-summary">
 			<StatusBadge tone="neutral">{{
-				t('addons.sourceCommunity', { total: communityCount })
+				t('addons.sourceCommunity', { total: addonsBySource.community.length })
 			}}</StatusBadge>
 			<StatusBadge tone="neutral">{{
-				t('addons.sourceSirus', { total: sirusCount })
+				t('addons.sourceSirus', { total: addonsBySource.sirus.length })
 			}}</StatusBadge>
 			<StatusBadge tone="neutral">{{
-				t('addons.sourceCustom', { total: customCount })
+				t('addons.sourceCustom', { total: addonsBySource.custom.length })
 			}}</StatusBadge>
 			<StatusBadge :tone="problemCount > 0 ? 'warning' : 'ok'">
 				{{ t('addons.problemCount', { total: problemCount }) }}
@@ -705,9 +675,8 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 				<div class="addon-table-section__heading-main">
 					<div class="addon-table-section__search">
 						<TextField
-							:model-value="getTableSearchValue(table.key)"
+							v-model="tableSearch[table.key]"
 							:placeholder="getTableSearchPlaceholder(table.title)"
-							@update:model-value="setTableSearchValue(table.key, $event)"
 						/>
 					</div>
 				</div>

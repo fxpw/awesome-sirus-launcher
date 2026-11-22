@@ -1,6 +1,8 @@
 import { createWriteStream } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
+import type { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import yauzl, { type Entry, type ZipFile } from 'yauzl'
 
 export async function unzipToDirectory(archivePath: string, targetDir: string): Promise<void> {
@@ -65,25 +67,16 @@ function openZip(archivePath: string): Promise<ZipFile> {
 	})
 }
 
-function extractEntry(zip: ZipFile, entry: Entry, targetPath: string): Promise<void> {
-	return new Promise((resolvePromise, reject) => {
-		zip.openReadStream(entry, (error, readStream) => {
-			if (error) {
-				reject(error)
-				return
-			}
-			if (!readStream) {
-				reject(new Error('Не удалось прочитать файл из zip-архива'))
-				return
-			}
-
-			const output = createWriteStream(targetPath)
-			readStream.on('error', reject)
-			output.on('error', reject)
-			output.on('finish', resolvePromise)
-			readStream.pipe(output)
+async function extractEntry(zip: ZipFile, entry: Entry, targetPath: string): Promise<void> {
+	const readStream = await new Promise<Readable>((resolvePromise, reject) => {
+		zip.openReadStream(entry, (error, stream) => {
+			if (error) reject(error)
+			else if (!stream) reject(new Error('Не удалось прочитать файл из zip-архива'))
+			else resolvePromise(stream)
 		})
 	})
+
+	await pipeline(readStream, createWriteStream(targetPath))
 }
 
 function getSafeEntryPath(targetRoot: string, fileName: string): string {

@@ -15,7 +15,6 @@ export function useLocale() {
 	}
 
 	return {
-		locale,
 		localeOptions,
 		currentLocale: computed(() => locale.value),
 		setLocale,

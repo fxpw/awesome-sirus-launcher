@@ -179,6 +179,43 @@ describe('client patch service', () => {
 		expect(await readFile(join(wowPath, 'Data', 'patch.mpq'), 'utf8')).toBe(fileContent)
 	})
 
+	it('hashes client files one at a time before downloading missing ones', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-client-download-missing-'))
+		const wowPath = join(root, 'wow')
+		const fileNames = ['a.mpq', 'b.mpq', 'c.mpq']
+		await mkdir(join(wowPath, 'Data'), { recursive: true })
+		for (const fileName of fileNames) {
+			await writeFile(join(wowPath, 'Data', fileName), fileName)
+		}
+		let activeHashes = 0
+		let maxActiveHashes = 0
+
+		const service = createClientPatchService(
+			createMemorySettingsStore({ wowPath }),
+			async () => ({
+				patches: fileNames.map((fileName) =>
+					createManifestFile(fileName, '/Data/', fileName)
+				)
+			}),
+			async (path) => {
+				activeHashes += 1
+				maxActiveHashes = Math.max(maxActiveHashes, activeHashes)
+				await new Promise((resolve) => setTimeout(resolve, 5))
+				activeHashes -= 1
+				return createHash('md5')
+					.update(await readFile(path))
+					.digest('hex')
+			},
+			async () => undefined,
+			() => root
+		)
+
+		const result = await service.downloadMissing()
+
+		expect(result.total).toBe(0)
+		expect(maxActiveHashes).toBe(1)
+	})
+
 	it('uses selected manifest source without fallback', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-client-source-'))
 		const wowPath = join(root, 'wow')

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, type Ref } from 'vue'
 import type {
 	AccountListResult,
 	AccountSummary,
@@ -40,19 +40,11 @@ import WtfBackupPathForm from '@renderer/elements/WtfBackupPathForm.vue'
 import WtfBackupPanel from '@renderer/elements/WtfBackupPanel.vue'
 import { launcherApi } from '@renderer/api/launcherApi'
 import { useLocale } from '@renderer/composables/useLocale'
-import { useTheme } from '@renderer/composables/useTheme'
 import { getUserErrorMessage } from '@renderer/shared/errors'
 import type { MessageKey } from '@renderer/shared/i18n'
 
 type LauncherSection =
-	| 'dashboard'
-	| 'addons'
-	| 'client'
-	| 'patch'
-	| 'wtf'
-	| 'mining'
-	| 'settings'
-	| 'thanks'
+	'dashboard' | 'addons' | 'client' | 'patch' | 'wtf' | 'mining' | 'settings' | 'thanks'
 
 const sectionTitleKeys: Record<LauncherSection, MessageKey> = {
 	dashboard: 'section.dashboard.title',
@@ -123,7 +115,6 @@ let miningPollTimer: number | undefined
 let removeClientCheckProgressListener: (() => void) | undefined
 
 const { t } = useLocale()
-useTheme()
 
 const latestBackup = computed(() => backups.value[0] ?? null)
 const effectiveWtfBackupPath = computed(() => {
@@ -199,33 +190,39 @@ onMounted(async () => {
 			clientCheckProgress.value = progress
 		}
 	)
+	miningPollTimer = window.setInterval(() => {
+		if (miningState.value?.status === 'running') void refreshMiningState()
+	}, 2500)
+	void checkAppUpdate()
+	void launcherApi.fpsPatch.getStatus().then(
+		(status) => (fpsPatchStatus.value = status),
+		(err: unknown) => (error.value = getUserErrorMessage(err, t('app.initError')))
+	)
 	try {
-		appInfo.value = await launcherApi.app.getInfo()
-		void checkAppUpdate()
-		githubTokenStatus.value = await launcherApi.github.getTokenStatus()
-		accounts.value = await launcherApi.accounts.list()
-		settings.value = await launcherApi.settings.get()
-		await reloadBackups()
-		fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
-		miningState.value = await launcherApi.mining.getState()
-		wowPath.value = settings.value.wowPath
-		wtfBackupPath.value = settings.value.wtfBackupPath
+		await Promise.all([
+			launcherApi.app.getInfo().then((info) => (appInfo.value = info)),
+			launcherApi.github
+				.getTokenStatus()
+				.then((status) => (githubTokenStatus.value = status)),
+			launcherApi.accounts.list().then((list) => (accounts.value = list)),
+			launcherApi.mining.getState().then((state) => (miningState.value = state)),
+			reloadBackups(),
+			launcherApi.settings.get().then((value) => {
+				settings.value = value
+				wowPath.value = value.wowPath
+				wtfBackupPath.value = value.wtfBackupPath
+			})
+		])
 		if (wowPath.value) {
 			await validateWowPath()
 			if (wowValidation.value?.valid) {
-				if (settings.value.checkClientBeforeLaunch) {
-					await checkClient()
-				}
+				if (settings.value?.checkClientBeforeLaunch) await checkClient()
 				await scanAddonsOnStartup()
 			}
 		}
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('app.initError')
+		error.value = getUserErrorMessage(err, t('app.initError'))
 	}
-
-	miningPollTimer = window.setInterval(() => {
-		if (miningState.value?.status === 'running') void refreshMiningState()
-	}, 2500)
 })
 
 onUnmounted(() => {
@@ -233,34 +230,45 @@ onUnmounted(() => {
 	if (miningPollTimer) window.clearInterval(miningPollTimer)
 })
 
+async function runAction(
+	fallbackKey: MessageKey,
+	action: () => Promise<void>,
+	busy?: Ref<boolean>
+): Promise<void> {
+	error.value = ''
+	notice.value = ''
+	if (busy) busy.value = true
+	try {
+		await action()
+	} catch (err) {
+		error.value = getUserErrorMessage(err, t(fallbackKey))
+	} finally {
+		if (busy) busy.value = false
+	}
+}
+
 async function validateWowPath(): Promise<void> {
 	error.value = ''
 	try {
 		wowValidation.value = await launcherApi.wow.validatePath(wowPath.value)
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('wow.validateError')
+		error.value = getUserErrorMessage(err, t('wow.validateError'))
 	}
 }
 
-async function selectWowPath(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	try {
+function selectWowPath(): Promise<void> {
+	return runAction('wow.selectError', async () => {
 		settings.value = await launcherApi.settings.selectWowPath()
 		wowPath.value = settings.value.wowPath
 		wtfBackupPath.value = settings.value.wtfBackupPath
 		fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 		if (wowPath.value) await validateWowPath()
 		await reloadBackups()
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('wow.selectError')
-	}
+	})
 }
 
-async function saveWowPath(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	try {
+function saveWowPath(): Promise<void> {
+	return runAction('wow.saveError', async () => {
 		settings.value = await launcherApi.settings.save({ wowPath: wowPath.value })
 		wowPath.value = settings.value.wowPath
 		wtfBackupPath.value = settings.value.wtfBackupPath
@@ -268,48 +276,34 @@ async function saveWowPath(): Promise<void> {
 		fpsPatchStatus.value = await launcherApi.fpsPatch.getStatus()
 		await reloadBackups()
 		notice.value = t('wow.saved')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('wow.saveError')
-	}
+	})
 }
 
-async function selectWtfBackupPath(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	try {
+function selectWtfBackupPath(): Promise<void> {
+	return runAction('backup.path.selectError', async () => {
 		settings.value = await launcherApi.settings.selectWtfBackupPath()
 		wtfBackupPath.value = settings.value.wtfBackupPath
 		await reloadBackups()
 		notice.value = t('backup.path.saved')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('backup.path.selectError')
-	}
+	})
 }
 
-async function saveWtfBackupPath(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	try {
+function saveWtfBackupPath(): Promise<void> {
+	return runAction('backup.path.saveError', async () => {
 		settings.value = await launcherApi.settings.save({ wtfBackupPath: wtfBackupPath.value })
 		wtfBackupPath.value = settings.value.wtfBackupPath
 		await reloadBackups()
 		notice.value = t('backup.path.saved')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('backup.path.saveError')
-	}
+	})
 }
 
-async function resetWtfBackupPath(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	try {
+function resetWtfBackupPath(): Promise<void> {
+	return runAction('backup.path.saveError', async () => {
 		wtfBackupPath.value = ''
 		settings.value = await launcherApi.settings.save({ wtfBackupPath: '' })
 		await reloadBackups()
 		notice.value = t('backup.path.resetDone')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('backup.path.saveError')
-	}
+	})
 }
 
 async function reloadBackups(): Promise<void> {
@@ -362,7 +356,7 @@ async function saveGitHubToken(): Promise<void> {
 		tokenModalOpen.value = false
 		notice.value = t('token.saved')
 	} catch (err) {
-		const message = err instanceof Error ? err.message : t('token.saveError')
+		const message = getUserErrorMessage(err, t('token.saveError'))
 		if (tokenModalOpen.value) tokenModalError.value = message
 		else error.value = message
 	}
@@ -378,7 +372,7 @@ async function clearGitHubToken(): Promise<void> {
 		tokenModalOpen.value = false
 		notice.value = t('token.cleared')
 	} catch (err) {
-		const message = err instanceof Error ? err.message : t('token.clearError')
+		const message = getUserErrorMessage(err, t('token.clearError'))
 		if (tokenModalOpen.value) tokenModalError.value = message
 		else error.value = message
 	}
@@ -430,78 +424,59 @@ async function addAccount(): Promise<void> {
 		accountModalOpen.value = false
 		notice.value = t('account.saved')
 	} catch (err) {
-		accountModalError.value = err instanceof Error ? err.message : t('account.saveError')
+		accountModalError.value = getUserErrorMessage(err, t('account.saveError'))
 	}
 }
 
-async function selectAccount(accountId: string): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	try {
+function selectAccount(accountId: string): Promise<void> {
+	return runAction('account.selectError', async () => {
 		accounts.value = await launcherApi.accounts.select({ accountId })
 		notice.value = t('account.selected')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('account.selectError')
-	}
+	})
 }
 
 async function deleteAccount(account: AccountSummary): Promise<void> {
 	if (!confirm(t('account.deleteConfirm', { login: account.login }))) return
 
-	error.value = ''
-	notice.value = ''
-	try {
+	await runAction('account.deleteError', async () => {
 		accounts.value = await launcherApi.accounts.delete({ accountId: account.id })
 		notice.value = t('account.deleted')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('account.deleteError')
-	}
+	})
 }
 
-async function createWtfBackup(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	wtfBackupCreating.value = true
-	try {
-		const result = await launcherApi.backup.createWtf()
-		backups.value = [
-			result.backup,
-			...backups.value.filter((backup) => backup.id !== result.backup.id)
-		]
-		notice.value = t('backup.created')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('backup.createError')
-	} finally {
-		wtfBackupCreating.value = false
-	}
+function createWtfBackup(): Promise<void> {
+	return runAction(
+		'backup.createError',
+		async () => {
+			const result = await launcherApi.backup.createWtf()
+			backups.value = [
+				result.backup,
+				...backups.value.filter((backup) => backup.id !== result.backup.id)
+			]
+			notice.value = t('backup.created')
+		},
+		wtfBackupCreating
+	)
 }
 
 async function restoreWtfBackup(backup: WtfBackupSummary): Promise<void> {
 	if (!confirm(t('backup.restoreConfirm', { name: backup.fileName }))) return
 
-	error.value = ''
-	notice.value = ''
-	try {
+	await runAction('backup.restoreError', async () => {
 		await launcherApi.backup.restoreWtf({ id: backup.id })
 		backups.value = await launcherApi.backup.listWtf()
 		notice.value = t('backup.restored')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('backup.restoreError')
-	}
+	})
 }
 
 async function deleteWtfBackup(backup: WtfBackupSummary): Promise<void> {
 	if (!confirm(t('backup.deleteConfirm', { name: backup.fileName }))) return
 
-	error.value = ''
-	notice.value = ''
-	try {
+	await runAction('backup.deleteError', async () => {
 		const result = await launcherApi.backup.deleteWtf({ id: backup.id })
 		backups.value = backups.value.filter((item) => item.id !== result.deletedId)
 		notice.value = t('backup.deleted')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('backup.deleteError')
-	}
+	})
 }
 
 async function openWtfBackupFolder(): Promise<void> {
@@ -509,56 +484,47 @@ async function openWtfBackupFolder(): Promise<void> {
 	try {
 		await launcherApi.backup.openWtfFolder()
 	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('backup.openError')
+		error.value = getUserErrorMessage(err, t('backup.openError'))
 	}
 }
 
-async function installFpsPatch(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	fpsPatchInstalling.value = true
-	try {
-		const result = await launcherApi.fpsPatch.install()
-		fpsPatchStatus.value = result.status
-		notice.value = t('fpsPatch.installedNotice')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('fpsPatch.installError')
-	} finally {
-		fpsPatchInstalling.value = false
-	}
+function installFpsPatch(): Promise<void> {
+	return runAction(
+		'fpsPatch.installError',
+		async () => {
+			const result = await launcherApi.fpsPatch.install()
+			fpsPatchStatus.value = result.status
+			notice.value = t('fpsPatch.installedNotice')
+		},
+		fpsPatchInstalling
+	)
 }
 
-async function deleteFpsPatch(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	fpsPatchInstalling.value = true
-	try {
-		const result = await launcherApi.fpsPatch.delete()
-		fpsPatchStatus.value = result.status
-		notice.value = t('fpsPatch.deletedNotice')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('fpsPatch.deleteError')
-	} finally {
-		fpsPatchInstalling.value = false
-	}
+function deleteFpsPatch(): Promise<void> {
+	return runAction(
+		'fpsPatch.deleteError',
+		async () => {
+			const result = await launcherApi.fpsPatch.delete()
+			fpsPatchStatus.value = result.status
+			notice.value = t('fpsPatch.deletedNotice')
+		},
+		fpsPatchInstalling
+	)
 }
 
-async function launchGame(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	gameLaunching.value = true
-	try {
-		if (miningState.value?.status === 'running') {
-			miningState.value = await launcherApi.mining.stop()
-		}
-		await launcherApi.wow.launchGame()
-		notice.value = t('game.launched')
-		if (settings.value?.closeOnLaunch) window.close()
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('game.launchError')
-	} finally {
-		gameLaunching.value = false
-	}
+function launchGame(): Promise<void> {
+	return runAction(
+		'game.launchError',
+		async () => {
+			if (miningState.value?.status === 'running') {
+				miningState.value = await launcherApi.mining.stop()
+			}
+			await launcherApi.wow.launchGame()
+			notice.value = t('game.launched')
+			if (settings.value?.closeOnLaunch) window.close()
+		},
+		gameLaunching
+	)
 }
 
 async function checkClient(): Promise<void> {
@@ -585,7 +551,7 @@ async function checkClient(): Promise<void> {
 		}
 		notice.value = t('clientCheck.checked')
 	} catch (err) {
-		const message = err instanceof Error ? err.message : t('clientCheck.error')
+		const message = getUserErrorMessage(err, t('clientCheck.error'))
 		if (message === 'Проверка клиента остановлена') notice.value = t('clientCheck.stopped')
 		else error.value = message
 	} finally {
@@ -593,54 +559,42 @@ async function checkClient(): Promise<void> {
 	}
 }
 
-async function cancelClientCheck(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	try {
+function cancelClientCheck(): Promise<void> {
+	return runAction('clientCheck.stopError', async () => {
 		await launcherApi.client.cancelCheck()
 		notice.value = t('clientCheck.stopping')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('clientCheck.stopError')
-	}
+	})
 }
 
-async function clearClientCheckCache(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	clientClearingCache.value = true
-	try {
-		await launcherApi.client.clearCheckCache()
-		notice.value = t('clientCheck.cacheCleared')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('clientCheck.clearCacheError')
-	} finally {
-		clientClearingCache.value = false
-	}
+function clearClientCheckCache(): Promise<void> {
+	return runAction(
+		'clientCheck.clearCacheError',
+		async () => {
+			await launcherApi.client.clearCheckCache()
+			notice.value = t('clientCheck.cacheCleared')
+		},
+		clientClearingCache
+	)
 }
 
-async function loadClientManifest(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	clientManifestLoading.value = true
-	try {
-		clientPatchManifest.value = await launcherApi.client.list({
-			sourceUrl: selectedClientPatchSourceUrl.value
-		})
-		selectedClientPatchSourceUrl.value = clientPatchManifest.value.sourceUrl
-		notice.value = t('clientCheck.loaded')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('clientCheck.loadError')
-	} finally {
-		clientManifestLoading.value = false
-	}
+function loadClientManifest(): Promise<void> {
+	return runAction(
+		'clientCheck.loadError',
+		async () => {
+			clientPatchManifest.value = await launcherApi.client.list({
+				sourceUrl: selectedClientPatchSourceUrl.value
+			})
+			selectedClientPatchSourceUrl.value = clientPatchManifest.value.sourceUrl
+			notice.value = t('clientCheck.loaded')
+		},
+		clientManifestLoading
+	)
 }
 
 async function downloadClientFile(input: ClientPatchFileInput): Promise<void> {
-	error.value = ''
-	notice.value = ''
 	clientDownloadingKey.value = createClientFileKey(input)
 	clientCheckProgress.value = null
-	try {
+	await runAction('clientCheck.downloadError', async () => {
 		await launcherApi.client.downloadFile({
 			...input,
 			sourceUrl: selectedClientPatchSourceUrl.value
@@ -650,32 +604,26 @@ async function downloadClientFile(input: ClientPatchFileInput): Promise<void> {
 		})
 		selectedClientPatchSourceUrl.value = clientCheckResult.value.sourceUrl
 		notice.value = t('clientCheck.downloadedFile')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('clientCheck.downloadError')
-	} finally {
-		clientDownloadingKey.value = ''
-	}
+	})
+	clientDownloadingKey.value = ''
 }
 
-async function downloadMissingClientFiles(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	clientDownloadingAll.value = true
-	clientCheckProgress.value = null
-	try {
-		const result = await launcherApi.client.downloadMissing({
-			sourceUrl: selectedClientPatchSourceUrl.value
-		})
-		clientCheckResult.value = await launcherApi.client.check({
-			sourceUrl: selectedClientPatchSourceUrl.value
-		})
-		selectedClientPatchSourceUrl.value = clientCheckResult.value.sourceUrl
-		notice.value = t('clientCheck.downloadedAll', { total: result.total })
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('clientCheck.downloadError')
-	} finally {
-		clientDownloadingAll.value = false
-	}
+function downloadMissingClientFiles(): Promise<void> {
+	return runAction(
+		'clientCheck.downloadError',
+		async () => {
+			clientCheckProgress.value = null
+			const result = await launcherApi.client.downloadMissing({
+				sourceUrl: selectedClientPatchSourceUrl.value
+			})
+			clientCheckResult.value = await launcherApi.client.check({
+				sourceUrl: selectedClientPatchSourceUrl.value
+			})
+			selectedClientPatchSourceUrl.value = clientCheckResult.value.sourceUrl
+			notice.value = t('clientCheck.downloadedAll', { total: result.total })
+		},
+		clientDownloadingAll
+	)
 }
 
 function createClientFileKey(input: ClientPatchFileInput): string {
@@ -750,83 +698,64 @@ function updateAddonCheckResult(result: AddonsListResult): void {
 	notice.value = ''
 }
 
-async function saveMiningConfig(patch: MiningConfigInput): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	miningWorking.value = true
-	try {
-		miningState.value = await launcherApi.mining.saveConfig(patch)
-		notice.value = t('mining.saved')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('mining.saveError')
-	} finally {
-		miningWorking.value = false
-	}
+function saveMiningConfig(patch: MiningConfigInput): Promise<void> {
+	return runAction(
+		'mining.saveError',
+		async () => {
+			miningState.value = await launcherApi.mining.saveConfig(patch)
+			notice.value = t('mining.saved')
+		},
+		miningWorking
+	)
 }
 
-async function selectMinerPath(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	miningWorking.value = true
-	try {
-		miningState.value = await launcherApi.mining.selectMinerPath()
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('mining.selectError')
-	} finally {
-		miningWorking.value = false
-	}
+function selectMinerPath(): Promise<void> {
+	return runAction(
+		'mining.selectError',
+		async () => {
+			miningState.value = await launcherApi.mining.selectMinerPath()
+		},
+		miningWorking
+	)
 }
 
-async function startMining(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	miningWorking.value = true
-	try {
-		miningState.value = await launcherApi.mining.start()
-		notice.value = t('mining.started')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('mining.startError')
-	} finally {
-		miningWorking.value = false
-	}
+function startMining(): Promise<void> {
+	return runAction(
+		'mining.startError',
+		async () => {
+			miningState.value = await launcherApi.mining.start()
+			notice.value = t('mining.started')
+		},
+		miningWorking
+	)
 }
 
-async function stopMining(): Promise<void> {
-	error.value = ''
-	notice.value = ''
-	miningWorking.value = true
-	try {
-		miningState.value = await launcherApi.mining.stop()
-		notice.value = t('mining.stopped')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('mining.stopError')
-	} finally {
-		miningWorking.value = false
-	}
+function stopMining(): Promise<void> {
+	return runAction(
+		'mining.stopError',
+		async () => {
+			miningState.value = await launcherApi.mining.stop()
+			notice.value = t('mining.stopped')
+		},
+		miningWorking
+	)
 }
 
 async function resetMiningStats(): Promise<void> {
 	if (!confirm(t('mining.resetConfirm'))) return
 
-	error.value = ''
-	notice.value = ''
-	miningWorking.value = true
-	try {
-		miningState.value = await launcherApi.mining.resetStats()
-		notice.value = t('mining.statsReset')
-	} catch (err) {
-		error.value = err instanceof Error ? err.message : t('mining.resetError')
-	} finally {
-		miningWorking.value = false
-	}
+	await runAction(
+		'mining.resetError',
+		async () => {
+			miningState.value = await launcherApi.mining.resetStats()
+			notice.value = t('mining.statsReset')
+		},
+		miningWorking
+	)
 }
 
 async function refreshMiningState(): Promise<void> {
-	try {
-		miningState.value = await launcherApi.mining.getState()
-	} catch {
-		// Footer already carries actionable errors from direct user actions.
-	}
+	miningState.value = await launcherApi.mining.getState().catch(() => miningState.value)
 }
 </script>
 
@@ -890,7 +819,7 @@ async function refreshMiningState(): Promise<void> {
 						v-else-if="activeSection === 'client'"
 						:manifest="clientPatchManifest"
 						:result="clientCheckResult"
-						:source-urls="[...clientPatchSourceUrls]"
+						:source-urls="clientPatchSourceUrls"
 						:selected-source-url="selectedClientPatchSourceUrl"
 						:checking="clientChecking"
 						:loading-manifest="clientManifestLoading"

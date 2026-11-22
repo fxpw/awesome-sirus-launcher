@@ -9,11 +9,12 @@ import {
 	session,
 	shell,
 	type OpenDialogOptions,
+	type SaveDialogOptions,
 	type WebContents
 } from 'electron'
-import { is } from '@electron-toolkit/utils'
 import { ipcChannels } from '@shared/contracts'
 import { updateAccountConfigText } from '@core/accounts/configWtf'
+import { resolveWtfBackupsDir } from '@core/backup/wtfBackup'
 import { createAccountService } from '@main/accounts/accountService'
 import { createAddonService } from '@main/addons/addonService'
 import { unzipToDirectory } from '@main/archive/unzipToDirectory'
@@ -34,6 +35,7 @@ import { createSirusLauncherVersionService } from '@main/sirus/sirusLauncherVers
 import { createChildProcessMiningRunner, createMiningService } from '@main/mining/miningService'
 import { createPortableUpdateScript } from '@core/updater/portableUpdateScript'
 import { createAppUpdateService } from '@main/updater/appUpdateService'
+import { isAllowedExternalUrl } from '@main/externalUrl'
 import { getPreloadPath } from '@main/windowPaths'
 import {
 	accountConfigInputSchema,
@@ -228,6 +230,28 @@ function sendProgress(channel: string, sender: WebContents, payload: unknown): v
 	if (!sender.isDestroyed()) sender.send(channel, payload)
 }
 
+async function pickOpenPath(
+	sender: WebContents,
+	options: OpenDialogOptions
+): Promise<string | undefined> {
+	const parentWindow = BrowserWindow.fromWebContents(sender)
+	const result = parentWindow
+		? await dialog.showOpenDialog(parentWindow, options)
+		: await dialog.showOpenDialog(options)
+	return result.canceled ? undefined : result.filePaths[0]
+}
+
+async function pickSavePath(
+	sender: WebContents,
+	options: SaveDialogOptions
+): Promise<string | undefined> {
+	const parentWindow = BrowserWindow.fromWebContents(sender)
+	const result = parentWindow
+		? await dialog.showSaveDialog(parentWindow, options)
+		: await dialog.showSaveDialog(options)
+	return result.canceled ? undefined : result.filePath
+}
+
 function createWindow(): void {
 	const mainWindow = new BrowserWindow({
 		width: 1580,
@@ -251,11 +275,15 @@ function createWindow(): void {
 	})
 
 	mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-		void shell.openExternal(url)
+		if (isAllowedExternalUrl(url)) void shell.openExternal(url)
 		return { action: 'deny' }
 	})
 
-	if (is.dev && process.env.ELECTRON_RENDERER_URL) {
+	mainWindow.webContents.on('will-navigate', (event) => {
+		if (event.url !== mainWindow.webContents.getURL()) event.preventDefault()
+	})
+
+	if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
 		void mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
 	} else {
 		void mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
@@ -369,17 +397,15 @@ function registerIpcHandlers(): void {
 		voidInputSchema,
 		launcherSettingsSchema,
 		async (_input, event) => {
-			const parentWindow = BrowserWindow.fromWebContents(event.sender)
-			const dialogOptions: OpenDialogOptions = {
+			const settings = await settingsStore.get()
+			const wowPath = await pickOpenPath(event.sender, {
 				title: 'Выбрать папку World of Warcraft Sirus',
+				defaultPath: settings.wowPath || undefined,
 				properties: ['openDirectory']
-			}
-			const result = parentWindow
-				? await dialog.showOpenDialog(parentWindow, dialogOptions)
-				: await dialog.showOpenDialog(dialogOptions)
+			})
 
-			if (result.canceled || !result.filePaths[0]) return settingsStore.get()
-			return settingsStore.save({ wowPath: result.filePaths[0] })
+			if (!wowPath) return settingsStore.get()
+			return settingsStore.save({ wowPath })
 		}
 	)
 
@@ -388,17 +414,16 @@ function registerIpcHandlers(): void {
 		voidInputSchema,
 		launcherSettingsSchema,
 		async (_input, event) => {
-			const parentWindow = BrowserWindow.fromWebContents(event.sender)
-			const dialogOptions: OpenDialogOptions = {
+			const settings = await settingsStore.get()
+			const wtfBackupPath = await pickOpenPath(event.sender, {
 				title: 'Выбрать папку для бекапов WTF',
+				defaultPath:
+					resolveWtfBackupsDir(settings.wowPath, settings.wtfBackupPath) || undefined,
 				properties: ['openDirectory', 'createDirectory']
-			}
-			const result = parentWindow
-				? await dialog.showOpenDialog(parentWindow, dialogOptions)
-				: await dialog.showOpenDialog(dialogOptions)
+			})
 
-			if (result.canceled || !result.filePaths[0]) return settingsStore.get()
-			return settingsStore.save({ wtfBackupPath: result.filePaths[0] })
+			if (!wtfBackupPath) return settingsStore.get()
+			return settingsStore.save({ wtfBackupPath })
 		}
 	)
 
@@ -555,18 +580,14 @@ function registerIpcHandlers(): void {
 		voidInputSchema,
 		customAddonsTransferResultSchema,
 		async (_input, event) => {
-			const parentWindow = BrowserWindow.fromWebContents(event.sender)
-			const dialogOptions = {
+			const filePath = await pickSavePath(event.sender, {
 				title: 'Экспорт пользовательских аддонов',
 				defaultPath: 'awesome-sirus-custom-addons.json',
 				filters: [{ name: 'JSON', extensions: ['json'] }]
-			}
-			const result = parentWindow
-				? await dialog.showSaveDialog(parentWindow, dialogOptions)
-				: await dialog.showSaveDialog(dialogOptions)
-			if (result.canceled || !result.filePath) return undefined
+			})
+			if (!filePath) return undefined
 
-			return addonService.exportCustom(result.filePath)
+			return addonService.exportCustom(filePath)
 		}
 	)
 
@@ -575,18 +596,14 @@ function registerIpcHandlers(): void {
 		voidInputSchema,
 		customAddonsTransferResultSchema,
 		async (_input, event) => {
-			const parentWindow = BrowserWindow.fromWebContents(event.sender)
-			const dialogOptions: OpenDialogOptions = {
+			const filePath = await pickOpenPath(event.sender, {
 				title: 'Импорт пользовательских аддонов',
 				properties: ['openFile'],
 				filters: [{ name: 'JSON', extensions: ['json'] }]
-			}
-			const result = parentWindow
-				? await dialog.showOpenDialog(parentWindow, dialogOptions)
-				: await dialog.showOpenDialog(dialogOptions)
-			if (result.canceled || !result.filePaths[0]) return undefined
+			})
+			if (!filePath) return undefined
 
-			return addonService.importCustom(result.filePaths[0])
+			return addonService.importCustom(filePath)
 		}
 	)
 
@@ -606,18 +623,16 @@ function registerIpcHandlers(): void {
 		voidInputSchema,
 		miningStateSchema,
 		async (_input, event) => {
-			const parentWindow = BrowserWindow.fromWebContents(event.sender)
-			const dialogOptions: OpenDialogOptions = {
+			const { config } = await miningService.getState()
+			const minerPath = await pickOpenPath(event.sender, {
 				title: 'Выбрать exe-файл майнера',
+				defaultPath: config.minerPath || undefined,
 				properties: ['openFile'],
 				filters: [{ name: 'Executable', extensions: ['exe'] }]
-			}
-			const result = parentWindow
-				? await dialog.showOpenDialog(parentWindow, dialogOptions)
-				: await dialog.showOpenDialog(dialogOptions)
+			})
 
-			if (result.canceled || !result.filePaths[0]) return miningService.getState()
-			return miningService.selectMinerPath(minerPathInputSchema.parse(result.filePaths[0]))
+			if (!minerPath) return miningService.getState()
+			return miningService.selectMinerPath(minerPathInputSchema.parse(minerPath))
 		}
 	)
 

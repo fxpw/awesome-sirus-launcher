@@ -1,8 +1,5 @@
 :root {
 	--app-bg: #282a37;
-	--surface-bg: rgba(247, 244, 238, 0.09);
-	--surface-strong: rgba(247, 244, 238, 0.18);
-	--surface-muted: rgba(143, 201, 203, 0.1);
 	--glass-bg:
 		linear-gradient(
 			145deg,
@@ -29,8 +26,6 @@
 	--border: rgba(247, 244, 238, 0.2);
 	--border-strong: rgba(143, 201, 203, 0.24);
 	--accent: #c64a56;
-	--accent-hover: #d8a85b;
-	--secondary: #8fc9cb;
 	--ok: #8fc9cb;
 	--ok-border: rgba(143, 201, 203, 0.62);
 	--warning: #d8a85b;
@@ -118,7 +113,6 @@ textarea,
 		'sidebar footer';
 	grid-template-columns: 280px 1fr;
 	grid-template-rows: auto minmax(0, 1fr) auto;
-	height: 100vh;
 	height: 100dvh;
 	max-height: 100dvh;
 	min-height: 0;
@@ -146,7 +140,6 @@ textarea,
 }
 
 .sidebar h1,
-.workspace h2,
 .panel h3 {
 	margin: 0;
 	letter-spacing: 0;
@@ -861,11 +854,6 @@ nav {
 	opacity: 0.58;
 }
 
-textarea.field {
-	cursor: text;
-	user-select: text;
-}
-
 .field:-webkit-autofill,
 .field:-webkit-autofill:hover,
 .field:-webkit-autofill:focus {
@@ -1555,29 +1543,6 @@ textarea.field {
 	overflow-wrap: anywhere;
 }
 
-.compact-list {
-	display: grid;
-	gap: 6px;
-	margin: 12px 0 0;
-	padding: 0;
-	list-style: none;
-}
-
-.compact-list li {
-	display: grid;
-	grid-template-columns: 1fr auto;
-	gap: 12px;
-	padding: 8px 10px;
-	border: 1px solid var(--border);
-	border-radius: 6px;
-	background: rgba(143, 201, 203, 0.1);
-}
-
-.compact-list span:first-child {
-	min-width: 0;
-	overflow-wrap: anywhere;
-}
-
 .client-check-summary {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto;
@@ -1946,7 +1911,6 @@ textarea.field {
 	border: 1px solid var(--border);
 	border-radius: 10px;
 	color: var(--text-muted);
-	background: var(--surface-2);
 	text-decoration: none;
 }
 
@@ -2002,11 +1966,6 @@ textarea.field {
 	line-height: 1.2;
 }
 
-.addon-tooltip span,
-.addon-tooltip small {
-	color: var(--text-muted);
-}
-
 .addon-tooltip p {
 	margin: 2px 0;
 	color: var(--text);
@@ -2055,17 +2014,11 @@ textarea.field {
 		min-height: 100vh;
 		height: auto;
 		max-height: none;
-		padding: 12px;
 		overflow: visible;
-	}
-
-	.sidebar {
-		min-height: auto;
 	}
 
 	.workspace {
 		overflow: visible;
-		padding: 0;
 	}
 
 	.topbar {
@@ -2104,7 +2057,6 @@ textarea.field {
 	}
 
 	.panel-heading,
-	.backup-row,
 	.addon-remote-warning,
 	.backup-row__meta {
 		flex-direction: column;
@@ -2121,7 +2073,6 @@ textarea.field {
 	.client-files-table__row,
 	.addons-table__head,
 	.addons-table__row,
-	.compact-list li,
 	.backup-row__actions {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -2138,10 +2089,6 @@ textarea.field {
 	.github-connection-actions,
 	.addon-remote-warning__actions {
 		display: grid;
-	}
-
-	.modal-path-row {
-		grid-template-columns: 1fr;
 	}
 
 	.source-select {

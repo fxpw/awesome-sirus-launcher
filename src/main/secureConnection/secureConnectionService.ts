@@ -7,7 +7,6 @@ import {
 import { createSirusLauncherUserAgent } from '@core/device/clientRegistration'
 import {
 	DEFAULT_FETCH_TIMEOUT_MS,
-	DEFAULT_VERIFY_TIMEOUT_MS,
 	SECURED_CONNECTION_API_BASE,
 	SECURED_CONNECTION_PATH,
 	verifySecureConnection,
@@ -22,14 +21,13 @@ export function createSecureConnectionService(
 ) {
 	return {
 		verifyClient(): Promise<VerifySecureConnectionResult> {
-			return verifySecureConnection('', {
+			return verifySecureConnection({
 				fetchConfig: async () => {
 					const version = await sirusLauncherVersionService.getVersion()
 					return fetchSecuredConfig(createSirusLauncherUserAgent(version))
 				},
 				establishConnection: establishSecureConnection,
-				logger: console,
-				verifyTimeoutMs: DEFAULT_VERIFY_TIMEOUT_MS
+				logger: console
 			})
 		}
 	}

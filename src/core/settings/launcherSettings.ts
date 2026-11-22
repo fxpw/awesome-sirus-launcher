@@ -1,6 +1,7 @@
 import { normalize, resolve } from 'node:path'
 import type { LauncherSettings, LauncherSettingsPatch } from '@shared/contracts'
 import { normalizeGitHubProxyUrl, validateGitHubProxySettings } from '@core/github/githubProxy'
+import { isRecord } from '@core/isRecord'
 
 export const defaultLauncherSettings: LauncherSettings = {
 	wowPath: '',
@@ -18,7 +19,7 @@ export function normalizeLauncherSettings(value: unknown): LauncherSettings {
 
 	const githubProxyUrl = normalizeGitHubProxyUrl(value.githubProxyUrl)
 	return {
-		wowPath: normalizeWowPath(value.wowPath),
+		wowPath: normalizeOptionalPath(value.wowPath),
 		wtfBackupPath: normalizeOptionalPath(value.wtfBackupPath),
 		closeOnLaunch: value.closeOnLaunch === true,
 		checkClientBeforeLaunch: value.checkClientBeforeLaunch === true,
@@ -46,16 +47,8 @@ export function applyLauncherSettingsPatch(
 	})
 }
 
-function normalizeWowPath(value: unknown): string {
-	return normalizeOptionalPath(value)
-}
-
 function normalizeOptionalPath(value: unknown): string {
 	if (typeof value !== 'string') return ''
 	const trimmed = value.trim()
 	return trimmed ? normalize(resolve(trimmed)) : ''
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null
 }

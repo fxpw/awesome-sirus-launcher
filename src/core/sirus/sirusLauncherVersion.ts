@@ -1,7 +1,6 @@
-export const SIRUS_OFFICIAL_LAUNCHER_REPO = 'sirussu/open-launcher'
 export const SIRUS_OFFICIAL_LAUNCHER_RELEASES_LATEST_URL =
 	'https://api.github.com/repos/sirussu/open-launcher/releases/latest'
-export const DEFAULT_SIRUS_LAUNCHER_VERSION_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const DEFAULT_SIRUS_LAUNCHER_VERSION_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 export interface SirusOfficialLauncherRelease {
 	tag_name: string

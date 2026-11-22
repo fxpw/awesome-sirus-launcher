@@ -1,4 +1,4 @@
-import { copyFile, mkdir, mkdtemp, rename, rm, stat } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, stat } from 'node:fs/promises'
 import type { Stats } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type {
@@ -11,14 +11,15 @@ import type {
 	ClientPatchManifestResult,
 	ClientPatchSourceInput
 } from '@shared/contracts'
-import type { SettingsStore } from '@main/settings/fileSettingsStore'
 import {
 	type ClientPatchManifestFile as CoreClientPatchManifestFile,
 	clientPatchManifestUrls,
 	createClientPatchTargetPath,
 	isExpectedMd5,
 	normalizeClientPatchManifest
-} from '../../core/clientPatches/clientPatches'
+} from '@core/clientPatches/clientPatches'
+import { moveFile } from '@main/files/moveFile'
+import type { SettingsStore } from '@main/settings/fileSettingsStore'
 
 export type FetchJson = (url: string, options?: { signal?: AbortSignal }) => Promise<unknown>
 export type HashFile = (filePath: string, options?: { signal?: AbortSignal }) => Promise<string>
@@ -37,7 +38,7 @@ export interface ClientMd5Cache {
 	clear(): Promise<void>
 }
 
-export const emptyClientMd5Cache: ClientMd5Cache = {
+const emptyClientMd5Cache: ClientMd5Cache = {
 	async get() {
 		return undefined
 	},
@@ -175,21 +176,11 @@ export function createClientPatchService(
 		async downloadMissing(input) {
 			const settings = await getSettingsWithWowPath(settingsStore)
 			const manifest = await fetchManifest(fetchJson, input?.sourceUrl)
-			const checkedFiles = await Promise.all(
-				manifest.patches.map((patch) =>
-					checkPatchFile(settings.wowPath, patch, hashFile, md5Cache)
-				)
-			)
-			const patchesByKey = new Map(
-				manifest.patches.map((patch) => [
-					createPatchKey(patch.relativePath, patch.fileName),
-					patch
-				])
-			)
-			const patchesToDownload = checkedFiles
-				.filter((file) => file.status !== 'ok')
-				.map((file) => patchesByKey.get(createPatchKey(file.relativePath, file.fileName)))
-				.filter((patch): patch is CoreClientPatchManifestFile => Boolean(patch))
+			const patchesToDownload: CoreClientPatchManifestFile[] = []
+			for (const patch of manifest.patches) {
+				const checked = await checkPatchFile(settings.wowPath, patch, hashFile, md5Cache)
+				if (checked.status !== 'ok') patchesToDownload.push(patch)
+			}
 			const files = []
 
 			for (const patch of patchesToDownload) {
@@ -324,7 +315,7 @@ async function downloadAndVerifyPatch(
 		}
 
 		await rm(targetPath, { force: true })
-		await moveDownloadedFile(tempPath, targetPath)
+		await moveFile(tempPath, targetPath)
 		const targetStat = await stat(targetPath)
 		await md5Cache.set(createMd5CacheKey(targetPath, targetStat), actualMd5)
 
@@ -376,26 +367,6 @@ function createMd5CacheKey(filePath: string, fileStat: Stats): ClientMd5CacheKey
 	}
 }
 
-async function moveDownloadedFile(sourcePath: string, targetPath: string): Promise<void> {
-	try {
-		await rename(sourcePath, targetPath)
-	} catch (error) {
-		if (!isCrossDeviceRenameError(error)) throw error
-
-		await copyFile(sourcePath, targetPath)
-		await rm(sourcePath, { force: true })
-	}
-}
-
-function isCrossDeviceRenameError(error: unknown): boolean {
-	return Boolean(
-		error &&
-		typeof error === 'object' &&
-		'code' in error &&
-		(error as NodeJS.ErrnoException).code === 'EXDEV'
-	)
-}
-
 function findManifestPatch(
 	patches: CoreClientPatchManifestFile[],
 	input: ClientPatchFileInput
@@ -414,10 +385,6 @@ function countPatchStatuses(files: ClientCheckResult['files']) {
 		missing: files.filter((file) => file.status === 'missing').length,
 		outdated: files.filter((file) => file.status === 'outdated').length
 	}
-}
-
-function createPatchKey(relativePath: string, fileName: string): string {
-	return `${relativePath}\0${fileName}`
 }
 
 async function fetchManifest(fetchJson: FetchJson, sourceUrl?: string, signal?: AbortSignal) {

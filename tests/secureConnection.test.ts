@@ -57,7 +57,7 @@ describe('verifySecureConnection', () => {
 			}
 		}
 
-		expect(await verifySecureConnection('1.0.15', deps)).toEqual({ verified: true })
+		expect(await verifySecureConnection(deps)).toEqual({ verified: true })
 		expect(connections).toBe(0)
 	})
 
@@ -71,7 +71,7 @@ describe('verifySecureConnection', () => {
 		}
 		const connected: string[] = []
 
-		const result = await verifySecureConnection('1.0.15', {
+		const result = await verifySecureConnection({
 			fetchConfig: async () => config,
 			establishConnection: async (host) => {
 				connected.push(`${host.host}:${host.port}`)
@@ -87,7 +87,7 @@ describe('verifySecureConnection', () => {
 	})
 
 	it('returns error when host handshake fails', async () => {
-		const result = await verifySecureConnection('1.0.15', {
+		const result = await verifySecureConnection({
 			fetchConfig: async () => ({
 				enabled: true,
 				hosts: [{ address: '127.0.0.1', port: 1, phrase: 'aa' }]
@@ -128,10 +128,7 @@ describe('secure connection service', () => {
 					MCR_REQUEST
 				)
 
-				const challenge = Buffer.concat([
-					Buffer.from(MCR_CHALLENGE),
-					Buffer.from(cookie)
-				])
+				const challenge = Buffer.concat([Buffer.from(MCR_CHALLENGE), Buffer.from(cookie)])
 				socket.write(challenge)
 
 				socket.once('data', (response) => {

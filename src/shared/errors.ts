@@ -8,9 +8,3 @@ export class LauncherError extends Error {
 		this.name = 'LauncherError'
 	}
 }
-
-export function toUserMessage(error: unknown): string {
-	if (error instanceof LauncherError) return error.message
-	if (error instanceof Error) return error.message
-	return 'Неизвестная ошибка'
-}

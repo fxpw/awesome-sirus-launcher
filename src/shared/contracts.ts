@@ -392,11 +392,7 @@ export interface AddonsUpdateAllResult {
 
 export type AddonProgressOperation = 'install' | 'update-all'
 export type AddonProgressPhase =
-	| 'preparing'
-	| 'downloading'
-	| 'extracting'
-	| 'installing'
-	| 'completed'
+	'preparing' | 'downloading' | 'extracting' | 'installing' | 'completed'
 
 export interface AddonProgress {
 	operation: AddonProgressOperation

@@ -11,7 +11,8 @@ import {
 	createFpsPatchInstallPlan,
 	fpsPatchMetadataUrls,
 	fpsPatchSourceUrls
-} from '../../core/fpsPatch/fpsPatch'
+} from '@core/fpsPatch/fpsPatch'
+import { moveFile } from '@main/files/moveFile'
 import type { SettingsStore } from '@main/settings/fileSettingsStore'
 
 export type DownloadFile = (url: string, targetPath: string) => Promise<void>
@@ -127,7 +128,7 @@ export function createFpsPatchService(
 				fileSystem
 			)
 			await fileSystem.rm(plan.targetPath, { force: true })
-			await moveDownloadedFile(plan.tempPath, plan.targetPath, fileSystem)
+			await moveFile(plan.tempPath, plan.targetPath, fileSystem)
 
 			return {
 				status: await readFpsPatchStatus(
@@ -157,30 +158,6 @@ export function createFpsPatchService(
 			}
 		}
 	}
-}
-
-async function moveDownloadedFile(
-	sourcePath: string,
-	targetPath: string,
-	fileSystem: FpsPatchFileSystem
-): Promise<void> {
-	try {
-		await fileSystem.rename(sourcePath, targetPath)
-	} catch (error) {
-		if (!isCrossDeviceRenameError(error)) throw error
-
-		await fileSystem.copyFile(sourcePath, targetPath)
-		await fileSystem.rm(sourcePath, { force: true })
-	}
-}
-
-function isCrossDeviceRenameError(error: unknown): boolean {
-	return Boolean(
-		error &&
-		typeof error === 'object' &&
-		'code' in error &&
-		(error as NodeJS.ErrnoException).code === 'EXDEV'
-	)
 }
 
 async function readFpsPatchStatus(

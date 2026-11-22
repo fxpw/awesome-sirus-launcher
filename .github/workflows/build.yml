@@ -10,8 +10,6 @@ on:
             - VERSION
             - package.json
             - package-lock.json
-            - pnpm-lock.yaml
-            - yarn.lock
             - .github/workflows/build.yml
 
 permissions:
@@ -23,36 +21,18 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v6
-
-            - name: Check project scaffold
-              id: scaffold
-              shell: pwsh
-              run: |
-                  if (Test-Path package.json) {
-                    "exists=true" >> $env:GITHUB_OUTPUT
-                  } else {
-                    "exists=false" >> $env:GITHUB_OUTPUT
-                    Write-Host "package.json is not created yet; skipping Node/Electron build."
-                  }
+              uses: actions/checkout@v7
 
             - name: Setup Node
-              if: steps.scaffold.outputs.exists == 'true'
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version-file: .node-version
                   cache: npm
 
-            - name: Enable Corepack
-              if: steps.scaffold.outputs.exists == 'true'
-              run: corepack enable
-
             - name: Install dependencies
-              if: steps.scaffold.outputs.exists == 'true'
               run: npm ci
 
             - name: Read release version
-              if: steps.scaffold.outputs.exists == 'true'
               id: version
               shell: pwsh
               run: |
@@ -71,7 +51,7 @@ jobs:
                   "tag=v$version" >> $env:GITHUB_OUTPUT
 
             - name: Prepare release notes
-              if: steps.scaffold.outputs.exists == 'true' && github.event_name == 'push'
+              if: github.event_name == 'push'
               shell: pwsh
               run: |
                   $version = "${{ steps.version.outputs.version }}"
@@ -88,23 +68,17 @@ jobs:
                   Set-Content -Path release-notes.md -Value $notes -Encoding UTF8
 
             - name: Check
-              if: steps.scaffold.outputs.exists == 'true'
-              run: npm run check --if-present
-
-            - name: Test
-              if: steps.scaffold.outputs.exists == 'true'
-              run: npm test --if-present
+              run: npm run check
 
             - name: Build
-              if: steps.scaffold.outputs.exists == 'true'
-              run: npm run build
+              run: npx electron-vite build
 
             - name: Package
-              if: steps.scaffold.outputs.exists == 'true' && github.event_name == 'push'
-              run: npm run package:win
+              if: github.event_name == 'push'
+              run: npx electron-builder --win --publish never
 
             - name: Publish GitHub release
-              if: steps.scaffold.outputs.exists == 'true' && github.event_name == 'push'
+              if: github.event_name == 'push'
               uses: softprops/action-gh-release@v3
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -120,7 +94,7 @@ jobs:
                       release/latest.yml
 
             - name: Upload artifacts
-              if: steps.scaffold.outputs.exists == 'true' && always()
+              if: always()
               uses: actions/upload-artifact@v7
               with:
                   name: launcher-build

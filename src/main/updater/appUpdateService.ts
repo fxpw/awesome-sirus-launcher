@@ -2,14 +2,15 @@ import {
 	checkForAppUpdate,
 	mapGitHubRelease,
 	type GitHubReleaseResponse
-} from '../../core/updater/appUpdate'
-import { getPortableUpdateDownloadPath } from '../../core/updater/portableUpdateScript'
+} from '@core/updater/appUpdate'
+import { getPortableUpdateDownloadPath } from '@core/updater/portableUpdateScript'
+import { isRecord } from '@core/isRecord'
 import { mkdir, open, rm, stat } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import type { AppUpdateCheck, AppUpdateInstallResult, ReleaseAsset } from '../../shared/contracts'
-import { LauncherError } from '../../shared/errors'
-import type { SettingsStore } from '../settings/fileSettingsStore'
-import type { SecretStore } from '../secrets/memorySecretStore'
+import type { AppUpdateCheck, AppUpdateInstallResult, ReleaseAsset } from '@shared/contracts'
+import { LauncherError } from '@shared/errors'
+import type { SettingsStore } from '@main/settings/fileSettingsStore'
+import type { SecretStore } from '@main/secrets/memorySecretStore'
 
 export const appReleasesUrl =
 	'https://api.github.com/repos/fxpw/awesome-sirus-launcher/releases?per_page=20'
@@ -233,8 +234,4 @@ function readString(record: Record<string, unknown>, key: string): string {
 	if (typeof value !== 'string')
 		throw new Error(`GitHub release field ${key} должен быть строкой`)
 	return value
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null
 }
