@@ -7,7 +7,8 @@ import {
 	createFpsPatchInstallPlan,
 	fpsPatchFileName,
 	fpsPatchMetadataUrls,
-	fpsPatchSourceUrls
+	fpsPatchSourceUrls,
+	orderFpsPatchSourceUrls
 } from '../src/core/fpsPatch/fpsPatch'
 import {
 	createFpsPatchService,
@@ -30,6 +31,24 @@ describe('fps patch core', () => {
 		)
 		expect(plan.tempPath).toMatch(/patch-ruRU-\[\.mpq\.tmp$/)
 		expect(plan.sourceUrls).toEqual([...fpsPatchSourceUrls])
+	})
+
+	it('tries the https source first without a manifest hash and the http mirror first with it', () => {
+		const [httpsUrl, httpUrl] = fpsPatchSourceUrls
+		expect(httpsUrl).toMatch(/^https:/)
+		expect(httpUrl).toMatch(/^http:/)
+
+		expect(orderFpsPatchSourceUrls()).toEqual([httpsUrl, httpUrl])
+		expect(orderFpsPatchSourceUrls('')).toEqual([httpsUrl, httpUrl])
+		expect(orderFpsPatchSourceUrls('f4fa11955f13c49d8e7a515813b9f156')).toEqual([
+			httpUrl,
+			httpsUrl
+		])
+		expect(
+			createFpsPatchInstallPlan('F:/wow', 'C:/temp', 'f4fa11955f13c49d8e7a515813b9f156')
+				.sourceUrls
+		).toEqual([httpUrl, httpsUrl])
+		expect(fpsPatchSourceUrls).toEqual([httpsUrl, httpUrl])
 	})
 })
 
@@ -116,6 +135,39 @@ describe('fps patch service', () => {
 		expect(result.status.installed).toBe(true)
 		expect(result.status.freshness).toBe('latest')
 		await expect(readFile(targetPath, 'utf8')).resolves.toBe(mpqContent('patch bytes'))
+	})
+
+	it('starts with the http mirror when the manifest hash is known and falls back to https', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-fps-patch-mirror-first-'))
+		const wowPath = join(root, 'wow')
+		const userDataPath = join(root, 'user-data')
+		await mkdir(join(wowPath, 'Data', 'ruRU'), { recursive: true })
+
+		const triedUrls: string[] = []
+		const service = createFpsPatchService(
+			() => userDataPath,
+			createMemorySettingsStore({ wowPath }),
+			async (url, tempPath) => {
+				triedUrls.push(url)
+				if (triedUrls.length === 1) throw new Error('mirror failed')
+				await writeFile(tempPath, mpqContent('fresh patch'))
+			},
+			undefined,
+			createMetadataFetcher({
+				build: 383,
+				hash: createHash('md5').update(mpqContent('fresh patch')).digest('hex')
+			}),
+			hashTestFile
+		)
+
+		const result = await service.install()
+
+		expect(triedUrls).toEqual([fpsPatchSourceUrls[1], fpsPatchSourceUrls[0]])
+		expect(result.sourceUrl).toBe(fpsPatchSourceUrls[0])
+		expect(result.status.freshness).toBe('latest')
+		await expect(
+			readFile(join(wowPath, 'Data', 'ruRU', fpsPatchFileName), 'utf8')
+		).resolves.toBe(mpqContent('fresh patch'))
 	})
 
 	it('keeps the installed patch when every download fails the manifest hash', async () => {

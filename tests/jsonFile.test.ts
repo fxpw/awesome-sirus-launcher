@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, open, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -36,6 +36,21 @@ describe('json file', () => {
 		)
 
 		await expect(readJsonFile(filePath)).resolves.toEqual({ index: 19 })
+		await expect(readdir(root)).resolves.toEqual(['state.json'])
+	})
+
+	it('waits for a reader to release the file instead of losing the write', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-json-reader-'))
+		const filePath = join(root, 'state.json')
+		await writeJsonFile(filePath, { value: 1 })
+
+		const reader = await open(filePath, 'r')
+		const write = writeJsonFile(filePath, { value: 2 })
+		await new Promise((resolve) => setTimeout(resolve, 100))
+		await reader.close()
+
+		await expect(write).resolves.toBeUndefined()
+		await expect(readJsonFile(filePath)).resolves.toEqual({ value: 2 })
 		await expect(readdir(root)).resolves.toEqual(['state.json'])
 	})
 

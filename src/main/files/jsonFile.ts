@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, resolve } from 'node:path'
+import { setTimeout as delay } from 'node:timers/promises'
 
 export async function readJsonFile(filePath: string): Promise<unknown> {
 	if (!existsSync(filePath)) return undefined
@@ -40,9 +41,24 @@ async function replaceFile(filePath: string, text: string): Promise<void> {
 	await mkdir(dirname(filePath), { recursive: true })
 	try {
 		await writeFile(tempPath, text, 'utf8')
-		await rename(tempPath, filePath)
+		await renameWhenReleased(tempPath, filePath)
 	} catch (error) {
 		await rm(tempPath, { force: true })
 		throw error
+	}
+}
+
+const lockedFileErrorCodes = ['EPERM', 'EACCES', 'EBUSY']
+
+async function renameWhenReleased(sourcePath: string, targetPath: string): Promise<void> {
+	for (let attempt = 1; ; attempt += 1) {
+		try {
+			await rename(sourcePath, targetPath)
+			return
+		} catch (error) {
+			const code = (error as NodeJS.ErrnoException | undefined)?.code
+			if (attempt === 10 || !code || !lockedFileErrorCodes.includes(code)) throw error
+			await delay(attempt * 20)
+		}
 	}
 }

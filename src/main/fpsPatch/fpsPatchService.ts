@@ -125,12 +125,16 @@ export function createFpsPatchService(
 			const settings = await settingsStore.get()
 			if (!settings.wowPath) throw new Error('Сначала выберите папку WoW')
 
-			const plan = createFpsPatchInstallPlan(settings.wowPath, getTempDir())
+			const remote = await readRemoteMetadata(fetchMetadata)
+			const plan = createFpsPatchInstallPlan(
+				settings.wowPath,
+				getTempDir(),
+				remote.metadata?.hash
+			)
 			await fileSystem.mkdir(dirname(plan.targetPath), { recursive: true })
 			await fileSystem.mkdir(dirname(plan.tempPath), { recursive: true })
 			await fileSystem.rm(plan.tempPath, { force: true })
 
-			const remote = await readRemoteMetadata(fetchMetadata)
 			const sourceUrl = await downloadWithFallback(
 				plan,
 				remote.metadata,

@@ -99,7 +99,7 @@ Emit progress events from main to renderer. Keep cancellation cooperative and ma
 
 - Fetch client MD5 manifests from `https://s-patches.pro/api/client/patches`, then `https://s-patches.ru/api/client/patches`, then `https://sirus.world/api/client/patches`.
 - Install the FPS patch as `<wowPath>/Data/ruRU/patch-ruRU-[.mpq`.
-- Try `https://d1st4r.ru/patch/patch-ruRU-[.mpq` before `http://d1st4r.stream/patch/patch-ruRU-[.mpq`.
+- Order FPS patch sources with `orderFpsPatchSourceUrls`: when the HTTPS manifest provides an MD5 hash, try `http://d1st4r.stream/patch/patch-ruRU-[.mpq` first and `https://d1st4r.ru/patch/patch-ruRU-[.mpq` second; without a hash keep HTTPS first and the HTTP mirror as the fallback.
 - Download GitHub addons as repository source zip files, not release assets for the MVP.
 - Support an optional GitHub token for addon downloads/API calls to raise rate limits. Store it as a secret, use `Authorization: Bearer ...`, never log it, and keep addon downloads working without it when possible.
 - After unpacking a GitHub source zip, do not install the top folder like `{repo}-{branch}`. Find folders containing `.toc` and move those addon folders into `<wowPath>/Interface/AddOns`.
