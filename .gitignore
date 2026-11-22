@@ -2,8 +2,8 @@ node_modules/
 dist/
 out/
 release/
-out/
 .vite/
+.tmp/
 *.log
 *.local
 coverage/

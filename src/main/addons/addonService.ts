@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
-import addonCatalog from '../../shared/addons/addonCatalog.json'
+import addonCatalog from '@shared/addons/addonCatalog.json'
 import type {
 	AddCustomAddonInput,
 	AddonActionInput,
@@ -14,21 +14,25 @@ import type {
 	AddonSummary,
 	AddonsUpdateAllResult,
 	AddonStatus,
-	CustomAddonsTransferResult
+	CustomAddonsTransferResult,
+	LauncherSettings
 } from '@shared/contracts'
-import { buildGitHubSourceZipUrl } from '../../core/github/sourceZip'
-import { getWowPaths, validateWowPath } from '../../core/wow/wowPaths'
+import { buildGitHubSourceZipUrl } from '@core/github/sourceZip'
+import { getWowPaths, validateWowPath } from '@core/wow/wowPaths'
 import {
 	compareAddonVersions,
 	createCustomAddonEntry,
 	hasGitFolder,
 	parseTocVersion,
-	readInstalledAddonVersion
-} from '../../core/addons/addons'
-import type { SettingsStore } from '../settings/fileSettingsStore'
-import type { SecretStore } from '../secrets/memorySecretStore'
+	readInstalledAddonVersion,
+	slugify
+} from '@core/addons/addons'
 import { createGitHubAuthHeaders, isTrustedGitHubUrl } from '@core/github/githubAuth'
 import { createGitHubHttpError, createGitHubNetworkError } from '@core/github/githubErrors'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
+import { addonCatalogEntrySchema } from '@main/ipc/schemas'
+import type { SettingsStore } from '@main/settings/fileSettingsStore'
+import type { SecretStore } from '@main/secrets/memorySecretStore'
 
 type DownloadFile = (url: string, targetPath: string, options?: { token?: string }) => Promise<void>
 type FetchText = (url: string, options?: { token?: string }) => Promise<string>
@@ -40,6 +44,12 @@ interface AddonCatalogFile {
 
 type AddonProgressHandler = (progress: AddonProgress) => void
 
+interface AddonOperation {
+	settings: LauncherSettings
+	entries: AddonCatalogEntry[]
+	getToken(): Promise<string | undefined>
+}
+
 export function createAddonService(
 	getUserDataPath: () => string,
 	settingsStore: SettingsStore,
@@ -50,12 +60,28 @@ export function createAddonService(
 ) {
 	const getCustomAddonsPath = () => join(getUserDataPath(), 'custom-addons.json')
 
-	async function list(checkRemote = false, installedOnly = false): Promise<AddonsListResult> {
-		const catalogEntries = await getCatalogEntries()
+	async function startOperation(): Promise<AddonOperation> {
+		const settings = await settingsStore.get()
+		const entries = [
+			...((addonCatalog as AddonCatalogFile).addons ?? []),
+			...(await readCustomAddons())
+		]
+		let token: Promise<string | undefined> | undefined
+		return { settings, entries, getToken: () => (token ??= secretStore.get('github-token')) }
+	}
+
+	async function list(
+		checkRemote = false,
+		installedOnly = false,
+		operation?: AddonOperation
+	): Promise<AddonsListResult> {
+		const current = operation ?? (await startOperation())
 		const entries = installedOnly
-			? await filterInstalledCatalogEntries(catalogEntries)
-			: catalogEntries
-		const addons = await Promise.all(entries.map((entry) => summarizeAddon(entry, checkRemote)))
+			? await filterInstalledCatalogEntries(current.entries, current.settings)
+			: current.entries
+		const addons = await Promise.all(
+			entries.map((entry) => summarizeAddon(entry, current, checkRemote))
+		)
 		const counts = countSources(addons)
 
 		return {
@@ -68,18 +94,18 @@ export function createAddonService(
 
 	async function install(
 		input: AddonActionInput,
-		onProgress?: AddonProgressHandler
+		onProgress?: AddonProgressHandler,
+		operation?: AddonOperation
 	): Promise<AddonInstallResult> {
-		const entries = await getCatalogEntries()
-		const entry = entries.find((addon) => addon.id === input.addonId)
+		const current = operation ?? (await startOperation())
+		const entry = current.entries.find((addon) => addon.id === input.addonId)
 		if (!entry) throw new Error('Аддон не найден в каталоге')
 		if (!entry.repo) throw new Error('У аддона нет GitHub репозитория')
 
-		const settings = await settingsStore.get()
-		const validation = validateWowPath(settings.wowPath)
+		const validation = validateWowPath(current.settings.wowPath)
 		if (!validation.valid) throw new Error('Сначала укажи корректную папку WoW')
 
-		const existing = await summarizeAddon(entry, false)
+		const existing = await summarizeAddon(entry, current, false)
 		if (existing.status === 'manual-git') {
 			throw new Error('Аддон установлен из git и пропущен автообновлением')
 		}
@@ -87,10 +113,10 @@ export function createAddonService(
 		const tempRoot = await mkdtemp(join(tmpdir(), 'sirus-addon-'))
 		const archivePath = join(tempRoot, `${entry.name}.zip`)
 		const unpackPath = join(tempRoot, 'unpacked')
-		const token = await secretStore.get('github-token')
 		const progressState = createAddonProgressState('install', 1, 0)
 
 		try {
+			const token = await current.getToken()
 			reportAddonProgress(onProgress, progressState, entry, 'preparing')
 			const zipUrl = buildGitHubSourceZipUrl({ repo: entry.repo, ref: entry.branch })
 			reportAddonProgress(onProgress, progressState, entry, 'downloading')
@@ -123,7 +149,7 @@ export function createAddonService(
 				throw new Error('В архиве не найдены папки аддона из каталога')
 			}
 
-			const addon = await summarizeAddon(entry, true)
+			const addon = await summarizeAddon(entry, current, true)
 			reportAddonProgress(onProgress, progressState, entry, 'completed', 1)
 			return {
 				installedAt: new Date().toISOString(),
@@ -137,12 +163,11 @@ export function createAddonService(
 	}
 
 	async function deleteAddon(input: AddonActionInput): Promise<AddonDeleteResult> {
-		const entries = await getCatalogEntries()
-		const entry = entries.find((addon) => addon.id === input.addonId)
+		const operation = await startOperation()
+		const entry = operation.entries.find((addon) => addon.id === input.addonId)
 		if (!entry) throw new Error('Аддон не найден в каталоге')
 
-		const settings = await settingsStore.get()
-		const validation = validateWowPath(settings.wowPath)
+		const validation = validateWowPath(operation.settings.wowPath)
 		if (!validation.valid) throw new Error('Сначала укажи корректную папку WoW')
 
 		const deletedFolders: string[] = []
@@ -156,13 +181,14 @@ export function createAddonService(
 
 		return {
 			deletedAt: new Date().toISOString(),
-			addon: await summarizeAddon(entry, false),
+			addon: await summarizeAddon(entry, operation, false),
 			deletedFolders
 		}
 	}
 
 	async function updateAll(onProgress?: AddonProgressHandler): Promise<AddonsUpdateAllResult> {
-		const checked = await list(true, true)
+		const operation = await startOperation()
+		const checked = await list(true, true, operation)
 		const candidates = checked.addons.filter(
 			(addon) =>
 				!addon.error && (addon.status === 'outdated' || addon.status === 'not-installed')
@@ -189,23 +215,27 @@ export function createAddonService(
 			const progressState = createAddonProgressState('update-all', total, index)
 			try {
 				installed.push(
-					await install({ addonId: addon.id }, (progress) => {
-						const completed =
-							progress.phase === 'completed'
-								? progressState.completed + 1
-								: progressState.completed
-						onProgress?.({
-							...progress,
-							operation: 'update-all',
-							completed,
-							total: progressState.total,
-							percent: calculateAddonPercent(
-								progressState.total,
-								progressState.completed,
-								progress.step
-							)
-						})
-					})
+					await install(
+						{ addonId: addon.id },
+						(progress) => {
+							const completed =
+								progress.phase === 'completed'
+									? progressState.completed + 1
+									: progressState.completed
+							onProgress?.({
+								...progress,
+								operation: 'update-all',
+								completed,
+								total: progressState.total,
+								percent: calculateAddonPercent(
+									progressState.total,
+									progressState.completed,
+									progress.step
+								)
+							})
+						},
+						operation
+					)
 				)
 			} catch (error) {
 				skipped.push({
@@ -251,9 +281,8 @@ export function createAddonService(
 	async function importCustom(filePath: string): Promise<CustomAddonsTransferResult> {
 		const imported = normalizeImportedCustomAddons(JSON.parse(await readFile(filePath, 'utf8')))
 		const current = await readCustomAddons()
-		const merged = mergeCustomAddons(current, imported)
-		await writeCustomAddons(renumberCustomAddons(merged))
-		const next = await readCustomAddons()
+		const next = renumberCustomAddons(mergeCustomAddons(current, imported))
+		await writeCustomAddons(next)
 
 		return {
 			filePath,
@@ -262,42 +291,13 @@ export function createAddonService(
 		}
 	}
 
-	async function getCatalogEntries(): Promise<AddonCatalogEntry[]> {
-		return [...((addonCatalog as AddonCatalogFile).addons ?? []), ...(await readCustomAddons())]
-	}
-
-	async function filterInstalledCatalogEntries(
-		entries: AddonCatalogEntry[]
-	): Promise<AddonCatalogEntry[]> {
-		const installedFolderNames = await readInstalledAddonFolderNames()
-		if (installedFolderNames.size === 0) return []
-
-		return entries.filter((entry) =>
-			getAddonFolderNames(entry).some((folder) =>
-				installedFolderNames.has(normalizeAddonName(folder))
-			)
-		)
-	}
-
-	async function readInstalledAddonFolderNames(): Promise<Set<string>> {
-		const settings = await settingsStore.get()
-		const validation = validateWowPath(settings.wowPath)
-		if (!validation.valid || !existsSync(validation.addonsPath)) return new Set()
-
-		const folders = await readdir(validation.addonsPath, { withFileTypes: true })
-		return new Set(
-			folders
-				.filter((folder) => folder.isDirectory())
-				.map((folder) => normalizeAddonName(folder.name))
-		)
-	}
-
 	async function summarizeAddon(
 		entry: AddonCatalogEntry,
+		operation: AddonOperation,
 		checkRemote: boolean
 	): Promise<AddonSummary> {
-		const settings = await settingsStore.get()
-		const paths = settings.wowPath ? getWowPaths(settings.wowPath) : undefined
+		const { wowPath } = operation.settings
+		const paths = wowPath ? getWowPaths(wowPath) : undefined
 		const installedFolders: string[] = []
 		const missingFolders: string[] = []
 		const gitFolders: string[] = []
@@ -327,9 +327,7 @@ export function createAddonService(
 			}
 			if (checkRemote && entry.versionUrl) {
 				remoteVersion = parseTocVersion(
-					await fetchText(entry.versionUrl, {
-						token: await secretStore.get('github-token')
-					})
+					await fetchText(entry.versionUrl, { token: await operation.getToken() })
 				)
 			}
 		} catch (err) {
@@ -355,16 +353,17 @@ export function createAddonService(
 	}
 
 	async function readCustomAddons(): Promise<AddonCatalogEntry[]> {
-		const filePath = getCustomAddonsPath()
-		if (!existsSync(filePath)) return []
+		const data = await readJsonFile(getCustomAddonsPath())
+		if (!Array.isArray(data)) return []
 
-		return JSON.parse(await readFile(filePath, 'utf8')) as AddonCatalogEntry[]
+		return data.flatMap((entry) => {
+			const parsed = addonCatalogEntrySchema.safeParse(entry)
+			return parsed.success ? [parsed.data] : []
+		})
 	}
 
 	async function writeCustomAddons(addons: AddonCatalogEntry[]): Promise<void> {
-		const filePath = getCustomAddonsPath()
-		await mkdir(getUserDataPath(), { recursive: true })
-		await writeFile(filePath, JSON.stringify(addons, null, 2), 'utf8')
+		await writeJsonFile(getCustomAddonsPath(), addons)
 	}
 
 	return {
@@ -414,6 +413,32 @@ async function defaultFetchText(url: string, options: { token?: string } = {}): 
 	} catch (error) {
 		throw createGitHubNetworkError(error, { usingProxy: false })
 	}
+}
+
+async function filterInstalledCatalogEntries(
+	entries: AddonCatalogEntry[],
+	settings: LauncherSettings
+): Promise<AddonCatalogEntry[]> {
+	const installedFolderNames = await readInstalledAddonFolderNames(settings)
+	if (installedFolderNames.size === 0) return []
+
+	return entries.filter((entry) =>
+		getAddonFolderNames(entry).some((folder) =>
+			installedFolderNames.has(normalizeAddonName(folder))
+		)
+	)
+}
+
+async function readInstalledAddonFolderNames(settings: LauncherSettings): Promise<Set<string>> {
+	const validation = validateWowPath(settings.wowPath)
+	if (!validation.valid || !existsSync(validation.addonsPath)) return new Set()
+
+	const folders = await readdir(validation.addonsPath, { withFileTypes: true })
+	return new Set(
+		folders
+			.filter((folder) => folder.isDirectory())
+			.map((folder) => normalizeAddonName(folder.name))
+	)
 }
 
 async function findAddonDirs(rootPath: string): Promise<string[]> {
@@ -631,11 +656,4 @@ function renumberCustomAddons(addons: AddonCatalogEntry[]): AddonCatalogEntry[] 
 
 function createCustomAddonKey(addon: AddonCatalogEntry): string {
 	return `${addon.name.toLowerCase()}|${addon.githubUrl?.toLowerCase() ?? addon.repo?.toLowerCase()}`
-}
-
-function slugify(value: string): string {
-	return value
-		.toLowerCase()
-		.replace(/[^a-z0-9а-яё!_-]+/gi, '-')
-		.replace(/^-+|-+$/g, '')
 }

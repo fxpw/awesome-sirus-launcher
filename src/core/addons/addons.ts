@@ -121,7 +121,7 @@ function compareVersionParts(installedParts: number[], remoteParts: number[]): n
 	return 0
 }
 
-function slugify(value: string): string {
+export function slugify(value: string): string {
 	return value
 		.toLowerCase()
 		.replace(/[^a-z0-9а-яё!_-]+/gi, '-')

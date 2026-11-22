@@ -9,11 +9,10 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"types": ["node", "vitest/globals"],
-		"baseUrl": ".",
 		"paths": {
-			"@core/*": ["src/core/*"],
-			"@shared/*": ["src/shared/*"],
-			"@main/*": ["src/main/*"]
+			"@core/*": ["./src/core/*"],
+			"@shared/*": ["./src/shared/*"],
+			"@main/*": ["./src/main/*"]
 		}
 	},
 	"include": [

@@ -19,16 +19,22 @@ export interface FpsPatchInstallPlan {
 	sourceUrls: string[]
 }
 
+export function orderFpsPatchSourceUrls(remoteHash?: string): string[] {
+	const urls = [...fpsPatchSourceUrls]
+	if (!remoteHash) return urls
+	return urls.sort((a, b) => Number(a.startsWith('https:')) - Number(b.startsWith('https:')))
+}
+
 export function createFpsPatchInstallPlan(
 	wowPath: string,
 	tempDir: string,
-	sourceUrls: readonly string[] = fpsPatchSourceUrls
+	remoteHash?: string
 ): FpsPatchInstallPlan {
 	const paths = getWowPaths(wowPath)
 
 	return {
 		targetPath: join(paths.localeDataPath, fpsPatchFileName),
 		tempPath: normalize(resolve(tempDir, `${fpsPatchFileName}.tmp`)),
-		sourceUrls: [...sourceUrls]
+		sourceUrls: orderFpsPatchSourceUrls(remoteHash)
 	}
 }

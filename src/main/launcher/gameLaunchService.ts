@@ -1,7 +1,7 @@
 import { dirname } from 'node:path'
 import type { GameLaunchResult } from '@shared/contracts'
+import { validateWowPath } from '@core/wow/wowPaths'
 import type { SettingsStore } from '@main/settings/fileSettingsStore'
-import { validateWowPath } from '../../core/wow/wowPaths'
 
 export type LaunchProcess = (executablePath: string, cwd: string) => Promise<void>
 export type BeforeGameLaunch = (wowPath: string) => Promise<void>

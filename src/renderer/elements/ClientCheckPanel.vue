@@ -12,11 +12,13 @@ import BaseButton from '@renderer/components/BaseButton.vue'
 import BasePanel from '@renderer/components/BasePanel.vue'
 import StatusBadge from '@renderer/components/StatusBadge.vue'
 import { useLocale } from '@renderer/composables/useLocale'
+import { createClientFileKey } from '@renderer/shared/clientPatchFiles'
+import { isFocusLeaving } from '@renderer/shared/focus'
 
 const props = defineProps<{
 	manifest: ClientPatchManifestResult | null
 	result: ClientCheckResult | null
-	sourceUrls: string[]
+	sourceUrls: readonly string[]
 	selectedSourceUrl: string
 	checking: boolean
 	loadingManifest: boolean
@@ -36,20 +38,45 @@ const emit = defineEmits<{
 	downloadMissing: []
 }>()
 
+const sizeFormat = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 2,
+	minimumFractionDigits: 2
+})
+const largeSizeFormat = new Intl.NumberFormat(undefined, {
+	maximumFractionDigits: 1,
+	minimumFractionDigits: 0
+})
+
 const { t } = useLocale()
 const sourceOpen = ref(false)
 
 const checkedFilesByKey = computed(() => {
 	const files = new Map<string, ClientPatchCheckFile>()
-	for (const file of props.result?.files ?? []) files.set(createFileKey(file), file)
+	for (const file of props.result?.files ?? []) files.set(createClientFileKey(file), file)
 
 	return files
 })
 
-const tableFiles = computed(() => props.manifest?.files ?? props.result?.files ?? [])
+const tableRows = computed(() =>
+	(props.manifest?.files ?? props.result?.files ?? []).map((file) => {
+		const key = createClientFileKey(file)
+		const status = checkedFilesByKey.value.get(key)?.status ?? 'pending'
+		return {
+			key,
+			file,
+			status,
+			size: fileSize(file.expectedSize),
+			statusLabel:
+				status === 'pending' ? t('clientCheck.status.pending') : t(statusLabelKey(status))
+		}
+	})
+)
 
 const problemCount = computed(
 	() => (props.result?.files ?? []).filter((file) => file.status !== 'ok').length
+)
+const summaryTone = computed(() =>
+	props.result ? (problemCount.value === 0 ? 'ok' : 'warning') : undefined
 )
 const canDownloadMissing = computed(() => problemCount.value > 0)
 const checkedCount = computed(() => props.result?.files.length ?? 0)
@@ -85,19 +112,6 @@ function statusLabelKey(status: ClientCheckResult['files'][number]['status']) {
 	return 'clientCheck.status.ok'
 }
 
-function createFileKey(file: Pick<ClientPatchFileInput, 'fileName' | 'relativePath'>): string {
-	return `${file.relativePath}\u0000${file.fileName}`
-}
-
-function fileStatus(file: Pick<ClientPatchFileInput, 'fileName' | 'relativePath'>) {
-	return checkedFilesByKey.value.get(createFileKey(file))?.status ?? 'pending'
-}
-
-function fileStatusLabel(file: Pick<ClientPatchFileInput, 'fileName' | 'relativePath'>): string {
-	const status = fileStatus(file)
-	return status === 'pending' ? t('clientCheck.status.pending') : t(statusLabelKey(status))
-}
-
 function fileSize(size: number): string {
 	const megabytes = size / 1024 / 1024
 	if (megabytes >= 1024) return t('clientCheck.sizeGb', { size: formatSize(megabytes / 1024) })
@@ -106,10 +120,7 @@ function fileSize(size: number): string {
 }
 
 function formatSize(size: number): string {
-	return new Intl.NumberFormat(undefined, {
-		maximumFractionDigits: size >= 10 ? 1 : 2,
-		minimumFractionDigits: size >= 10 ? 0 : 2
-	}).format(size)
+	return (size >= 10 ? largeSizeFormat : sizeFormat).format(size)
 }
 
 function toggleSourceMenu(): void {
@@ -123,12 +134,7 @@ function selectSource(sourceUrl: string): void {
 }
 
 function closeSourceMenu(event: FocusEvent): void {
-	const nextTarget = event.relatedTarget
-	if (nextTarget instanceof Node && event.currentTarget instanceof Node) {
-		if (event.currentTarget.contains(nextTarget)) return
-	}
-
-	sourceOpen.value = false
+	if (isFocusLeaving(event)) sourceOpen.value = false
 }
 </script>
 
@@ -180,13 +186,7 @@ function closeSourceMenu(event: FocusEvent): void {
 				</BaseButton>
 				<BaseButton
 					variant="secondary"
-					:disabled="
-						checking ||
-						loadingManifest ||
-						clearingCache ||
-						downloadingAll ||
-						Boolean(downloadingKey)
-					"
+					:disabled="sourceDisabled"
 					@click="$emit('clearCache')"
 				>
 					{{
@@ -211,12 +211,12 @@ function closeSourceMenu(event: FocusEvent): void {
 
 		<div class="client-check-summary">
 			<div class="client-check-summary__status">
-				<StatusBadge :tone="result ? (problemCount === 0 ? 'ok' : 'warning') : undefined">
+				<StatusBadge :tone="summaryTone">
 					{{
 						t('clientCheck.checkedCount', { checked: checkedCount, total: totalCount })
 					}}
 				</StatusBadge>
-				<StatusBadge :tone="result ? (problemCount === 0 ? 'ok' : 'warning') : undefined">
+				<StatusBadge :tone="summaryTone">
 					{{ t('clientCheck.problemCount', { total: problemCount }) }}
 				</StatusBadge>
 			</div>
@@ -240,46 +240,42 @@ function closeSourceMenu(event: FocusEvent): void {
 			</div>
 		</div>
 
-		<div v-if="tableFiles.length > 0" class="client-files-table">
+		<div v-if="tableRows.length > 0" class="client-files-table">
 			<div class="client-files-table__head">
 				<span>{{ t('clientCheck.table.file') }}</span>
 				<span>{{ t('clientCheck.table.size') }}</span>
 				<span>{{ t('clientCheck.table.status') }}</span>
 				<span>{{ t('clientCheck.table.action') }}</span>
 			</div>
-			<div
-				v-for="file in tableFiles"
-				:key="createFileKey(file)"
-				class="client-files-table__row"
-			>
+			<div v-for="row in tableRows" :key="row.key" class="client-files-table__row">
 				<div class="path-text">
-					<strong>{{ file.fileName }}</strong>
-					<span>{{ file.relativePath }}</span>
+					<strong>{{ row.file.fileName }}</strong>
+					<span>{{ row.file.relativePath }}</span>
 				</div>
-				<span>{{ fileSize(file.expectedSize) }}</span>
+				<span>{{ row.size }}</span>
 				<StatusBadge
 					:tone="
-						fileStatus(file) === 'ok'
+						row.status === 'ok'
 							? 'ok'
-							: fileStatus(file) === 'pending'
+							: row.status === 'pending'
 								? undefined
 								: 'warning'
 					"
 				>
-					{{ fileStatusLabel(file) }}
+					{{ row.statusLabel }}
 				</StatusBadge>
 				<BaseButton
 					variant="secondary"
-					:disabled="downloadingKey === createFileKey(file) || downloadingAll"
+					:disabled="downloadingKey === row.key || downloadingAll"
 					@click="
 						$emit('downloadFile', {
-							fileName: file.fileName,
-							relativePath: file.relativePath
+							fileName: row.file.fileName,
+							relativePath: row.file.relativePath
 						})
 					"
 				>
 					{{
-						downloadingKey === createFileKey(file)
+						downloadingKey === row.key
 							? t('clientCheck.downloading')
 							: t('clientCheck.downloadFile')
 					}}

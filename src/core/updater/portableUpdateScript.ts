@@ -22,7 +22,7 @@ export function createPortableUpdateScript(input: PortableUpdateScriptInput): st
 		'}',
 		'Start-Sleep -Milliseconds 500',
 		'if (-not (Test-Path -LiteralPath $downloadedPath)) {',
-		"	throw \"Downloaded update file not found: $downloadedPath\"",
+		'	throw "Downloaded update file not found: $downloadedPath"',
 		'}',
 		'$lastErrorMessage = $null',
 		'for ($attempt = 1; $attempt -le 20; $attempt += 1) {',
@@ -52,7 +52,7 @@ export function getPortableUpdateDownloadPath(assetName: string, executablePath:
 	return join(dirname(executablePath), `${sanitizeFileName(assetName)}.download`)
 }
 
-function sanitizeFileName(fileName: string): string {
+export function sanitizeFileName(fileName: string): string {
 	return fileName.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
 }
 

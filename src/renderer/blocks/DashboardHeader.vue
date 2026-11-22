@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { Check, ChevronDown, Plus, Trash2 } from '@lucide/vue'
 import type { AccountListResult, AccountSummary, GitHubTokenStatus } from '@shared/contracts'
 import { localeLabels, type Locale } from '@renderer/shared/i18n'
+import { isFocusLeaving } from '@renderer/shared/focus'
 import { useLocale } from '@renderer/composables/useLocale'
 
 const props = defineProps<{
@@ -31,21 +32,11 @@ const selectedAccount = computed(
 )
 
 function closeAccountMenu(event: FocusEvent): void {
-	const nextTarget = event.relatedTarget
-	if (nextTarget instanceof Node && event.currentTarget instanceof Node) {
-		if (event.currentTarget.contains(nextTarget)) return
-	}
-
-	accountMenuOpen.value = false
+	if (isFocusLeaving(event)) accountMenuOpen.value = false
 }
 
 function closeLocaleMenu(event: FocusEvent): void {
-	const nextTarget = event.relatedTarget
-	if (nextTarget instanceof Node && event.currentTarget instanceof Node) {
-		if (event.currentTarget.contains(nextTarget)) return
-	}
-
-	localeMenuOpen.value = false
+	if (isFocusLeaving(event)) localeMenuOpen.value = false
 }
 
 function selectLocale(locale: Locale): void {

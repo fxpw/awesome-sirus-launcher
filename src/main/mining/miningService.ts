@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import type { MiningConfig, MiningConfigInput, MiningState, MiningStatus } from '@shared/contracts'
 import {
@@ -11,11 +10,12 @@ import {
 	splitMiningArguments,
 	validateMiningStart
 } from '@core/mining/mining'
+import { isRecord } from '@core/isRecord'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 
 interface MiningStorage {
 	config: MiningConfig
 	acceptedSharesTotal: number
-	receivedTotal: number
 }
 
 export interface MiningProcessRunner {
@@ -70,20 +70,22 @@ export function createMiningService(
 	let stoppedAt: string | undefined
 	let hashrate = '0 H/s'
 	let acceptedSharesSession = 0
-	let receivedSession = 0
 	let lastOutput = ''
 	let error: string | undefined
+	let storageQueue: Promise<unknown> = Promise.resolve()
 
-	async function getStorage(): Promise<MiningStorage> {
-		return readStorage(getFilePath())
-	}
-
-	async function saveStorage(storage: MiningStorage): Promise<void> {
-		await writeStorage(getFilePath(), storage)
+	function updateStorage(change: (storage: MiningStorage) => void): Promise<void> {
+		const update = storageQueue.then(async () => {
+			const storage = await readStorage(getFilePath())
+			change(storage)
+			await writeJsonFile(getFilePath(), storage)
+		})
+		storageQueue = update.catch(() => undefined)
+		return update
 	}
 
 	async function createState(): Promise<MiningState> {
-		const storage = await getStorage()
+		const storage = await readStorage(getFilePath())
 		const normalizedStatus = !storage.config.minerPath
 			? 'not-configured'
 			: processHandle
@@ -100,8 +102,6 @@ export function createMiningService(
 			hashrate,
 			acceptedSharesTotal: storage.acceptedSharesTotal,
 			acceptedSharesSession,
-			receivedTotal: storage.receivedTotal,
-			receivedSession,
 			lastOutput,
 			error
 		})
@@ -113,23 +113,23 @@ export function createMiningService(
 		},
 
 		async saveConfig(patch) {
-			const storage = await getStorage()
-			storage.config = applyMiningConfigPatch(storage.config, patch)
-			await saveStorage(storage)
+			await updateStorage((storage) => {
+				storage.config = applyMiningConfigPatch(storage.config, patch)
+			})
 			return createState()
 		},
 
 		async selectMinerPath(minerPath) {
-			const storage = await getStorage()
-			storage.config = applyMiningConfigPatch(storage.config, { minerPath })
-			await saveStorage(storage)
+			await updateStorage((storage) => {
+				storage.config = applyMiningConfigPatch(storage.config, { minerPath })
+			})
 			return createState()
 		},
 
 		async start() {
 			if (processHandle) return createState()
 
-			const storage = await getStorage()
+			const storage = await readStorage(getFilePath())
 			validateMiningStart(storage.config)
 			if (!existsSync(storage.config.minerPath)) {
 				throw new Error('Файл майнера не найден')
@@ -141,22 +141,26 @@ export function createMiningService(
 			stoppedAt = undefined
 			hashrate = '0 H/s'
 			acceptedSharesSession = 0
-			receivedSession = 0
 			lastOutput = ''
 
 			processHandle = runner.start(
 				storage.config.minerPath,
 				splitMiningArguments(storage.config.arguments),
-				async (text) => {
+				(text) => {
 					lastOutput = compactOutput(text)
 					hashrate = extractHashrate(text) ?? hashrate
 					const accepted = countAcceptedShares(text)
-					if (accepted > 0) {
-						acceptedSharesSession += accepted
-						const nextStorage = await getStorage()
+					if (accepted === 0) return
+
+					acceptedSharesSession += accepted
+					updateStorage((nextStorage) => {
 						nextStorage.acceptedSharesTotal += accepted
-						await saveStorage(nextStorage)
-					}
+					}).catch((saveError) => {
+						console.warn(
+							'[mining] не удалось сохранить счётчик шар:',
+							saveError instanceof Error ? saveError.message : String(saveError)
+						)
+					})
 				}
 			)
 
@@ -183,41 +187,25 @@ export function createMiningService(
 		},
 
 		async resetStats() {
-			const storage = await getStorage()
-			storage.acceptedSharesTotal = 0
-			storage.receivedTotal = 0
 			acceptedSharesSession = 0
-			receivedSession = 0
-			await saveStorage(storage)
+			await updateStorage((storage) => {
+				storage.acceptedSharesTotal = 0
+			})
 			return createState()
 		}
 	}
 }
 
 async function readStorage(filePath: string): Promise<MiningStorage> {
-	if (!existsSync(filePath)) {
-		return {
-			config: { ...defaultMiningConfig },
-			acceptedSharesTotal: 0,
-			receivedTotal: 0
-		}
+	const parsed = await readJsonFile(filePath)
+	if (!isRecord(parsed)) {
+		return { config: { ...defaultMiningConfig }, acceptedSharesTotal: 0 }
 	}
-
-	const raw = await readFile(filePath, 'utf8')
-	const parsed = JSON.parse(raw) as Partial<MiningStorage>
 
 	return {
 		config: normalizeMiningConfig(parsed.config),
-		acceptedSharesTotal: normalizeNumber(parsed.acceptedSharesTotal),
-		receivedTotal: normalizeNumber(parsed.receivedTotal)
+		acceptedSharesTotal: normalizeNumber(parsed.acceptedSharesTotal)
 	}
-}
-
-async function writeStorage(filePath: string, storage: MiningStorage): Promise<void> {
-	const tempPath = `${filePath}.tmp`
-	await mkdir(dirname(filePath), { recursive: true })
-	await writeFile(tempPath, JSON.stringify(storage, null, 2), 'utf8')
-	await rename(tempPath, filePath)
 }
 
 function normalizeNumber(value: unknown): number {

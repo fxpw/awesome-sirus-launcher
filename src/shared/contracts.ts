@@ -392,11 +392,7 @@ export interface AddonsUpdateAllResult {
 
 export type AddonProgressOperation = 'install' | 'update-all'
 export type AddonProgressPhase =
-	| 'preparing'
-	| 'downloading'
-	| 'extracting'
-	| 'installing'
-	| 'completed'
+	'preparing' | 'downloading' | 'extracting' | 'installing' | 'completed'
 
 export interface AddonProgress {
 	operation: AddonProgressOperation
@@ -428,7 +424,7 @@ export interface MiningConfig {
 	coinSymbol: string
 }
 
-export type MiningConfigInput = Partial<MiningConfig>
+export type MiningConfigInput = Partial<Omit<MiningConfig, 'minerPath'>>
 
 export interface MiningState {
 	status: MiningStatus
@@ -439,8 +435,6 @@ export interface MiningState {
 	hashrate: string
 	acceptedSharesTotal: number
 	acceptedSharesSession: number
-	receivedTotal: number
-	receivedSession: number
 	lastOutput: string
 	error?: string
 }

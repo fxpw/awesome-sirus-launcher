@@ -26,7 +26,7 @@ Use this skill after making project changes. Every agent-authored change should 
 - Mention behavior, product capabilities, release/build changes, docs, and agent workflow changes.
 - Skip noise such as formatting-only edits unless they affect maintainability or release behavior.
 - Preserve newest versions at the top.
-- Keep `VERSION` as the release trigger file for GitHub Actions.
+- Keep `VERSION` as the release version source. GitHub Actions publishes a release on any push to `main`/`master` that changes `VERSION`, `package.json`, `package-lock.json` or the workflow, so a dependency-only change republishes the current version.
 - After creating a release commit, ensure `CHANGELOG.md`, `VERSION`, and `package.json` version match if `package.json` exists.
 
 ## Entry Examples

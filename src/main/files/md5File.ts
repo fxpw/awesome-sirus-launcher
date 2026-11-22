@@ -9,7 +9,7 @@ export function md5File(filePath: string, options: { signal?: AbortSignal } = {}
 		}
 
 		const hash = createHash('md5')
-		const stream = createReadStream(filePath)
+		const stream = createReadStream(filePath, { highWaterMark: 1024 * 1024 })
 		const abort = () => destroyStreamAsCancelled(stream)
 
 		options.signal?.addEventListener('abort', abort, { once: true })

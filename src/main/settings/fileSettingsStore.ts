@@ -1,12 +1,10 @@
-import { dirname, join } from 'node:path'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import type { LauncherSettings, LauncherSettingsPatch } from '@shared/contracts'
 import {
 	applyLauncherSettingsPatch,
-	defaultLauncherSettings,
 	normalizeLauncherSettings
 } from '@core/settings/launcherSettings'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 
 export interface SettingsStore {
 	get(): Promise<LauncherSettings>
@@ -23,22 +21,12 @@ export function createFileSettingsStore(getUserDataPath: () => string): Settings
 		async save(patch) {
 			const current = await readSettings(getFilePath())
 			const next = applyLauncherSettingsPatch(current, patch)
-			await writeSettings(getFilePath(), next)
+			await writeJsonFile(getFilePath(), next)
 			return next
 		}
 	}
 }
 
 async function readSettings(filePath: string): Promise<LauncherSettings> {
-	if (!existsSync(filePath)) return { ...defaultLauncherSettings }
-
-	const raw = await readFile(filePath, 'utf8')
-	return normalizeLauncherSettings(JSON.parse(raw))
-}
-
-async function writeSettings(filePath: string, settings: LauncherSettings): Promise<void> {
-	const tempPath = `${filePath}.tmp`
-	await mkdir(dirname(filePath), { recursive: true })
-	await writeFile(tempPath, JSON.stringify(settings, null, 2), 'utf8')
-	await rename(tempPath, filePath)
+	return normalizeLauncherSettings(await readJsonFile(filePath))
 }

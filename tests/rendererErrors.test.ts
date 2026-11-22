@@ -8,6 +8,19 @@ describe('renderer error messages', () => {
 				"Error invoking remote method 'addons:check': Error: GitHub недоступен"
 			)
 		).toBe('GitHub недоступен')
+		expect(
+			cleanIpcErrorMessage(
+				"Error invoking remote method 'github:test-connection': LauncherError: Прокси недоступен"
+			)
+		).toBe('Прокси недоступен')
+		expect(
+			getUserErrorMessage(
+				new Error(
+					"Error invoking remote method 'client:check': Error: Проверка клиента остановлена"
+				),
+				'fallback'
+			)
+		).toBe('Проверка клиента остановлена')
 	})
 
 	it('uses a fallback for unknown or empty errors', () => {

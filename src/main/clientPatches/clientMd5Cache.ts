@@ -1,6 +1,7 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { dirname, join, normalize, resolve } from 'node:path'
-import type { ClientMd5Cache, ClientMd5CacheKey } from '@main/clientPatches/clientPatchService'
+import { join, normalize, resolve } from 'node:path'
+import { isRecord } from '@core/isRecord'
+import type { ClientMd5Cache } from '@main/clientPatches/clientPatchService'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 
 interface ClientMd5CacheDocument {
 	version: 1
@@ -15,18 +16,13 @@ interface ClientMd5CacheEntry {
 
 export function createFileClientMd5Cache(getUserDataPath: () => string): ClientMd5Cache {
 	const getCachePath = () => join(getUserDataPath(), 'cache', 'client-md5.json')
-	let cachedDocument: ClientMd5CacheDocument | undefined
+	let cachedDocument: Promise<ClientMd5CacheDocument> | undefined
 	let writeQueue = Promise.resolve()
+	const loadCacheDocument = () => (cachedDocument ??= readCacheDocument(getCachePath()))
 
 	return {
 		async get(key) {
-			const document = await loadCacheDocument(
-				getCachePath,
-				() => cachedDocument,
-				(next) => {
-					cachedDocument = next
-				}
-			)
+			const document = await loadCacheDocument()
 			const entry = document.entries[createCacheEntryKey(key.filePath)]
 			if (!entry || entry.size !== key.size || entry.mtimeMs !== key.mtimeMs) {
 				return undefined
@@ -38,20 +34,13 @@ export function createFileClientMd5Cache(getUserDataPath: () => string): ClientM
 			writeQueue = writeQueue
 				.catch(() => undefined)
 				.then(async () => {
-					const cachePath = getCachePath()
-					const document = await loadCacheDocument(
-						getCachePath,
-						() => cachedDocument,
-						(next) => {
-							cachedDocument = next
-						}
-					)
+					const document = await loadCacheDocument()
 					document.entries[createCacheEntryKey(key.filePath)] = {
 						size: key.size,
 						mtimeMs: key.mtimeMs,
 						md5
 					}
-					await writeCacheDocument(cachePath, document)
+					await writeJsonFile(getCachePath(), document)
 				})
 			await writeQueue
 		},
@@ -59,54 +48,25 @@ export function createFileClientMd5Cache(getUserDataPath: () => string): ClientM
 			writeQueue = writeQueue
 				.catch(() => undefined)
 				.then(async () => {
-					const cachePath = getCachePath()
 					const document = createEmptyDocument()
-					cachedDocument = document
-					await writeCacheDocument(cachePath, document)
+					cachedDocument = Promise.resolve(document)
+					await writeJsonFile(getCachePath(), document)
 				})
 			await writeQueue
 		}
 	}
 }
 
-async function loadCacheDocument(
-	getCachePath: () => string,
-	getCachedDocument: () => ClientMd5CacheDocument | undefined,
-	setCachedDocument: (document: ClientMd5CacheDocument) => void
-): Promise<ClientMd5CacheDocument> {
-	const cachedDocument = getCachedDocument()
-	if (cachedDocument) return cachedDocument
-
-	const document = await readCacheDocument(getCachePath())
-	setCachedDocument(document)
-
-	return document
-}
-
 async function readCacheDocument(cachePath: string): Promise<ClientMd5CacheDocument> {
-	try {
-		const raw = JSON.parse(await readFile(cachePath, 'utf8')) as Partial<ClientMd5CacheDocument>
-		if (raw.version !== 1 || !raw.entries || typeof raw.entries !== 'object') {
-			return createEmptyDocument()
-		}
-
-		return {
-			version: 1,
-			entries: raw.entries
-		}
-	} catch {
+	const raw = await readJsonFile(cachePath).catch(() => undefined)
+	if (!isRecord(raw) || raw.version !== 1 || !isRecord(raw.entries)) {
 		return createEmptyDocument()
 	}
-}
 
-async function writeCacheDocument(
-	cachePath: string,
-	document: ClientMd5CacheDocument
-): Promise<void> {
-	await mkdir(dirname(cachePath), { recursive: true })
-	const tempPath = `${cachePath}.tmp`
-	await writeFile(tempPath, `${JSON.stringify(document)}\n`, 'utf8')
-	await rename(tempPath, cachePath)
+	return {
+		version: 1,
+		entries: raw.entries as ClientMd5CacheDocument['entries']
+	}
 }
 
 function createEmptyDocument(): ClientMd5CacheDocument {

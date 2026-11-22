@@ -39,9 +39,9 @@ describe('wtf backup core', () => {
 	})
 
 	it('resolves default backups dir next to wow path', () => {
-		expect(
-			resolveWtfBackupsDir('F:/games/sirus/World of Warcraft Sirus')
-		).toMatch(/World of Warcraft Sirus[\\/]wtf_backup$/)
+		expect(resolveWtfBackupsDir('F:/games/sirus/World of Warcraft Sirus')).toMatch(
+			/World of Warcraft Sirus[\\/]wtf_backup$/
+		)
 	})
 
 	it('prefers custom backups dir when provided', () => {

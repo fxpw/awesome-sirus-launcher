@@ -503,6 +503,38 @@ describe('addon service', () => {
 		expect(secondImport.total).toBe(1)
 		expect((await target.list()).custom).toBe(1)
 	})
+
+	it('reads settings and the GitHub token once per list, not per addon', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-addons-single-read-'))
+		const wowPath = join(root, 'wow')
+		const addonsPath = join(wowPath, 'Interface', 'AddOns')
+		await mkdir(join(wowPath, 'Data'), { recursive: true })
+		await mkdir(join(wowPath, 'WTF'), { recursive: true })
+		await mkdir(join(addonsPath, 'AckisRecipeList'), { recursive: true })
+		await mkdir(join(addonsPath, 'Atlas'), { recursive: true })
+		await writeFile(join(wowPath, 'run.exe'), '')
+		const settingsStore = createMemorySettingsStore({ wowPath })
+		const secretStore = createMemorySecretStore()
+		const readSettings = vi.spyOn(settingsStore, 'get')
+		const readToken = vi.spyOn(secretStore, 'get')
+
+		const service = createAddonService(
+			() => root,
+			settingsStore,
+			secretStore,
+			async () => undefined,
+			async () => undefined,
+			async () => '## Version: 1.0.0\n'
+		)
+
+		const listed = await service.list()
+		const checked = await service.check()
+
+		expect(listed.total).toBeGreaterThan(2)
+		expect(checked.total).toBe(2)
+		expect(readSettings).toHaveBeenCalledTimes(2)
+		expect(readToken).toHaveBeenCalledTimes(1)
+	})
 })
 
 function createMemorySettingsStore(patch: Partial<LauncherSettings>): SettingsStore {

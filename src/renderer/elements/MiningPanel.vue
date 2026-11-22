@@ -109,16 +109,47 @@ const minerSources = [
 	}
 ] as const
 
+let appliedKey = ''
+let pendingSaveKey = ''
+
+function readForm() {
+	return {
+		consentAccepted: consentAccepted.value,
+		arguments: minerArguments.value,
+		poolUrl: poolUrl.value,
+		walletAddress: walletAddress.value,
+		workerName: workerName.value,
+		coinSymbol: coinSymbol.value
+	}
+}
+
+function formKey(form: ReturnType<typeof readForm>): string {
+	return JSON.stringify([
+		form.consentAccepted,
+		form.arguments,
+		form.poolUrl,
+		form.walletAddress,
+		form.workerName,
+		form.coinSymbol
+	])
+}
+
 watch(
 	() => props.state?.config,
 	(config) => {
 		if (!config) return
+		const incomingKey = formKey(config)
+		if (incomingKey === appliedKey) return
+		const currentKey = formKey(readForm())
+		if (appliedKey && currentKey !== appliedKey && currentKey !== pendingSaveKey) return
 		consentAccepted.value = config.consentAccepted
 		minerArguments.value = config.arguments
 		poolUrl.value = config.poolUrl
 		walletAddress.value = config.walletAddress
 		workerName.value = config.workerName
 		coinSymbol.value = config.coinSymbol
+		appliedKey = incomingKey
+		pendingSaveKey = ''
 	},
 	{ immediate: true }
 )
@@ -152,20 +183,12 @@ const statusLabel = computed(() => {
 })
 
 function save(): void {
-	emit('save', {
-		consentAccepted: consentAccepted.value,
-		arguments: minerArguments.value,
-		poolUrl: poolUrl.value,
-		walletAddress: walletAddress.value,
-		workerName: workerName.value,
-		coinSymbol: coinSymbol.value
-	})
+	const form = readForm()
+	pendingSaveKey = formKey(form)
+	emit('save', form)
 }
 
-function buildMinerArguments(
-	example: (typeof walletExamples)[number],
-	worker: string
-): string {
+function buildMinerArguments(example: (typeof walletExamples)[number], worker: string): string {
 	const user = `${example.address}.${worker}`
 	if (example.minerKind === 'lolminer') {
 		return `--algo EQU144_5 --pool ${example.poolUrl} --user ${user} --pass x`
@@ -184,7 +207,6 @@ function applyWalletExample(example: (typeof walletExamples)[number]): void {
 	poolUrl.value = example.poolUrl
 	minerArguments.value = buildMinerArguments(example, worker)
 }
-
 </script>
 
 <template>
@@ -211,13 +233,6 @@ function applyWalletExample(example: (typeof walletExamples)[number]): void {
 			<div class="mining-stat">
 				<span>{{ t('mining.acceptedShares') }}</span>
 				<strong>{{ state?.acceptedSharesTotal ?? 0 }}</strong>
-			</div>
-			<div class="mining-stat">
-				<span>{{ t('mining.receivedTotal') }}</span>
-				<strong
-					>{{ state?.receivedTotal ?? 0 }}
-					{{ state?.config.coinSymbol ?? 'COIN' }}</strong
-				>
 			</div>
 		</div>
 

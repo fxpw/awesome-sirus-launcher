@@ -1,6 +1,6 @@
-import { copyFile, mkdir, rename, rm, stat } from 'node:fs/promises'
+import { copyFile, mkdir, open, rename, rm, stat } from 'node:fs/promises'
 import type { Stats } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
 import type {
 	FpsPatchDeleteResult,
 	FpsPatchFreshness,
@@ -10,8 +10,11 @@ import type {
 import {
 	createFpsPatchInstallPlan,
 	fpsPatchMetadataUrls,
-	fpsPatchSourceUrls
-} from '../../core/fpsPatch/fpsPatch'
+	fpsPatchSourceUrls,
+	type FpsPatchInstallPlan
+} from '@core/fpsPatch/fpsPatch'
+import { md5File } from '@main/files/md5File'
+import { moveFile } from '@main/files/moveFile'
 import type { SettingsStore } from '@main/settings/fileSettingsStore'
 
 export type DownloadFile = (url: string, targetPath: string) => Promise<void>
@@ -41,6 +44,8 @@ const defaultFileSystem: FpsPatchFileSystem = {
 	rm,
 	stat
 }
+
+const mpqSignature = Buffer.from('MPQ\x1a', 'latin1')
 
 const defaultFetchFpsPatchMetadata: FetchFpsPatchMetadata = async (url) => {
 	if (url.endsWith('/patchfx')) {
@@ -99,7 +104,7 @@ export function createFpsPatchService(
 	downloadFile: DownloadFile,
 	fileSystem: FpsPatchFileSystem = defaultFileSystem,
 	fetchMetadata: FetchFpsPatchMetadata = defaultFetchFpsPatchMetadata,
-	hashFile?: HashFile
+	hashFile: HashFile = md5File
 ): FpsPatchService {
 	const getTempDir = () => join(getUserDataPath(), 'downloads', 'fps-patch')
 
@@ -109,33 +114,42 @@ export function createFpsPatchService(
 			if (!settings.wowPath) return createMissingStatus('')
 
 			const plan = createFpsPatchInstallPlan(settings.wowPath, getTempDir())
-			return readFpsPatchStatus(plan.targetPath, fileSystem, fetchMetadata, hashFile)
+			return readFpsPatchStatus(
+				plan.targetPath,
+				fileSystem,
+				await readRemoteMetadata(fetchMetadata),
+				hashFile
+			)
 		},
 		async install() {
 			const settings = await settingsStore.get()
 			if (!settings.wowPath) throw new Error('Сначала выберите папку WoW')
 
-			const plan = createFpsPatchInstallPlan(settings.wowPath, getTempDir())
+			const remote = await readRemoteMetadata(fetchMetadata)
+			const plan = createFpsPatchInstallPlan(
+				settings.wowPath,
+				getTempDir(),
+				remote.metadata?.hash
+			)
 			await fileSystem.mkdir(dirname(plan.targetPath), { recursive: true })
 			await fileSystem.mkdir(dirname(plan.tempPath), { recursive: true })
 			await fileSystem.rm(plan.tempPath, { force: true })
 
 			const sourceUrl = await downloadWithFallback(
-				plan.sourceUrls,
-				plan.tempPath,
+				plan,
+				remote.metadata,
 				downloadFile,
-				fileSystem
+				fileSystem,
+				hashFile
 			)
-			await fileSystem.rm(plan.targetPath, { force: true })
-			await moveDownloadedFile(plan.tempPath, plan.targetPath, fileSystem)
+			try {
+				await moveFile(plan.tempPath, plan.targetPath, fileSystem)
+			} finally {
+				await fileSystem.rm(plan.tempPath, { force: true })
+			}
 
 			return {
-				status: await readFpsPatchStatus(
-					plan.targetPath,
-					fileSystem,
-					fetchMetadata,
-					hashFile
-				),
+				status: await readFpsPatchStatus(plan.targetPath, fileSystem, remote, hashFile),
 				sourceUrl
 			}
 		},
@@ -150,7 +164,7 @@ export function createFpsPatchService(
 				status: await readFpsPatchStatus(
 					plan.targetPath,
 					fileSystem,
-					fetchMetadata,
+					await readRemoteMetadata(fetchMetadata),
 					hashFile
 				),
 				deleted: true
@@ -159,42 +173,21 @@ export function createFpsPatchService(
 	}
 }
 
-async function moveDownloadedFile(
-	sourcePath: string,
-	targetPath: string,
-	fileSystem: FpsPatchFileSystem
-): Promise<void> {
-	try {
-		await fileSystem.rename(sourcePath, targetPath)
-	} catch (error) {
-		if (!isCrossDeviceRenameError(error)) throw error
-
-		await fileSystem.copyFile(sourcePath, targetPath)
-		await fileSystem.rm(sourcePath, { force: true })
-	}
-}
-
-function isCrossDeviceRenameError(error: unknown): boolean {
-	return Boolean(
-		error &&
-		typeof error === 'object' &&
-		'code' in error &&
-		(error as NodeJS.ErrnoException).code === 'EXDEV'
-	)
+interface RemoteMetadataResult {
+	metadata?: FpsPatchRemoteMetadata
+	error?: string
 }
 
 async function readFpsPatchStatus(
 	patchPath: string,
 	fileSystem: FpsPatchFileSystem,
-	fetchMetadata: FetchFpsPatchMetadata,
-	hashFile?: HashFile
+	remote: RemoteMetadataResult,
+	hashFile: HashFile
 ): Promise<FpsPatchStatus> {
-	const remote = await readRemoteMetadata(fetchMetadata)
 	try {
 		const patchStat = await fileSystem.stat(patchPath)
 		const installed = patchStat.isFile()
-		const localHash =
-			installed && remote.metadata?.hash && hashFile ? await hashFile(patchPath) : undefined
+		const localHash = installed && remote.metadata?.hash ? await hashFile(patchPath) : undefined
 		const freshness = installed
 			? compareFpsPatchFreshness(patchStat, remote.metadata, localHash)
 			: 'missing'
@@ -221,7 +214,7 @@ async function readFpsPatchStatus(
 
 async function readRemoteMetadata(
 	fetchMetadata: FetchFpsPatchMetadata
-): Promise<{ metadata?: FpsPatchRemoteMetadata; error?: string }> {
+): Promise<RemoteMetadataResult> {
 	const errors: string[] = []
 
 	for (const sourceUrl of fpsPatchMetadataUrls) {
@@ -277,22 +270,62 @@ function createMissingStatus(
 }
 
 async function downloadWithFallback(
-	sourceUrls: string[],
-	tempPath: string,
+	plan: FpsPatchInstallPlan,
+	remote: FpsPatchRemoteMetadata | undefined,
 	downloadFile: DownloadFile,
-	fileSystem: FpsPatchFileSystem
+	fileSystem: FpsPatchFileSystem,
+	hashFile: HashFile
 ): Promise<string> {
 	const errors: string[] = []
 
-	for (const sourceUrl of sourceUrls) {
+	for (const sourceUrl of plan.sourceUrls) {
 		try {
-			await downloadFile(sourceUrl, tempPath)
+			await downloadFile(sourceUrl, plan.tempPath)
+			await verifyDownloadedPatch(plan, remote, fileSystem, hashFile)
 			return sourceUrl
 		} catch (error) {
-			await fileSystem.rm(tempPath, { force: true })
-			errors.push(error instanceof Error ? error.message : String(error))
+			await fileSystem.rm(plan.tempPath, { force: true })
+			errors.push(
+				`${new URL(sourceUrl).host}: ${error instanceof Error ? error.message : String(error)}`
+			)
 		}
 	}
 
-	throw new Error(`Не удалось скачать FPS-патч: ${errors.join('; ')}`)
+	throw new Error(
+		`Не удалось скачать FPS-патч, установленный патч не изменён. ${errors.join('; ')}`
+	)
+}
+
+async function verifyDownloadedPatch(
+	plan: FpsPatchInstallPlan,
+	remote: FpsPatchRemoteMetadata | undefined,
+	fileSystem: FpsPatchFileSystem,
+	hashFile: HashFile
+): Promise<void> {
+	const { size } = await fileSystem.stat(plan.tempPath)
+	if (size === 0) throw new Error('скачан пустой файл')
+	if (
+		extname(plan.targetPath).toLowerCase() === '.mpq' &&
+		!(await hasMpqSignature(plan.tempPath))
+	) {
+		throw new Error('скачанный файл не MPQ-архив')
+	}
+	if (remote?.hash) {
+		if ((await hashFile(plan.tempPath)).toLowerCase() !== remote.hash.toLowerCase()) {
+			throw new Error('MD5 скачанного файла не совпадает с manifest')
+		}
+	} else if (typeof remote?.size === 'number' && size !== remote.size) {
+		throw new Error(`размер скачанного файла ${size} Б, ожидалось ${remote.size} Б`)
+	}
+}
+
+async function hasMpqSignature(filePath: string): Promise<boolean> {
+	const head = Buffer.alloc(mpqSignature.length)
+	const file = await open(filePath, 'r')
+	try {
+		await file.read(head, 0, head.length, 0)
+	} finally {
+		await file.close()
+	}
+	return head.equals(mpqSignature)
 }

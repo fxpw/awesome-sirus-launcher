@@ -1,4 +1,4 @@
-import { copyFile, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -7,7 +7,8 @@ import {
 	createFpsPatchInstallPlan,
 	fpsPatchFileName,
 	fpsPatchMetadataUrls,
-	fpsPatchSourceUrls
+	fpsPatchSourceUrls,
+	orderFpsPatchSourceUrls
 } from '../src/core/fpsPatch/fpsPatch'
 import {
 	createFpsPatchService,
@@ -31,6 +32,24 @@ describe('fps patch core', () => {
 		expect(plan.tempPath).toMatch(/patch-ruRU-\[\.mpq\.tmp$/)
 		expect(plan.sourceUrls).toEqual([...fpsPatchSourceUrls])
 	})
+
+	it('tries the https source first without a manifest hash and the http mirror first with it', () => {
+		const [httpsUrl, httpUrl] = fpsPatchSourceUrls
+		expect(httpsUrl).toMatch(/^https:/)
+		expect(httpUrl).toMatch(/^http:/)
+
+		expect(orderFpsPatchSourceUrls()).toEqual([httpsUrl, httpUrl])
+		expect(orderFpsPatchSourceUrls('')).toEqual([httpsUrl, httpUrl])
+		expect(orderFpsPatchSourceUrls('f4fa11955f13c49d8e7a515813b9f156')).toEqual([
+			httpUrl,
+			httpsUrl
+		])
+		expect(
+			createFpsPatchInstallPlan('F:/wow', 'C:/temp', 'f4fa11955f13c49d8e7a515813b9f156')
+				.sourceUrls
+		).toEqual([httpUrl, httpsUrl])
+		expect(fpsPatchSourceUrls).toEqual([httpsUrl, httpUrl])
+	})
 })
 
 describe('fps patch service', () => {
@@ -44,7 +63,7 @@ describe('fps patch service', () => {
 		const downloadFile: DownloadFile = async (url, targetPath) => {
 			triedUrls.push(url)
 			if (triedUrls.length === 1) throw new Error('primary failed')
-			await writeFile(targetPath, `downloaded from ${url}`)
+			await writeFile(targetPath, mpqContent(`downloaded from ${url}`))
 		}
 
 		const service = createFpsPatchService(
@@ -52,7 +71,9 @@ describe('fps patch service', () => {
 			createMemorySettingsStore({ wowPath }),
 			downloadFile,
 			undefined,
-			createMetadataFetcher({ size: `downloaded from ${fpsPatchSourceUrls[1]}`.length })
+			createMetadataFetcher({
+				size: mpqContent(`downloaded from ${fpsPatchSourceUrls[1]}`).length
+			})
 		)
 
 		const result = await service.install()
@@ -60,7 +81,7 @@ describe('fps patch service', () => {
 
 		expect(triedUrls).toEqual([...fpsPatchSourceUrls])
 		await expect(readFile(targetPath, 'utf8')).resolves.toBe(
-			`downloaded from ${fpsPatchSourceUrls[1]}`
+			mpqContent(`downloaded from ${fpsPatchSourceUrls[1]}`)
 		)
 		expect(result.sourceUrl).toBe(fpsPatchSourceUrls[1])
 		expect(result.status.installed).toBe(true)
@@ -95,7 +116,7 @@ describe('fps patch service', () => {
 			stat
 		}
 		const downloadFile: DownloadFile = async (_url, targetPath) => {
-			await writeFile(targetPath, 'patch bytes')
+			await writeFile(targetPath, mpqContent('patch bytes'))
 		}
 
 		const service = createFpsPatchService(
@@ -103,7 +124,7 @@ describe('fps patch service', () => {
 			createMemorySettingsStore({ wowPath }),
 			downloadFile,
 			fileSystem,
-			createMetadataFetcher({ size: 'patch bytes'.length })
+			createMetadataFetcher({ size: mpqContent('patch bytes').length })
 		)
 
 		const result = await service.install()
@@ -113,7 +134,124 @@ describe('fps patch service', () => {
 		expect(removedPaths.some((path) => path.endsWith(`${fpsPatchFileName}.tmp`))).toBe(true)
 		expect(result.status.installed).toBe(true)
 		expect(result.status.freshness).toBe('latest')
-		await expect(readFile(targetPath, 'utf8')).resolves.toBe('patch bytes')
+		await expect(readFile(targetPath, 'utf8')).resolves.toBe(mpqContent('patch bytes'))
+	})
+
+	it('starts with the http mirror when the manifest hash is known and falls back to https', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-fps-patch-mirror-first-'))
+		const wowPath = join(root, 'wow')
+		const userDataPath = join(root, 'user-data')
+		await mkdir(join(wowPath, 'Data', 'ruRU'), { recursive: true })
+
+		const triedUrls: string[] = []
+		const service = createFpsPatchService(
+			() => userDataPath,
+			createMemorySettingsStore({ wowPath }),
+			async (url, tempPath) => {
+				triedUrls.push(url)
+				if (triedUrls.length === 1) throw new Error('mirror failed')
+				await writeFile(tempPath, mpqContent('fresh patch'))
+			},
+			undefined,
+			createMetadataFetcher({
+				build: 383,
+				hash: createHash('md5').update(mpqContent('fresh patch')).digest('hex')
+			}),
+			hashTestFile
+		)
+
+		const result = await service.install()
+
+		expect(triedUrls).toEqual([fpsPatchSourceUrls[1], fpsPatchSourceUrls[0]])
+		expect(result.sourceUrl).toBe(fpsPatchSourceUrls[0])
+		expect(result.status.freshness).toBe('latest')
+		await expect(
+			readFile(join(wowPath, 'Data', 'ruRU', fpsPatchFileName), 'utf8')
+		).resolves.toBe(mpqContent('fresh patch'))
+	})
+
+	it('keeps the installed patch when every download fails the manifest hash', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-fps-patch-bad-hash-'))
+		const wowPath = join(root, 'wow')
+		const userDataPath = join(root, 'user-data')
+		const targetPath = join(wowPath, 'Data', 'ruRU', fpsPatchFileName)
+		await mkdir(join(wowPath, 'Data', 'ruRU'), { recursive: true })
+		await writeFile(targetPath, mpqContent('installed patch'))
+
+		const service = createFpsPatchService(
+			() => userDataPath,
+			createMemorySettingsStore({ wowPath }),
+			async (_url, tempPath) => writeFile(tempPath, mpqContent('damaged patch')),
+			undefined,
+			createMetadataFetcher({
+				build: 357,
+				hash: createHash('md5').update(mpqContent('fresh patch')).digest('hex')
+			}),
+			hashTestFile
+		)
+
+		await expect(service.install()).rejects.toThrow('установленный патч не изменён')
+		await expect(readFile(targetPath, 'utf8')).resolves.toBe(mpqContent('installed patch'))
+		await expect(readdir(join(userDataPath, 'downloads', 'fps-patch'))).resolves.toEqual([])
+	})
+
+	it('falls back to the next source when the first one serves a page instead of an MPQ', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-fps-patch-not-mpq-'))
+		const wowPath = join(root, 'wow')
+		const userDataPath = join(root, 'user-data')
+		const targetPath = join(wowPath, 'Data', 'ruRU', fpsPatchFileName)
+		await mkdir(join(wowPath, 'Data', 'ruRU'), { recursive: true })
+
+		const service = createFpsPatchService(
+			() => userDataPath,
+			createMemorySettingsStore({ wowPath }),
+			async (url, tempPath) =>
+				writeFile(
+					tempPath,
+					url === fpsPatchSourceUrls[0] ? '<html>blocked</html>' : mpqContent('patch')
+				),
+			undefined,
+			async () => {
+				throw new Error('metadata unavailable')
+			}
+		)
+
+		const result = await service.install()
+
+		expect(result.sourceUrl).toBe(fpsPatchSourceUrls[1])
+		await expect(readFile(targetPath, 'utf8')).resolves.toBe(mpqContent('patch'))
+	})
+
+	it('reports a locked patch file instead of a raw error code', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-fps-patch-locked-'))
+		const wowPath = join(root, 'wow')
+		const userDataPath = join(root, 'user-data')
+		const targetPath = join(wowPath, 'Data', 'ruRU', fpsPatchFileName)
+		await mkdir(join(wowPath, 'Data', 'ruRU'), { recursive: true })
+		await writeFile(targetPath, mpqContent('installed patch'))
+		const fileSystem: FpsPatchFileSystem = {
+			copyFile,
+			mkdir,
+			rename: async () => {
+				const error = new Error('operation not permitted') as NodeJS.ErrnoException
+				error.code = 'EPERM'
+				throw error
+			},
+			rm,
+			stat
+		}
+
+		const service = createFpsPatchService(
+			() => userDataPath,
+			createMemorySettingsStore({ wowPath }),
+			async (_url, tempPath) => writeFile(tempPath, mpqContent('fresh patch')),
+			fileSystem,
+			createMetadataFetcher({ size: mpqContent('fresh patch').length })
+		)
+
+		await expect(service.install()).rejects.toThrow('файл занят')
+		await expect(readFile(targetPath, 'utf8')).resolves.toBe(mpqContent('installed patch'))
+		await expect(readdir(join(userDataPath, 'downloads', 'fps-patch'))).resolves.toEqual([])
 	})
 
 	it('marks installed fps patch as outdated when remote size differs', async () => {
@@ -257,6 +395,10 @@ function createMetadataFetcher(metadata: {
 		sourceUrl,
 		...metadata
 	})
+}
+
+function mpqContent(text: string): string {
+	return `MPQ\x1a${text}`
 }
 
 async function hashTestFile(filePath: string): Promise<string> {

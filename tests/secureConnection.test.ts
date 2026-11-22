@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:net'
-import { describe, expect, it, afterEach } from 'vitest'
+import { describe, expect, it, afterEach, vi } from 'vitest'
 import {
 	crc32c,
 	createMcrRequestFrame,
@@ -57,8 +57,21 @@ describe('verifySecureConnection', () => {
 			}
 		}
 
-		expect(await verifySecureConnection('1.0.15', deps)).toEqual({ verified: true })
+		expect(await verifySecureConnection(deps)).toEqual({ verified: true })
 		expect(connections).toBe(0)
+	})
+
+	it('clears the timeout timer once verification finishes', async () => {
+		vi.useFakeTimers()
+		try {
+			await verifySecureConnection({
+				fetchConfig: async () => null,
+				establishConnection: async () => undefined
+			})
+			expect(vi.getTimerCount()).toBe(0)
+		} finally {
+			vi.useRealTimers()
+		}
 	})
 
 	it('connects to all configured hosts', async () => {
@@ -71,7 +84,7 @@ describe('verifySecureConnection', () => {
 		}
 		const connected: string[] = []
 
-		const result = await verifySecureConnection('1.0.15', {
+		const result = await verifySecureConnection({
 			fetchConfig: async () => config,
 			establishConnection: async (host) => {
 				connected.push(`${host.host}:${host.port}`)
@@ -87,7 +100,7 @@ describe('verifySecureConnection', () => {
 	})
 
 	it('returns error when host handshake fails', async () => {
-		const result = await verifySecureConnection('1.0.15', {
+		const result = await verifySecureConnection({
 			fetchConfig: async () => ({
 				enabled: true,
 				hosts: [{ address: '127.0.0.1', port: 1, phrase: 'aa' }]
@@ -128,10 +141,7 @@ describe('secure connection service', () => {
 					MCR_REQUEST
 				)
 
-				const challenge = Buffer.concat([
-					Buffer.from(MCR_CHALLENGE),
-					Buffer.from(cookie)
-				])
+				const challenge = Buffer.concat([Buffer.from(MCR_CHALLENGE), Buffer.from(cookie)])
 				socket.write(challenge)
 
 				socket.once('data', (response) => {

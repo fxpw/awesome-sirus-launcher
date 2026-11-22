@@ -1,8 +1,8 @@
-import { dirname, join } from 'node:path'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { safeStorage } from 'electron'
-import type { SecretStore } from './memorySecretStore'
+import { isRecord } from '@core/isRecord'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
+import type { SecretStore } from '@main/secrets/memorySecretStore'
 
 type SecretFile = Record<string, string>
 
@@ -18,39 +18,30 @@ export function createElectronSecretStore(getUserDataPath: () => string): Secret
 			const data = await readSecrets(getFilePath())
 			const value = data[key]
 			if (typeof value !== 'string') return undefined
-			if (!safeStorage.isEncryptionAvailable()) {
+			if (!(await safeStorage.isAsyncEncryptionAvailable())) {
 				throw new Error('Защищенное хранилище недоступно в этой системе')
 			}
 
-			return safeStorage.decryptString(Buffer.from(value, 'base64'))
+			return (await safeStorage.decryptStringAsync(Buffer.from(value, 'base64'))).result
 		},
 		async set(key, value) {
-			if (!safeStorage.isEncryptionAvailable()) {
+			if (!(await safeStorage.isAsyncEncryptionAvailable())) {
 				throw new Error('Защищенное хранилище недоступно в этой системе')
 			}
 
 			const data = await readSecrets(getFilePath())
-			data[key] = safeStorage.encryptString(value).toString('base64')
-			await writeSecrets(getFilePath(), data)
+			data[key] = (await safeStorage.encryptStringAsync(value)).toString('base64')
+			await writeJsonFile(getFilePath(), data)
 		},
 		async delete(key) {
 			const data = await readSecrets(getFilePath())
 			delete data[key]
-			await writeSecrets(getFilePath(), data)
+			await writeJsonFile(getFilePath(), data)
 		}
 	}
 }
 
 async function readSecrets(filePath: string): Promise<SecretFile> {
-	if (!existsSync(filePath)) return {}
-
-	const raw = await readFile(filePath, 'utf8')
-	return JSON.parse(raw) as SecretFile
-}
-
-async function writeSecrets(filePath: string, data: SecretFile): Promise<void> {
-	const tempPath = `${filePath}.tmp`
-	await mkdir(dirname(filePath), { recursive: true })
-	await writeFile(tempPath, JSON.stringify(data, null, 2), 'utf8')
-	await rename(tempPath, filePath)
+	const data = await readJsonFile(filePath)
+	return isRecord(data) ? (data as SecretFile) : {}
 }

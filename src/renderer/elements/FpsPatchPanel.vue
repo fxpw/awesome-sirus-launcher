@@ -5,6 +5,7 @@ import BaseButton from '@renderer/components/BaseButton.vue'
 import BasePanel from '@renderer/components/BasePanel.vue'
 import StatusBadge from '@renderer/components/StatusBadge.vue'
 import { useLocale } from '@renderer/composables/useLocale'
+import { getFpsPatchState } from '@renderer/shared/fpsPatchStatus'
 
 const props = defineProps<{
 	status: FpsPatchStatus | null
@@ -17,20 +18,6 @@ defineEmits<{
 }>()
 
 const { t } = useLocale()
-
-function statusTone(): 'neutral' | 'ok' | 'warning' {
-	if (!props.status?.installed) return 'warning'
-	if (props.status.freshness === 'latest') return 'ok'
-	if (props.status.freshness === 'outdated') return 'warning'
-	return 'neutral'
-}
-
-function statusLabel(): string {
-	if (!props.status?.installed) return t('fpsPatch.missing')
-	if (props.status.freshness === 'latest') return t('fpsPatch.latest')
-	if (props.status.freshness === 'outdated') return t('fpsPatch.outdated')
-	return t('fpsPatch.unknown')
-}
 
 function formatSize(size?: number): string {
 	if (!size) return ''
@@ -62,8 +49,8 @@ function formatHash(hash?: string): string {
 								: t('fpsPatch.install')
 					}}
 				</BaseButton>
-				<StatusBadge :tone="statusTone()">
-					{{ statusLabel() }}
+				<StatusBadge :tone="getFpsPatchState(status).tone">
+					{{ t(getFpsPatchState(status).labelKey) }}
 				</StatusBadge>
 				<BaseButton
 					v-if="status?.installed"
@@ -101,9 +88,7 @@ function formatHash(hash?: string): string {
 					})
 				}}
 			</p>
-			<p v-if="status?.checkError" class="muted-text">
-				{{ t('fpsPatch.checkError') }}
-			</p>
+			<p v-if="status?.checkError">{{ t('fpsPatch.checkError') }}</p>
 		</div>
 	</BasePanel>
 </template>

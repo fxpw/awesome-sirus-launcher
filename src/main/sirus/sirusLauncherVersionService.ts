@@ -1,15 +1,14 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { isRecord } from '@core/isRecord'
 import {
-	DEFAULT_SIRUS_LAUNCHER_VERSION_CACHE_TTL_MS,
 	isSirusLauncherVersionCacheFresh,
 	resolveSirusLauncherVersionFromRelease,
 	SIRUS_OFFICIAL_LAUNCHER_RELEASES_LATEST_URL,
 	type SirusOfficialLauncherRelease
 } from '@core/sirus/sirusLauncherVersion'
+import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 
-export interface SirusLauncherVersionCacheRecord {
+interface SirusLauncherVersionCacheRecord {
 	version: string
 	fetchedAt: string
 }
@@ -22,11 +21,10 @@ export interface SirusLauncherVersionService {
 export function createSirusLauncherVersionService(
 	getUserDataPath: () => string,
 	fallbackVersion: string,
-	fetchLatestRelease: (
-		url: string
-	) => Promise<SirusOfficialLauncherRelease> = fetchOfficialLauncherRelease
+	fetchLatestRelease: (url: string) => Promise<SirusOfficialLauncherRelease>
 ): SirusLauncherVersionService {
 	let memoryCache: SirusLauncherVersionCacheRecord | null = null
+	let pendingFetch: Promise<string> | null = null
 	const getCacheFilePath = () => join(getUserDataPath(), 'sirus-launcher-version.json')
 
 	return {
@@ -41,7 +39,10 @@ export function createSirusLauncherVersionService(
 		}
 
 		try {
-			return await fetchAndPersist()
+			pendingFetch ??= fetchAndPersist().finally(() => {
+				pendingFetch = null
+			})
+			return await pendingFetch
 		} catch (error) {
 			const stale = await readAnyCache()
 			if (stale) {
@@ -79,16 +80,15 @@ export function createSirusLauncherVersionService(
 	}
 
 	async function readDiskCache(): Promise<SirusLauncherVersionCacheRecord | null> {
-		const filePath = getCacheFilePath()
-		if (!existsSync(filePath)) return null
-
-		try {
-			const raw = JSON.parse(await readFile(filePath, 'utf8')) as Partial<SirusLauncherVersionCacheRecord>
-			if (typeof raw.version !== 'string' || typeof raw.fetchedAt !== 'string') return null
-			return { version: raw.version, fetchedAt: raw.fetchedAt }
-		} catch {
+		const raw = await readJsonFile(getCacheFilePath()).catch(() => undefined)
+		if (
+			!isRecord(raw) ||
+			typeof raw.version !== 'string' ||
+			typeof raw.fetchedAt !== 'string'
+		) {
 			return null
 		}
+		return { version: raw.version, fetchedAt: raw.fetchedAt }
 	}
 
 	async function fetchAndPersist(): Promise<string> {
@@ -103,40 +103,7 @@ export function createSirusLauncherVersionService(
 			fetchedAt: new Date().toISOString()
 		}
 		memoryCache = record
-		await writeDiskCache(record)
+		await writeJsonFile(getCacheFilePath(), record)
 		return version
-	}
-
-	async function writeDiskCache(record: SirusLauncherVersionCacheRecord): Promise<void> {
-		const filePath = getCacheFilePath()
-		await mkdir(dirname(filePath), { recursive: true })
-		const tempPath = `${filePath}.tmp`
-		await writeFile(tempPath, JSON.stringify(record, null, 2), 'utf8')
-		await rename(tempPath, filePath)
-	}
-}
-
-async function fetchOfficialLauncherRelease(
-	url: string
-): Promise<SirusOfficialLauncherRelease> {
-	const controller = new AbortController()
-	const timeout = setTimeout(() => controller.abort(), 10_000)
-
-	try {
-		const response = await fetch(url, {
-			headers: { accept: 'application/vnd.github+json' },
-			signal: controller.signal
-		})
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status} for ${url}`)
-		}
-		return (await response.json()) as SirusOfficialLauncherRelease
-	} catch (error) {
-		if (error instanceof Error && error.name === 'AbortError') {
-			throw new Error('GitHub Releases: таймаут')
-		}
-		throw error
-	} finally {
-		clearTimeout(timeout)
 	}
 }

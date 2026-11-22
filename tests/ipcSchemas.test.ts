@@ -176,6 +176,9 @@ describe('ipc schemas', () => {
 		expect(miningConfigInputSchema.parse({ consentAccepted: true })).toEqual({
 			consentAccepted: true
 		})
+		expect(() =>
+			miningConfigInputSchema.parse({ consentAccepted: true, minerPath: 'C:/evil.exe' })
+		).toThrow()
 		expect(
 			miningStateSchema.parse({
 				status: 'running',
@@ -185,8 +188,6 @@ describe('ipc schemas', () => {
 				hashrate: '42 MH/s',
 				acceptedSharesTotal: 2,
 				acceptedSharesSession: 1,
-				receivedTotal: 0,
-				receivedSession: 0,
 				lastOutput: 'accepted'
 			})
 		).toMatchObject({ status: 'running', config })
