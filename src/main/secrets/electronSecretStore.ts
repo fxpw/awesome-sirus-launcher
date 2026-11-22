@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import { safeStorage } from 'electron'
+import { isRecord } from '@core/isRecord'
 import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 import type { SecretStore } from '@main/secrets/memorySecretStore'
 
@@ -41,5 +42,6 @@ export function createElectronSecretStore(getUserDataPath: () => string): Secret
 }
 
 async function readSecrets(filePath: string): Promise<SecretFile> {
-	return ((await readJsonFile(filePath)) ?? {}) as SecretFile
+	const data = await readJsonFile(filePath)
+	return isRecord(data) ? (data as SecretFile) : {}
 }

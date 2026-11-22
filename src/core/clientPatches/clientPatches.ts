@@ -1,11 +1,5 @@
 import { join, normalize, resolve, isAbsolute, relative } from 'node:path'
 
-export const clientPatchManifestUrls = [
-	'https://s-patches.pro/api/client/patches',
-	'https://s-patches.ru/api/client/patches',
-	'https://sirus.world/api/client/patches'
-] as const
-
 export interface ClientPatchManifestFile {
 	fileName: string
 	relativePath: string

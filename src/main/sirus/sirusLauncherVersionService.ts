@@ -24,6 +24,7 @@ export function createSirusLauncherVersionService(
 	fetchLatestRelease: (url: string) => Promise<SirusOfficialLauncherRelease>
 ): SirusLauncherVersionService {
 	let memoryCache: SirusLauncherVersionCacheRecord | null = null
+	let pendingFetch: Promise<string> | null = null
 	const getCacheFilePath = () => join(getUserDataPath(), 'sirus-launcher-version.json')
 
 	return {
@@ -38,7 +39,10 @@ export function createSirusLauncherVersionService(
 		}
 
 		try {
-			return await fetchAndPersist()
+			pendingFetch ??= fetchAndPersist().finally(() => {
+				pendingFetch = null
+			})
+			return await pendingFetch
 		} catch (error) {
 			const stale = await readAnyCache()
 			if (stale) {

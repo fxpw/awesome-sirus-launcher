@@ -10,6 +10,7 @@ import BaseButton from '@renderer/components/BaseButton.vue'
 import BasePanel from '@renderer/components/BasePanel.vue'
 import StatusBadge from '@renderer/components/StatusBadge.vue'
 import { useLocale } from '@renderer/composables/useLocale'
+import { getFpsPatchState } from '@renderer/shared/fpsPatchStatus'
 import { Archive, Download, FolderOpen, Play, Puzzle, SearchCheck, Trash2, X } from '@lucide/vue'
 
 type StatusTone = 'neutral' | 'ok' | 'warning' | 'error'
@@ -86,20 +87,6 @@ function addonsLabel(): string {
 	}
 
 	return t('dashboard.addons.ok')
-}
-
-function fpsPatchTone(): StatusTone {
-	if (!props.fpsPatchStatus?.installed) return 'warning'
-	if (props.fpsPatchStatus.freshness === 'latest') return 'ok'
-	if (props.fpsPatchStatus.freshness === 'outdated') return 'warning'
-	return 'neutral'
-}
-
-function fpsPatchLabel(): string {
-	if (!props.fpsPatchStatus?.installed) return t('fpsPatch.missing')
-	if (props.fpsPatchStatus.freshness === 'latest') return t('fpsPatch.latest')
-	if (props.fpsPatchStatus.freshness === 'outdated') return t('fpsPatch.outdated')
-	return t('fpsPatch.unknown')
 }
 
 function formatBackupDate(backup: WtfBackupSummary | null): string {
@@ -220,8 +207,8 @@ function appUpdateLabel(): string {
 
 			<div class="info-tile">
 				<span class="tile-label">{{ t('dashboard.tile.fpsPatch') }}</span>
-				<strong>{{ fpsPatchLabel() }}</strong>
-				<StatusBadge :tone="fpsPatchTone()">
+				<strong>{{ t(getFpsPatchState(fpsPatchStatus).labelKey) }}</strong>
+				<StatusBadge :tone="getFpsPatchState(fpsPatchStatus).tone">
 					{{
 						fpsPatchStatus?.freshness === 'latest'
 							? t('dashboard.status.installed')

@@ -9,13 +9,13 @@ export const appInfoSchema = z.object({
 	version: z.string()
 })
 
-export const releaseAssetSchema = z.object({
+const releaseAssetSchema = z.object({
 	name: z.string(),
 	downloadUrl: z.string(),
 	size: z.number().optional()
 })
 
-export const appReleaseSchema = z.object({
+const appReleaseSchema = z.object({
 	version: z.string(),
 	url: z.string(),
 	notes: z.string().optional(),
@@ -123,7 +123,7 @@ export const accountConfigPreviewSchema = z.object({
 	touchedKeys: z.array(z.string())
 })
 
-export const accountSummarySchema = z.object({
+const accountSummarySchema = z.object({
 	id: z.string(),
 	login: z.string()
 })
@@ -152,7 +152,7 @@ export const deleteAccountInputSchema = z
 	})
 	.strict()
 
-export const wtfBackupSummarySchema = z.object({
+const wtfBackupSummarySchema = z.object({
 	id: z.string(),
 	fileName: z.string(),
 	archivePath: z.string(),
@@ -210,9 +210,9 @@ export const gameLaunchResultSchema = z.object({
 	executablePath: z.string()
 })
 
-export const clientPatchFileStatusSchema = z.enum(['ok', 'missing', 'outdated'])
+const clientPatchFileStatusSchema = z.enum(['ok', 'missing', 'outdated'])
 
-export const clientPatchCheckFileSchema = z.object({
+const clientPatchCheckFileSchema = z.object({
 	fileName: z.string(),
 	relativePath: z.string(),
 	targetPath: z.string(),
@@ -224,7 +224,7 @@ export const clientPatchCheckFileSchema = z.object({
 	status: clientPatchFileStatusSchema
 })
 
-export const clientPatchManifestFileSchema = z.object({
+const clientPatchManifestFileSchema = z.object({
 	fileName: z.string(),
 	relativePath: z.string(),
 	targetPath: z.string(),
@@ -279,8 +279,8 @@ export const clientPatchDownloadAllResultSchema = z.object({
 	files: z.array(clientPatchCheckFileSchema)
 })
 
-export const addonCatalogSourceSchema = z.enum(['community', 'sirus', 'custom'])
-export const addonStatusSchema = z.enum([
+const addonCatalogSourceSchema = z.enum(['community', 'sirus', 'custom'])
+const addonStatusSchema = z.enum([
 	'not-installed',
 	'installed',
 	'outdated',
@@ -306,7 +306,7 @@ export const addonCatalogEntrySchema = z.object({
 	category: z.string().optional()
 })
 
-export const addonSummarySchema = addonCatalogEntrySchema.extend({
+const addonSummarySchema = addonCatalogEntrySchema.extend({
 	status: addonStatusSchema,
 	installedVersion: z.string().optional(),
 	remoteVersion: z.string().optional(),
@@ -359,9 +359,9 @@ export const customAddonsTransferResultSchema = z
 	})
 	.optional()
 
-export const miningStatusSchema = z.enum(['not-configured', 'stopped', 'running', 'failed'])
+const miningStatusSchema = z.enum(['not-configured', 'stopped', 'running', 'failed'])
 
-export const miningConfigSchema = z.object({
+const miningConfigSchema = z.object({
 	consentAccepted: z.boolean(),
 	minerPath: z.string(),
 	arguments: z.string(),
@@ -374,7 +374,6 @@ export const miningConfigSchema = z.object({
 export const miningConfigInputSchema = z
 	.object({
 		consentAccepted: z.boolean().optional(),
-		minerPath: z.string().optional(),
 		arguments: z.string().optional(),
 		poolUrl: z.string().optional(),
 		walletAddress: z.string().optional(),
@@ -394,8 +393,6 @@ export const miningStateSchema = z.object({
 	hashrate: z.string(),
 	acceptedSharesTotal: z.number(),
 	acceptedSharesSession: z.number(),
-	receivedTotal: z.number(),
-	receivedSession: z.number(),
 	lastOutput: z.string(),
 	error: z.string().optional()
 })

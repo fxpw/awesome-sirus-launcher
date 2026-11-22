@@ -112,10 +112,10 @@ npm run build
 ## Устройство проекта
 
 ```text
-src/core       чистая доменная логика без Electron
-src/main       файловая система, сеть, архивы, процессы и IPC handlers
+src/core       доменная логика без Electron, сети и запуска процессов
+src/main       файловая система, сеть, архивы, процессы, IPC handlers и Zod-схемы
 src/preload    типизированный безопасный мост в renderer
-src/shared     общие DTO, IPC-каналы и схемы данных
+src/shared     общие DTO, IPC-каналы, ошибки и каталог аддонов
 src/renderer   Vue-интерфейс
 tests          unit, contract и integration tests
 ```
@@ -131,7 +131,7 @@ tests          unit, contract и integration tests
 
 ## Релизы
 
-`VERSION`, `package.json` и `package-lock.json` должны содержать одну версию. При релизном изменении workflow проверяет их согласованность, запускает проверки, собирает Windows Setup/Portable и публикует GitHub Release с заметками из `CHANGELOG.md`.
+`VERSION`, `package.json` и `package-lock.json` должны содержать одну версию. Workflow запускается на каждый pull request и на push в `main`/`master`, который меняет `VERSION`, `package.json`, `package-lock.json` или сам workflow. Он сверяет `VERSION` с `package.json`, запускает проверки и сборку, а на push дополнительно собирает Windows Setup/Portable и публикует GitHub Release с заметками из `CHANGELOG.md`. Публикацию запускает и изменение одних зависимостей — тогда заново публикуется текущая версия.
 
 Обычные изменения не требуют повышения версии: они добавляются в раздел `[Unreleased]` changelog. Подробный процесс закреплён в [changelog skill](.agents/skills/changelog/SKILL.md).
 

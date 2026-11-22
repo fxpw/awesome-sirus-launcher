@@ -12,6 +12,8 @@ import BaseButton from '@renderer/components/BaseButton.vue'
 import BasePanel from '@renderer/components/BasePanel.vue'
 import StatusBadge from '@renderer/components/StatusBadge.vue'
 import { useLocale } from '@renderer/composables/useLocale'
+import { createClientFileKey } from '@renderer/shared/clientPatchFiles'
+import { isFocusLeaving } from '@renderer/shared/focus'
 
 const props = defineProps<{
 	manifest: ClientPatchManifestResult | null
@@ -50,14 +52,14 @@ const sourceOpen = ref(false)
 
 const checkedFilesByKey = computed(() => {
 	const files = new Map<string, ClientPatchCheckFile>()
-	for (const file of props.result?.files ?? []) files.set(createFileKey(file), file)
+	for (const file of props.result?.files ?? []) files.set(createClientFileKey(file), file)
 
 	return files
 })
 
 const tableRows = computed(() =>
 	(props.manifest?.files ?? props.result?.files ?? []).map((file) => {
-		const key = createFileKey(file)
+		const key = createClientFileKey(file)
 		const status = checkedFilesByKey.value.get(key)?.status ?? 'pending'
 		return {
 			key,
@@ -110,10 +112,6 @@ function statusLabelKey(status: ClientCheckResult['files'][number]['status']) {
 	return 'clientCheck.status.ok'
 }
 
-function createFileKey(file: Pick<ClientPatchFileInput, 'fileName' | 'relativePath'>): string {
-	return `${file.relativePath}\u0000${file.fileName}`
-}
-
 function fileSize(size: number): string {
 	const megabytes = size / 1024 / 1024
 	if (megabytes >= 1024) return t('clientCheck.sizeGb', { size: formatSize(megabytes / 1024) })
@@ -136,12 +134,7 @@ function selectSource(sourceUrl: string): void {
 }
 
 function closeSourceMenu(event: FocusEvent): void {
-	const nextTarget = event.relatedTarget
-	if (nextTarget instanceof Node && event.currentTarget instanceof Node) {
-		if (event.currentTarget.contains(nextTarget)) return
-	}
-
-	sourceOpen.value = false
+	if (isFocusLeaving(event)) sourceOpen.value = false
 }
 </script>
 

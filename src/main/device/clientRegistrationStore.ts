@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import type { ClientRegistrationRecord } from '@core/device/clientRegistration'
@@ -43,7 +44,10 @@ function toRecord(raw: unknown): ClientRegistrationRecord | null {
 
 async function readOfficialLauncherRegistration(): Promise<ClientRegistrationRecord | null> {
 	const storePath = join(homedir(), 'AppData', 'Roaming', 'sirus-launcher-v2', 'store.json')
-	const raw = await readJsonFile(storePath).catch(() => undefined)
-
-	return toRecord(isRecord(raw) ? raw.app : undefined)
+	try {
+		const raw: unknown = JSON.parse(await readFile(storePath, 'utf8'))
+		return toRecord(isRecord(raw) ? raw.app : undefined)
+	} catch {
+		return null
+	}
 }

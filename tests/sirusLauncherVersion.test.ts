@@ -39,6 +39,28 @@ describe('sirus launcher version', () => {
 		await expect(service.getVersion()).resolves.toBe('2.0.8')
 	})
 
+	it('shares one GitHub request between parallel refresh and version reads', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-version-parallel-'))
+		let requests = 0
+		const service = createSirusLauncherVersionService(
+			() => root,
+			'1.0.15',
+			async () => {
+				requests += 1
+				return { tag_name: 'v2.0.8' }
+			}
+		)
+
+		await expect(Promise.all([service.refresh(), service.getVersion()])).resolves.toEqual([
+			'2.0.8',
+			'2.0.8'
+		])
+		expect(requests).toBe(1)
+
+		await service.refresh()
+		expect(requests).toBe(2)
+	})
+
 	it('falls back to cached version when refresh fails', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-version-fallback-'))
 		let shouldFail = false

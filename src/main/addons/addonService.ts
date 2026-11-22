@@ -30,6 +30,7 @@ import {
 import { createGitHubAuthHeaders, isTrustedGitHubUrl } from '@core/github/githubAuth'
 import { createGitHubHttpError, createGitHubNetworkError } from '@core/github/githubErrors'
 import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
+import { addonCatalogEntrySchema } from '@main/ipc/schemas'
 import type { SettingsStore } from '@main/settings/fileSettingsStore'
 import type { SecretStore } from '@main/secrets/memorySecretStore'
 
@@ -45,6 +46,7 @@ type AddonProgressHandler = (progress: AddonProgress) => void
 
 interface AddonOperation {
 	settings: LauncherSettings
+	entries: AddonCatalogEntry[]
 	getToken(): Promise<string | undefined>
 }
 
@@ -60,8 +62,12 @@ export function createAddonService(
 
 	async function startOperation(): Promise<AddonOperation> {
 		const settings = await settingsStore.get()
+		const entries = [
+			...((addonCatalog as AddonCatalogFile).addons ?? []),
+			...(await readCustomAddons())
+		]
 		let token: Promise<string | undefined> | undefined
-		return { settings, getToken: () => (token ??= secretStore.get('github-token')) }
+		return { settings, entries, getToken: () => (token ??= secretStore.get('github-token')) }
 	}
 
 	async function list(
@@ -70,10 +76,9 @@ export function createAddonService(
 		operation?: AddonOperation
 	): Promise<AddonsListResult> {
 		const current = operation ?? (await startOperation())
-		const catalogEntries = await getCatalogEntries()
 		const entries = installedOnly
-			? await filterInstalledCatalogEntries(catalogEntries, current.settings)
-			: catalogEntries
+			? await filterInstalledCatalogEntries(current.entries, current.settings)
+			: current.entries
 		const addons = await Promise.all(
 			entries.map((entry) => summarizeAddon(entry, current, checkRemote))
 		)
@@ -92,12 +97,11 @@ export function createAddonService(
 		onProgress?: AddonProgressHandler,
 		operation?: AddonOperation
 	): Promise<AddonInstallResult> {
-		const entries = await getCatalogEntries()
-		const entry = entries.find((addon) => addon.id === input.addonId)
+		const current = operation ?? (await startOperation())
+		const entry = current.entries.find((addon) => addon.id === input.addonId)
 		if (!entry) throw new Error('Аддон не найден в каталоге')
 		if (!entry.repo) throw new Error('У аддона нет GitHub репозитория')
 
-		const current = operation ?? (await startOperation())
 		const validation = validateWowPath(current.settings.wowPath)
 		if (!validation.valid) throw new Error('Сначала укажи корректную папку WoW')
 
@@ -159,11 +163,10 @@ export function createAddonService(
 	}
 
 	async function deleteAddon(input: AddonActionInput): Promise<AddonDeleteResult> {
-		const entries = await getCatalogEntries()
-		const entry = entries.find((addon) => addon.id === input.addonId)
+		const operation = await startOperation()
+		const entry = operation.entries.find((addon) => addon.id === input.addonId)
 		if (!entry) throw new Error('Аддон не найден в каталоге')
 
-		const operation = await startOperation()
 		const validation = validateWowPath(operation.settings.wowPath)
 		if (!validation.valid) throw new Error('Сначала укажи корректную папку WoW')
 
@@ -278,19 +281,14 @@ export function createAddonService(
 	async function importCustom(filePath: string): Promise<CustomAddonsTransferResult> {
 		const imported = normalizeImportedCustomAddons(JSON.parse(await readFile(filePath, 'utf8')))
 		const current = await readCustomAddons()
-		const merged = mergeCustomAddons(current, imported)
-		await writeCustomAddons(renumberCustomAddons(merged))
-		const next = await readCustomAddons()
+		const next = renumberCustomAddons(mergeCustomAddons(current, imported))
+		await writeCustomAddons(next)
 
 		return {
 			filePath,
 			total: next.length,
 			addons: next
 		}
-	}
-
-	async function getCatalogEntries(): Promise<AddonCatalogEntry[]> {
-		return [...((addonCatalog as AddonCatalogFile).addons ?? []), ...(await readCustomAddons())]
 	}
 
 	async function summarizeAddon(
@@ -355,7 +353,13 @@ export function createAddonService(
 	}
 
 	async function readCustomAddons(): Promise<AddonCatalogEntry[]> {
-		return ((await readJsonFile(getCustomAddonsPath())) ?? []) as AddonCatalogEntry[]
+		const data = await readJsonFile(getCustomAddonsPath())
+		if (!Array.isArray(data)) return []
+
+		return data.flatMap((entry) => {
+			const parsed = addonCatalogEntrySchema.safeParse(entry)
+			return parsed.success ? [parsed.data] : []
+		})
 	}
 
 	async function writeCustomAddons(addons: AddonCatalogEntry[]): Promise<void> {

@@ -3,7 +3,7 @@ import {
 	mapGitHubRelease,
 	type GitHubReleaseResponse
 } from '@core/updater/appUpdate'
-import { getPortableUpdateDownloadPath } from '@core/updater/portableUpdateScript'
+import { getPortableUpdateDownloadPath, sanitizeFileName } from '@core/updater/portableUpdateScript'
 import { isRecord } from '@core/isRecord'
 import { mkdir, open, rm, stat } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -172,10 +172,6 @@ export function selectInstallAsset(
 		candidates.find((asset) => /portable/i.test(asset.name)) ??
 		candidates[0]
 	)
-}
-
-function sanitizeFileName(fileName: string): string {
-	return fileName.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
 }
 
 function getPortableExecutablePath(runtime: AppUpdateRuntime): string {

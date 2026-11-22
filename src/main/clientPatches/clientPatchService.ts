@@ -11,9 +11,9 @@ import type {
 	ClientPatchManifestResult,
 	ClientPatchSourceInput
 } from '@shared/contracts'
+import { clientPatchSourceUrls } from '@shared/contracts'
 import {
 	type ClientPatchManifestFile as CoreClientPatchManifestFile,
-	clientPatchManifestUrls,
 	createClientPatchTargetPath,
 	isExpectedMd5,
 	normalizeClientPatchManifest
@@ -90,7 +90,7 @@ export function createClientPatchService(
 			return {
 				loadedAt: new Date().toISOString(),
 				sourceUrl: manifest.sourceUrl,
-				availableSourceUrls: [...clientPatchManifestUrls],
+				availableSourceUrls: [...clientPatchSourceUrls],
 				total: files.length,
 				files
 			}
@@ -132,7 +132,7 @@ export function createClientPatchService(
 				const result = {
 					checkedAt: new Date().toISOString(),
 					sourceUrl: manifest.sourceUrl,
-					availableSourceUrls: [...clientPatchManifestUrls],
+					availableSourceUrls: [...clientPatchSourceUrls],
 					total: files.length,
 					...countPatchStatuses(files),
 					files
@@ -314,7 +314,6 @@ async function downloadAndVerifyPatch(
 			throw new Error(`MD5 скачанного файла не совпадает: ${patch.fileName}`)
 		}
 
-		await rm(targetPath, { force: true })
 		await moveFile(tempPath, targetPath)
 		const targetStat = await stat(targetPath)
 		await md5Cache.set(createMd5CacheKey(targetPath, targetStat), actualMd5)
@@ -421,21 +420,21 @@ async function fetchManifestWithFallback(
 }
 
 function createManifestSourceOrder(startSourceUrl?: string): string[] {
-	if (!startSourceUrl) return [...clientPatchManifestUrls]
+	if (!startSourceUrl) return [...clientPatchSourceUrls]
 
-	const startIndex = clientPatchManifestUrls.indexOf(
-		startSourceUrl as (typeof clientPatchManifestUrls)[number]
+	const startIndex = clientPatchSourceUrls.indexOf(
+		startSourceUrl as (typeof clientPatchSourceUrls)[number]
 	)
-	if (startIndex === -1) return [...clientPatchManifestUrls]
+	if (startIndex === -1) return [...clientPatchSourceUrls]
 
 	return [
-		...clientPatchManifestUrls.slice(startIndex),
-		...clientPatchManifestUrls.slice(0, startIndex)
+		...clientPatchSourceUrls.slice(startIndex),
+		...clientPatchSourceUrls.slice(0, startIndex)
 	]
 }
 
 function isKnownManifestSource(sourceUrl: string): boolean {
-	return clientPatchManifestUrls.includes(sourceUrl as (typeof clientPatchManifestUrls)[number])
+	return clientPatchSourceUrls.includes(sourceUrl as (typeof clientPatchSourceUrls)[number])
 }
 
 function throwIfClientCheckCancelled(signal?: AbortSignal): void {

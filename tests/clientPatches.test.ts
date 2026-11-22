@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto'
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
-	clientPatchManifestUrls,
 	createClientPatchTargetPath,
 	normalizeClientPatchManifest
 } from '../src/core/clientPatches/clientPatches'
+import { clientPatchSourceUrls } from '../src/shared/contracts'
 import {
 	createClientPatchService,
 	type ClientMd5Cache,
@@ -179,6 +179,36 @@ describe('client patch service', () => {
 		expect(await readFile(join(wowPath, 'Data', 'patch.mpq'), 'utf8')).toBe(fileContent)
 	})
 
+	it('removes a partial download and keeps the installed file when the source stalls', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-client-stalled-'))
+		const wowPath = join(root, 'wow')
+		const tempRoot = join(root, 'temp')
+		const installedPath = join(wowPath, 'Data', 'patch.mpq')
+		await mkdir(tempRoot, { recursive: true })
+		await mkdir(join(wowPath, 'Data'), { recursive: true })
+		await writeFile(installedPath, 'installed')
+
+		const service = createClientPatchService(
+			createMemorySettingsStore({ wowPath }),
+			async () => ({ patches: [createManifestFile('patch.mpq', '/Data/', 'patched')] }),
+			async (path) =>
+				createHash('md5')
+					.update(await readFile(path))
+					.digest('hex'),
+			async (_url, targetPath) => {
+				await writeFile(targetPath, 'pat')
+				throw new Error('Источник перестал отдавать данные')
+			},
+			() => tempRoot
+		)
+
+		await expect(
+			service.downloadFile({ fileName: 'patch.mpq', relativePath: '/Data/' })
+		).rejects.toThrow('Источник перестал отдавать данные')
+		await expect(readFile(installedPath, 'utf8')).resolves.toBe('installed')
+		await expect(readdir(tempRoot)).resolves.toEqual([])
+	})
+
 	it('hashes client files one at a time before downloading missing ones', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-client-download-missing-'))
 		const wowPath = join(root, 'wow')
@@ -219,7 +249,7 @@ describe('client patch service', () => {
 	it('uses selected manifest source without fallback', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-client-source-'))
 		const wowPath = join(root, 'wow')
-		const selectedSourceUrl = clientPatchManifestUrls[1]
+		const selectedSourceUrl = clientPatchSourceUrls[1]
 		const fetchCalls: string[] = []
 
 		const service = createClientPatchService(
@@ -239,14 +269,14 @@ describe('client patch service', () => {
 
 		expect(fetchCalls).toEqual([selectedSourceUrl])
 		expect(manifest.sourceUrl).toBe(selectedSourceUrl)
-		expect(manifest.availableSourceUrls).toEqual([...clientPatchManifestUrls])
+		expect(manifest.availableSourceUrls).toEqual([...clientPatchSourceUrls])
 	})
 
 	it('falls back from the selected manifest source to the next source', async () => {
 		const root = await mkdtemp(join(tmpdir(), 'sirus-client-selected-fallback-'))
 		const wowPath = join(root, 'wow')
-		const selectedSourceUrl = clientPatchManifestUrls[1]
-		const fallbackSourceUrl = clientPatchManifestUrls[2]
+		const selectedSourceUrl = clientPatchSourceUrls[1]
+		const fallbackSourceUrl = clientPatchSourceUrls[2]
 		const fetchCalls: string[] = []
 
 		const service = createClientPatchService(

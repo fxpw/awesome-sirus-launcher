@@ -51,12 +51,13 @@ export async function verifySecureConnection(
 	deps: VerifySecureConnectionDeps
 ): Promise<VerifySecureConnectionResult> {
 	const log = deps.logger ?? { info() {}, warn() {} }
+	let timeout: ReturnType<typeof setTimeout> | undefined
 
 	try {
 		const result = await Promise.race([
 			runVerification(deps),
 			new Promise<VerifySecureConnectionResult>((resolve) => {
-				setTimeout(
+				timeout = setTimeout(
 					() => resolve({ verified: false, error: 'Connection timeout' }),
 					VERIFY_TIMEOUT_MS
 				)
@@ -71,6 +72,8 @@ export async function verifySecureConnection(
 		const message = error instanceof Error ? error.message : String(error)
 		log.warn(`[mcr] secure-connection ошибка: ${message}`)
 		return { verified: false, error: message }
+	} finally {
+		clearTimeout(timeout)
 	}
 }
 

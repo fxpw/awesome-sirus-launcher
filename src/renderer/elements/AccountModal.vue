@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { X } from '@lucide/vue'
 import BaseButton from '@renderer/components/BaseButton.vue'
 import TextField from '@renderer/components/TextField.vue'
 import { useLocale } from '@renderer/composables/useLocale'
@@ -34,7 +35,7 @@ const { t } = useLocale()
 					:aria-label="t('account.close')"
 					@click="$emit('close')"
 				>
-					×
+					<X :size="24" />
 				</button>
 			</div>
 

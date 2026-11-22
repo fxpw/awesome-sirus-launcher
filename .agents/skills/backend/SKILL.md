@@ -11,20 +11,23 @@ Use this skill to keep launcher backend code safe, testable, and consistent. Kee
 
 ## Architecture
 
-Prefer these module boundaries:
+Current module boundaries (`src/core/<domain>` for pure rules, `src/main/<domain>` for side effects):
 
-- `settings`: read/write launcher config and selected WoW path.
-- `secrets`: store GitHub token and account passwords through OS-protected credential storage.
+- `settings`: read/write launcher config (`settings.json` in app data) and the selected WoW path.
+- `secrets`: store GitHub token and account passwords through Electron `safeStorage`.
 - `accounts`: store local account profiles, protect saved passwords, and update `WTF/Config.wtf` before launch.
-- `wow-client`: validate WoW directory, derive `WTF`, `Data/ruRU`, `Interface/AddOns`, and `run.exe` paths.
-- `downloads`: queued downloads, temporary files, progress, retry, cancellation.
-- `patches`: fetch patch manifests, normalize paths, stream MD5 checks, update mismatched files.
-- `fps-patch`: install `patch-ruRU-[.mpq` into `Data/ruRU`.
-- `addons`: download GitHub repository source zip archives, unpack them safely, strip the top archive folder, and install real addon folders.
+- `wow`: validate the WoW directory and derive `WTF`, `Data/ruRU`, `Interface/AddOns`, and `run.exe` paths.
+- `downloads`, `files`, `archive`: download to a file, fetch JSON, stream MD5, read/write JSON atomically, move files, zip/unzip with path checks.
+- `clientPatches`: fetch patch manifests with mirror fallback, normalize paths, stream MD5 checks with a cache, download missing or mismatched files.
+- `fpsPatch`: install `patch-ruRU-[.mpq` into `Data/ruRU`.
+- `addons`, `github`: download GitHub repository source zip archives through the GitHub network session (proxy, token, diagnostics), unpack them safely, strip the top archive folder, and install real addon folders.
 - `backup`: zip, list, restore, and safety-backup `WTF`.
 - `launcher`: start WoW without blocking the UI.
-- `app-updater`: check GitHub Releases, compare launcher versions, download update assets, and trigger installation.
-- `logging`: write structured logs and forward user-facing events.
+- `updater`: check GitHub Releases, compare launcher versions, download update assets, and trigger installation.
+- `device`, `secureConnection`, `sirus`: Sirus-compatible device registration, handshake and MCR check.
+- `mining`: optional external miner process.
+
+There is no logging module yet: main writes to the console. A structured operation log is planned in `docs/ROADMAP.md`.
 
 Keep shared DTOs and channel names in `shared` so main, preload, renderer, and tests compile against the same contract.
 
@@ -51,7 +54,7 @@ Do not add manual ad-hoc `if/throw` validation in IPC handlers when a Zod schema
 
 ## Portability
 
-- Keep `core` free of `electron` imports.
+- Keep `core` free of `electron` imports (enforced by `tests/portableCore.test.ts`), network calls, process launches and file writes. `node:path` and read-only `node:fs` checks are allowed there.
 - Put filesystem, downloader, archive, process launch, and secret storage behind interfaces.
 - Keep Electron-specific code in adapters that call `core`.
 - Add tests for `core` behavior before wiring it to IPC.
@@ -69,7 +72,9 @@ Do not add manual ad-hoc `if/throw` validation in IPC handlers when a Zod schema
 
 ## Jobs And Progress
 
-Represent long-running work as jobs:
+Current state: there is no job model. Progress events exist for the client check (`progress:client-check`) and addon installs (`progress:addons`); only the client check can be cancelled (`client:cancel-check`, `AbortController` in `clientPatchService`). Events carry no job id.
+
+Target model for new long-running work (not implemented yet, see `docs/ARCHITECTURE.md` §7):
 
 ```ts
 export interface LauncherJob {
@@ -100,9 +105,9 @@ Emit progress events from main to renderer. Keep cancellation cooperative and ma
 - After unpacking a GitHub source zip, do not install the top folder like `{repo}-{branch}`. Find folders containing `.toc` and move those addon folders into `<wowPath>/Interface/AddOns`.
 - Back up `<wowPath>/WTF` into timestamped zip archives.
 - For multi-account launch, update `<wowPath>/WTF/Config.wtf` with `SET accountName "login"` and `SET readTerminationWithoutNotice "password"` immediately before launching the game.
-- For launcher auto-update, compare local `package.json.version`/`VERSION` with GitHub Releases, ignore pre-releases unless enabled, download to a temporary file, validate metadata/checksum when available, and provide manual fallback to the release page.
+- For launcher auto-update, compare the app version with GitHub Releases and ignore pre-releases unless the hidden `allowPrereleaseUpdates` flag is set in `settings.json` (no UI toggle on purpose). Download to a temporary file and check size and the `MZ` executable signature before running it. Checksum/signature validation and a manual fallback to the release page are not implemented yet.
 - Never log saved passwords or write them to plaintext launcher logs/settings. Prefer OS-protected storage for secrets.
-- Launch only the validated WoW executable, not arbitrary user-provided commands.
+- Launch only `run.exe` from the validated WoW folder, the miner exe chosen by the user after explicit consent, and the downloaded launcher update after the size and PE signature check. Never launch commands or paths supplied by the renderer (see `docs/ARCHITECTURE.md` §4).
 
 ## Testing
 
@@ -110,6 +115,6 @@ Emit progress events from main to renderer. Keep cancellation cooperative and ma
 - Unit test GitHub token handling without exposing token values: auth header creation, redacted logging, 401/403 handling, and rate-limit parsing.
 - Unit test app updater version comparison, release parsing, pre-release filtering, asset selection, and fallback behavior.
 - Integration test backup/restore and addon extraction using temporary directories.
-- Add adapter contract tests for filesystem, downloader, archive extraction, process launch, and secret storage.
+- Add adapter contract tests for filesystem, downloader, archive extraction, process launch, and secret storage. Archive, JSON file and GitHub downloader tests exist; process launch and the Electron secret store have none yet.
 - Mock network calls; do not depend on live patch servers in unit tests.
 - Add regression tests for any bug involving data loss, path traversal, or failed validation.

@@ -40,6 +40,7 @@ import WtfBackupPathForm from '@renderer/elements/WtfBackupPathForm.vue'
 import WtfBackupPanel from '@renderer/elements/WtfBackupPanel.vue'
 import { launcherApi } from '@renderer/api/launcherApi'
 import { useLocale } from '@renderer/composables/useLocale'
+import { createClientFileKey } from '@renderer/shared/clientPatchFiles'
 import { getUserErrorMessage } from '@renderer/shared/errors'
 import type { MessageKey } from '@renderer/shared/i18n'
 
@@ -314,11 +315,13 @@ async function reloadBackups(): Promise<void> {
 	}
 }
 
-async function toggleSetting(
-	key: 'closeOnLaunch' | 'checkClientBeforeLaunch' | 'autoUpdateAddons' | 'allowPrereleaseUpdates'
+function toggleSetting(
+	key: 'closeOnLaunch' | 'checkClientBeforeLaunch' | 'autoUpdateAddons'
 ): Promise<void> {
-	if (!settings.value) return
-	settings.value = await launcherApi.settings.save({ [key]: !settings.value[key] })
+	return runAction('launch.saveError', async () => {
+		if (!settings.value) return
+		settings.value = await launcherApi.settings.save({ [key]: !settings.value[key] })
+	})
 }
 
 async function checkAppUpdate(): Promise<void> {
@@ -500,8 +503,10 @@ function installFpsPatch(): Promise<void> {
 	)
 }
 
-function deleteFpsPatch(): Promise<void> {
-	return runAction(
+async function deleteFpsPatch(): Promise<void> {
+	if (!confirm(t('fpsPatch.deleteConfirm'))) return
+
+	await runAction(
 		'fpsPatch.deleteError',
 		async () => {
 			const result = await launcherApi.fpsPatch.delete()
@@ -624,10 +629,6 @@ function downloadMissingClientFiles(): Promise<void> {
 		},
 		clientDownloadingAll
 	)
-}
-
-function createClientFileKey(input: ClientPatchFileInput): string {
-	return `${input.relativePath}\u0000${input.fileName}`
 }
 
 function navigate(section: string): void {

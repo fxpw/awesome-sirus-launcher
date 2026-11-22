@@ -52,7 +52,7 @@ export function getPortableUpdateDownloadPath(assetName: string, executablePath:
 	return join(dirname(executablePath), `${sanitizeFileName(assetName)}.download`)
 }
 
-function sanitizeFileName(fileName: string): string {
+export function sanitizeFileName(fileName: string): string {
 	return fileName.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
 }
 

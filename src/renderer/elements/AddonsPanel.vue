@@ -29,6 +29,7 @@ const { t } = useLocale()
 
 const catalogAddons = ref<AddonSummary[]>([])
 const checkedAddons = ref<AddonSummary[]>([])
+const running = ref(false)
 const loading = ref(false)
 const checking = ref(false)
 const updatingAddonId = ref('')
@@ -49,7 +50,6 @@ const activeTooltip = ref<{
 	left: number
 	top: number
 	maxWidth: number
-	placement: 'above' | 'below'
 } | null>(null)
 const tooltipElement = ref<HTMLElement | null>(null)
 const tableSearch = ref<Record<AddonCatalogSource, string>>({
@@ -113,6 +113,7 @@ const addonTables = computed(() => [
 	createAddonTable('custom', t('addons.table.custom'))
 ])
 const isChecking = computed(() => checking.value || props.checkingExternal === true)
+const isBusy = computed(() => running.value || props.checkingExternal === true)
 
 watch(
 	() => props.addonResult,
@@ -248,6 +249,8 @@ async function importCustomAddons(): Promise<void> {
 }
 
 async function run(action: () => Promise<void>): Promise<void> {
+	if (running.value) return
+	running.value = true
 	error.value = ''
 	notice.value = ''
 	updateFailures.value = []
@@ -260,6 +263,7 @@ async function run(action: () => Promise<void>): Promise<void> {
 		failedAction = action
 		error.value = getUserErrorMessage(err, t('addons.error'))
 	} finally {
+		running.value = false
 		loading.value = false
 		checking.value = false
 		updatingAddonId.value = ''
@@ -486,8 +490,7 @@ async function showTooltip(addon: AddonSummary, event: MouseEvent): Promise<void
 		description: addon.description ?? '',
 		left: 0,
 		top: 0,
-		maxWidth: Math.max(280, window.innerWidth - 32),
-		placement: 'below'
+		maxWidth: Math.max(280, window.innerWidth - 32)
 	}
 	await positionTooltip()
 }
@@ -517,13 +520,7 @@ async function positionTooltip(): Promise<void> {
 		? Math.max(viewportPadding, anchorY - tooltipRect.height - gap)
 		: Math.min(window.innerHeight - tooltipRect.height - viewportPadding, anchorY + gap)
 
-	activeTooltip.value = {
-		...tooltip,
-		left,
-		top,
-		maxWidth,
-		placement: placeAbove ? 'above' : 'below'
-	}
+	activeTooltip.value = { ...tooltip, left, top, maxWidth }
 }
 
 function handleTooltipMouseMove(addon: AddonSummary, event: MouseEvent): void {
@@ -567,21 +564,13 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 				<p>{{ t('addons.description') }}</p>
 			</div>
 			<div class="panel-heading__actions">
-				<BaseButton
-					variant="secondary"
-					:disabled="loading || isChecking"
-					@click="loadAddons"
-				>
+				<BaseButton variant="secondary" :disabled="isBusy" @click="loadAddons">
 					{{ loading ? t('addons.loading') : t('addons.load') }}
 				</BaseButton>
-				<BaseButton :disabled="loading || isChecking" @click="checkAddons">
+				<BaseButton :disabled="isBusy" @click="checkAddons">
 					{{ isChecking ? t('addons.checking') : t('addons.check') }}
 				</BaseButton>
-				<BaseButton
-					variant="secondary"
-					:disabled="loading || isChecking"
-					@click="updateAll"
-				>
+				<BaseButton variant="secondary" :disabled="isBusy" @click="updateAll">
 					{{ t('addons.updateAll') }}
 				</BaseButton>
 			</div>
@@ -640,11 +629,7 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 				</details>
 			</div>
 			<div class="addon-remote-warning__actions">
-				<BaseButton
-					variant="secondary"
-					:disabled="isChecking"
-					@click="retryRemoteOperation"
-				>
+				<BaseButton variant="secondary" :disabled="isBusy" @click="retryRemoteOperation">
 					{{ isChecking ? t('addons.checking') : t('addons.retry') }}
 				</BaseButton>
 				<BaseButton variant="secondary" @click="emit('open-settings')">
@@ -656,13 +641,13 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 		<div class="addon-custom-form">
 			<TextField v-model="customName" :placeholder="t('addons.customName')" />
 			<TextField v-model="customUrl" :placeholder="t('addons.customUrl')" />
-			<BaseButton :disabled="!customName || !customUrl" @click="addCustomAddon">
+			<BaseButton :disabled="isBusy || !customName || !customUrl" @click="addCustomAddon">
 				{{ t('addons.customAdd') }}
 			</BaseButton>
-			<BaseButton variant="secondary" @click="exportCustomAddons">
+			<BaseButton variant="secondary" :disabled="isBusy" @click="exportCustomAddons">
 				{{ t('addons.customExport') }}
 			</BaseButton>
-			<BaseButton variant="secondary" @click="importCustomAddons">
+			<BaseButton variant="secondary" :disabled="isBusy" @click="importCustomAddons">
 				{{ t('addons.customImport') }}
 			</BaseButton>
 		</div>
@@ -766,9 +751,7 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 						</a>
 						<BaseButton
 							variant="secondary"
-							:disabled="
-								addon.status === 'manual-git' || updatingAddonId === addon.id
-							"
+							:disabled="addon.status === 'manual-git' || isBusy"
 							@click="installAddon(addon)"
 						>
 							{{ getInstallActionLabel(addon) }}
@@ -779,6 +762,7 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 							variant="danger"
 							:title="t('addons.delete')"
 							:aria-label="t('addons.delete')"
+							:disabled="isBusy"
 							@click="requestDeleteAddon(addon)"
 						>
 							<Trash2 :size="18" />
@@ -793,8 +777,7 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 		<div
 			v-if="activeTooltip"
 			ref="tooltipElement"
-			class="addon-tooltip addon-tooltip--visible"
-			:class="{ 'addon-tooltip--above': activeTooltip.placement === 'above' }"
+			class="addon-tooltip"
 			:style="{
 				left: `${activeTooltip.left}px`,
 				top: `${activeTooltip.top}px`,
@@ -827,11 +810,7 @@ function handleRowContextMenu(addonId: string, event: MouseEvent): void {
 				<BaseButton variant="secondary" @click="cancelDeleteAddon">
 					{{ t('addons.deleteCancel') }}
 				</BaseButton>
-				<BaseButton
-					variant="danger"
-					:disabled="deletingAddonId === addonPendingDelete.id"
-					@click="confirmDeleteAddon"
-				>
+				<BaseButton variant="danger" :disabled="isBusy" @click="confirmDeleteAddon">
 					{{
 						deletingAddonId === addonPendingDelete.id
 							? t('addons.deleting')

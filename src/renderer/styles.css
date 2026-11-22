@@ -1066,7 +1066,7 @@ nav {
 
 .mining-dashboard {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(3, minmax(0, 1fr));
 	gap: 10px;
 }
 
@@ -1378,8 +1378,6 @@ nav {
 	background: rgba(143, 201, 203, 0.08);
 	color: var(--text);
 	cursor: pointer;
-	font-size: 24px;
-	line-height: 1;
 }
 
 .icon-button:hover,
@@ -1946,18 +1944,7 @@ nav {
 	color: var(--text);
 	font-size: 12px;
 	line-height: 1.45;
-	opacity: 0;
 	pointer-events: none;
-	transform: translateY(4px);
-	visibility: hidden;
-	transition:
-		opacity 120ms ease,
-		transform 120ms ease,
-		visibility 0s linear 120ms;
-}
-
-.addon-tooltip--above {
-	transform: translateY(-4px);
 }
 
 .addon-tooltip strong {
@@ -1969,13 +1956,6 @@ nav {
 .addon-tooltip p {
 	margin: 2px 0;
 	color: var(--text);
-}
-
-.addon-tooltip--visible {
-	opacity: 1;
-	transform: translateY(0);
-	visibility: visible;
-	transition-delay: 40ms, 40ms, 0s;
 }
 
 .error {

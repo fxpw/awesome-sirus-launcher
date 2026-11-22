@@ -27,7 +27,7 @@ export function createClientRegistrationService(
 	sirusLauncherVersionService: SirusLauncherVersionService
 ): ClientRegistrationService {
 	let handshakeTimer: NodeJS.Timeout | undefined
-	let handshakeStarted = false
+	let handshakeLoop: object | undefined
 
 	return {
 		async ensureRegistered() {
@@ -51,20 +51,20 @@ export function createClientRegistrationService(
 			return uuid
 		},
 		stopHandshakePolling() {
-			if (!handshakeTimer) return
 			clearTimeout(handshakeTimer)
 			handshakeTimer = undefined
-			handshakeStarted = false
+			handshakeLoop = undefined
 		}
 	}
 
 	function startHandshakePolling() {
-		if (handshakeStarted) return
-		handshakeStarted = true
-		void runHandshake()
+		if (handshakeLoop) return
+		const loop = {}
+		handshakeLoop = loop
+		void runHandshake(loop)
 	}
 
-	async function runHandshake() {
+	async function runHandshake(loop: object) {
 		const record = await store.get()
 		if (!record?.registered) return
 
@@ -77,8 +77,9 @@ export function createClientRegistrationService(
 			)
 		}
 
+		if (handshakeLoop !== loop) return
 		handshakeTimer = setTimeout(() => {
-			void runHandshake()
+			void runHandshake(loop)
 		}, CLIENT_HANDSHAKE_INTERVAL_MS)
 	}
 

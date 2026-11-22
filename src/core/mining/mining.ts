@@ -1,6 +1,7 @@
-import { basename, normalize, resolve } from 'node:path'
-import type { MiningConfig, MiningConfigInput, MiningState, MiningStatus } from '@shared/contracts'
+import { basename } from 'node:path'
+import type { MiningConfig, MiningState, MiningStatus } from '@shared/contracts'
 import { isRecord } from '@core/isRecord'
+import { normalizeOptionalPath } from '@core/settings/launcherSettings'
 
 export const defaultMiningConfig: MiningConfig = {
 	consentAccepted: false,
@@ -17,7 +18,7 @@ export function normalizeMiningConfig(value: unknown): MiningConfig {
 
 	return {
 		consentAccepted: value.consentAccepted === true,
-		minerPath: normalizePath(value.minerPath),
+		minerPath: normalizeOptionalPath(value.minerPath),
 		arguments: normalizeText(value.arguments),
 		poolUrl: normalizeText(value.poolUrl),
 		walletAddress: normalizeText(value.walletAddress),
@@ -28,7 +29,7 @@ export function normalizeMiningConfig(value: unknown): MiningConfig {
 
 export function applyMiningConfigPatch(
 	current: MiningConfig,
-	patch: MiningConfigInput
+	patch: Partial<MiningConfig>
 ): MiningConfig {
 	return normalizeMiningConfig({
 		...current,
@@ -44,8 +45,6 @@ export function createMiningState(input: {
 	hashrate?: string
 	acceptedSharesTotal?: number
 	acceptedSharesSession?: number
-	receivedTotal?: number
-	receivedSession?: number
 	lastOutput?: string
 	error?: string
 }): MiningState {
@@ -58,8 +57,6 @@ export function createMiningState(input: {
 		hashrate: input.hashrate ?? '0 H/s',
 		acceptedSharesTotal: input.acceptedSharesTotal ?? 0,
 		acceptedSharesSession: input.acceptedSharesSession ?? 0,
-		receivedTotal: input.receivedTotal ?? 0,
-		receivedSession: input.receivedSession ?? 0,
 		lastOutput: input.lastOutput ?? '',
 		error: input.error
 	}
@@ -126,12 +123,6 @@ export function splitMiningArguments(value: string): string[] {
 function createCommandPreview(config: MiningConfig): string {
 	const executable = config.minerPath ? basename(config.minerPath) : 'miner.exe'
 	return [executable, config.arguments].filter(Boolean).join(' ')
-}
-
-function normalizePath(value: unknown): string {
-	if (typeof value !== 'string') return ''
-	const trimmed = value.trim()
-	return trimmed ? normalize(resolve(trimmed)) : ''
 }
 
 function normalizeText(value: unknown): string {

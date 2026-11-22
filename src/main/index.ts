@@ -97,10 +97,7 @@ const wtfBackupService = createWtfBackupService(settingsStore)
 const fpsPatchService = createFpsPatchService(
 	() => app.getPath('userData'),
 	settingsStore,
-	downloadFile,
-	undefined,
-	undefined,
-	md5File
+	downloadFile
 )
 const clientPatchService = createClientPatchService(
 	settingsStore,
@@ -677,33 +674,47 @@ function registerIpcHandlers(): void {
 	)
 }
 
-app.whenReady().then(() => {
-	registerIpcHandlers()
-	createWindow()
-	void sirusLauncherVersionService.refresh().catch((error) => {
-		console.warn(
-			'[sirus] не удалось обновить версию лаунчера при старте:',
-			error instanceof Error ? error.message : String(error)
-		)
-	})
-	void clientRegistrationService.ensureRegistered().catch((error) => {
-		console.warn(
-			'[client] регистрация устройства при старте не выполнена:',
-			error instanceof Error ? error.message : String(error)
-		)
+if (!app.requestSingleInstanceLock()) {
+	console.log(
+		'[app] лаунчер уже запущен, второй экземпляр закрыт. Для параллельного запуска укажите отдельную папку данных: --user-data-dir=<путь>'
+	)
+	app.quit()
+} else {
+	app.on('second-instance', () => {
+		const window = BrowserWindow.getAllWindows()[0]
+		if (!window) return
+		if (window.isMinimized()) window.restore()
+		window.focus()
 	})
 
-	app.on('activate', () => {
-		if (BrowserWindow.getAllWindows().length === 0) createWindow()
+	app.whenReady().then(() => {
+		registerIpcHandlers()
+		createWindow()
+		void sirusLauncherVersionService.refresh().catch((error) => {
+			console.warn(
+				'[sirus] не удалось обновить версию лаунчера при старте:',
+				error instanceof Error ? error.message : String(error)
+			)
+		})
+		void clientRegistrationService.ensureRegistered().catch((error) => {
+			console.warn(
+				'[client] регистрация устройства при старте не выполнена:',
+				error instanceof Error ? error.message : String(error)
+			)
+		})
+
+		app.on('activate', () => {
+			if (BrowserWindow.getAllWindows().length === 0) createWindow()
+		})
 	})
-})
 
-app.on('before-quit', () => {
-	clientRegistrationService.stopHandshakePolling()
-	void miningService.stop()
-})
+	app.on('before-quit', () => {
+		clientRegistrationService.stopHandshakePolling()
+		void miningService.stop()
+	})
 
-app.on('window-all-closed', () => {
-	void miningService.stop()
-	if (process.platform !== 'darwin') app.quit()
-})
+	app.on('window-all-closed', () => {
+		void miningService.stop()
+		if (process.platform !== 'darwin') app.quit()
+	})
+}

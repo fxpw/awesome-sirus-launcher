@@ -1,5 +1,5 @@
 import { createServer, type Server } from 'node:net'
-import { describe, expect, it, afterEach } from 'vitest'
+import { describe, expect, it, afterEach, vi } from 'vitest'
 import {
 	crc32c,
 	createMcrRequestFrame,
@@ -59,6 +59,19 @@ describe('verifySecureConnection', () => {
 
 		expect(await verifySecureConnection(deps)).toEqual({ verified: true })
 		expect(connections).toBe(0)
+	})
+
+	it('clears the timeout timer once verification finishes', async () => {
+		vi.useFakeTimers()
+		try {
+			await verifySecureConnection({
+				fetchConfig: async () => null,
+				establishConnection: async () => undefined
+			})
+			expect(vi.getTimerCount()).toBe(0)
+		} finally {
+			vi.useRealTimers()
+		}
 	})
 
 	it('connects to all configured hosts', async () => {

@@ -47,7 +47,7 @@ export function applyLauncherSettingsPatch(
 	})
 }
 
-function normalizeOptionalPath(value: unknown): string {
+export function normalizeOptionalPath(value: unknown): string {
 	if (typeof value !== 'string') return ''
 	const trimmed = value.trim()
 	return trimmed ? normalize(resolve(trimmed)) : ''

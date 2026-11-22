@@ -1,16 +1,48 @@
+import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { basename, dirname, resolve } from 'node:path'
 
 export async function readJsonFile(filePath: string): Promise<unknown> {
 	if (!existsSync(filePath)) return undefined
 
-	return JSON.parse(await readFile(filePath, 'utf8'))
+	const text = await readFile(filePath, 'utf8')
+	try {
+		return JSON.parse(text)
+	} catch {
+		const corruptPath = `${filePath}.${new Date().toISOString().replaceAll(':', '-')}.corrupt`
+		await rename(filePath, corruptPath)
+		console.warn(
+			`[files] ${basename(filePath)} не разобран как JSON, перенесён в ${basename(corruptPath)}`
+		)
+		return undefined
+	}
 }
 
+const pendingWrites = new Map<string, Promise<void>>()
+
 export async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
-	const tempPath = `${filePath}.tmp`
+	const text = JSON.stringify(value, null, 2)
+	const key = resolve(filePath)
+	const write = (pendingWrites.get(key) ?? Promise.resolve())
+		.catch(() => undefined)
+		.then(() => replaceFile(filePath, text))
+	pendingWrites.set(key, write)
+	try {
+		await write
+	} finally {
+		if (pendingWrites.get(key) === write) pendingWrites.delete(key)
+	}
+}
+
+async function replaceFile(filePath: string, text: string): Promise<void> {
+	const tempPath = `${filePath}.${randomUUID()}.tmp`
 	await mkdir(dirname(filePath), { recursive: true })
-	await writeFile(tempPath, JSON.stringify(value, null, 2), 'utf8')
-	await rename(tempPath, filePath)
+	try {
+		await writeFile(tempPath, text, 'utf8')
+		await rename(tempPath, filePath)
+	} catch (error) {
+		await rm(tempPath, { force: true })
+		throw error
+	}
 }

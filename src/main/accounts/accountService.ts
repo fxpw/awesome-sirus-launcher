@@ -10,6 +10,7 @@ import type {
 	SelectAccountInput
 } from '@shared/contracts'
 import { updateAccountConfigText } from '@core/accounts/configWtf'
+import { isRecord } from '@core/isRecord'
 import { validateWowPath } from '@core/wow/wowPaths'
 import { readJsonFile, writeJsonFile } from '@main/files/jsonFile'
 import type { SecretStore } from '@main/secrets/memorySecretStore'
@@ -118,13 +119,18 @@ export function createAccountService(
 }
 
 async function readAccounts(filePath: string): Promise<AccountFile> {
-	const data = (await readJsonFile(filePath)) as AccountFile | undefined
-	if (data === undefined) return { accounts: [] }
+	const data = await readJsonFile(filePath)
+	if (!isRecord(data)) return { accounts: [] }
 
 	return {
-		selectedAccountId: data.selectedAccountId,
-		accounts: Array.isArray(data.accounts) ? data.accounts : []
+		selectedAccountId:
+			typeof data.selectedAccountId === 'string' ? data.selectedAccountId : undefined,
+		accounts: Array.isArray(data.accounts) ? data.accounts.filter(isAccountRecord) : []
 	}
+}
+
+function isAccountRecord(value: unknown): value is AccountRecord {
+	return isRecord(value) && typeof value.id === 'string' && typeof value.login === 'string'
 }
 
 function toListResult(data: AccountFile): AccountListResult {
