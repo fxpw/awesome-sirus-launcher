@@ -334,6 +334,7 @@ export interface AddonCatalogEntry {
 	source: AddonCatalogSource
 	name: string
 	versionUrl?: string
+	archiveUrl?: string
 	versionFolder?: string
 	versionFile?: string
 	branch: string

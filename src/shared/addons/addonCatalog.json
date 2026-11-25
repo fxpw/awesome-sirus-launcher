@@ -1393,6 +1393,21 @@
 			"bugReportUrl": "https://github.com/KataLoved/SirusMythicPlus/issues",
 			"author": "NastyaLuve",
 			"category": "Всплывающие подсказки"
+		},
+		{
+			"id": "community:whispermessenger-sirus",
+			"source": "community",
+			"name": "WhisperMessenger",
+			"versionUrl": "https://raw.githubusercontent.com/AmonRay/WhisperMessenger-Sirus/master/WhisperMessenger.toc",
+			"archiveUrl": "https://github.com/AmonRay/WhisperMessenger-Sirus/releases/download/{version}/WhisperMessenger-{version}-sirus.zip",
+			"branch": "master",
+			"folders": ["WhisperMessenger"],
+			"description": "WhisperMessenger - окно переписки в стиле мессенджера для шёпотов, гильдии и каналов: история, ответы, реакции, эмодзи и уведомления.",
+			"githubUrl": "https://github.com/AmonRay/WhisperMessenger-Sirus",
+			"repo": "AmonRay/WhisperMessenger-Sirus",
+			"bugReportUrl": "https://github.com/AmonRay/WhisperMessenger-Sirus/issues",
+			"author": "Рэйнбоу",
+			"category": "Чат и общение"
 		}
 	]
 }

@@ -92,6 +92,25 @@ export function createAddonService(
 		}
 	}
 
+	async function buildInstallArchiveUrl(
+		entry: AddonCatalogEntry,
+		operation: AddonOperation
+	): Promise<string> {
+		if (!entry.archiveUrl) {
+			if (!entry.repo) throw new Error('У аддона нет GitHub репозитория')
+			return buildGitHubSourceZipUrl({ repo: entry.repo, ref: entry.branch })
+		}
+		if (!entry.archiveUrl.includes('{version}')) return entry.archiveUrl
+		if (!entry.versionUrl) throw new Error('У аддона нет источника версии для загрузки релиза')
+
+		const version = parseTocVersion(
+			await fetchText(entry.versionUrl, { token: await operation.getToken() })
+		)
+		if (!version) throw new Error('Не удалось определить версию аддона для загрузки релиза')
+
+		return entry.archiveUrl.split('{version}').join(encodeURIComponent(version))
+	}
+
 	async function install(
 		input: AddonActionInput,
 		onProgress?: AddonProgressHandler,
@@ -118,7 +137,7 @@ export function createAddonService(
 		try {
 			const token = await current.getToken()
 			reportAddonProgress(onProgress, progressState, entry, 'preparing')
-			const zipUrl = buildGitHubSourceZipUrl({ repo: entry.repo, ref: entry.branch })
+			const zipUrl = await buildInstallArchiveUrl(entry, current)
 			reportAddonProgress(onProgress, progressState, entry, 'downloading')
 			await downloadFile(zipUrl, archivePath, { token })
 			reportAddonProgress(onProgress, progressState, entry, 'extracting')
@@ -615,6 +634,7 @@ function normalizeImportedCustomAddon(
 		source: 'custom',
 		name: addon.name,
 		versionUrl: addon.versionUrl,
+		archiveUrl: addon.archiveUrl,
 		versionFolder: addon.versionFolder,
 		versionFile: addon.versionFile,
 		branch: addon.branch || 'main',
