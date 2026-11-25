@@ -293,6 +293,7 @@ export const addonCatalogEntrySchema = z.object({
 	source: addonCatalogSourceSchema,
 	name: z.string(),
 	versionUrl: z.string().optional(),
+	archiveUrl: z.string().optional(),
 	versionFolder: z.string().optional(),
 	versionFile: z.string().optional(),
 	branch: z.string(),

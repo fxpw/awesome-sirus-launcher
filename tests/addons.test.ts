@@ -261,6 +261,54 @@ describe('addon service', () => {
 		}
 	})
 
+	it('installs an addon from its release archive for the checked version', async () => {
+		const root = await mkdtemp(join(tmpdir(), 'sirus-addons-release-'))
+		const wowPath = join(root, 'wow')
+		const addonPath = join(wowPath, 'Interface', 'AddOns', 'WhisperMessenger')
+		const downloads: string[] = []
+
+		try {
+			await mkdir(join(wowPath, 'Data'), { recursive: true })
+			await mkdir(join(wowPath, 'Interface'), { recursive: true })
+			await mkdir(join(wowPath, 'WTF'), { recursive: true })
+			await writeFile(join(wowPath, 'run.exe'), '')
+
+			const service = createAddonService(
+				() => root,
+				createMemorySettingsStore({ wowPath }),
+				createMemorySecretStore(),
+				async (url) => {
+					downloads.push(url)
+				},
+				async (_archivePath, targetDir) => {
+					const archiveRoot = join(targetDir, 'WhisperMessenger')
+					await mkdir(archiveRoot, { recursive: true })
+					await writeFile(
+						join(archiveRoot, 'WhisperMessenger.toc'),
+						'## Version: v2.1.11\n'
+					)
+				},
+				async (url) => {
+					if (url.endsWith('/WhisperMessenger.toc')) return '## Version: v2.1.11\n'
+					throw new Error(`unexpected fetch: ${url}`)
+				}
+			)
+
+			const result = await service.install({ addonId: 'community:whispermessenger-sirus' })
+
+			expect(downloads).toEqual([
+				'https://github.com/AmonRay/WhisperMessenger-Sirus/releases/download/v2.1.11/WhisperMessenger-v2.1.11-sirus.zip'
+			])
+			expect(result.installedFolders).toEqual(['WhisperMessenger'])
+			expect(result.addon.installedVersion).toBe('v2.1.11')
+			await expect(
+				readFile(join(addonPath, 'WhisperMessenger.toc'), 'utf8')
+			).resolves.toContain('v2.1.11')
+		} finally {
+			vi.unstubAllGlobals()
+		}
+	})
+
 	it('checks only installed catalog addons matched by folder name', async () => {
 		vi.stubGlobal(
 			'fetch',
